@@ -1,42 +1,32 @@
-# 通用變數
+# Makefile for Pixel-Renderer
+
+# 定義變數
 CXX = C:/MinGW/mingw64/bin/g++.exe
-# include 路徑 + UNICODE；-I. 包含當前，若有子資料夾如 src/ 可加 -Isrc -Wextra
-CXXFLAGS_COMMON = -fdiagnostics-color=always -Wall -I. 
-SOURCES = $(shell find . -name "*.cpp")  # 動態抓所有 cpp (包含子資料夾)
+CXXFLAGS = -fdiagnostics-color=always
+SOURCES = *.cpp # 主目錄下的 cpp 檔案
+# 如果未來新增 tool 資料夾或其他子資料夾，添加如：tool/*.cpp src/*.cpp
+# 示例：SOURCES = *.cpp tool/*.cpp src/*.cpp
 LIBS = -lgdi32 -luser32
 
-# Debug 模式
-DEBUG_DIR = build/debug
-DEBUG_OBJS = $(addprefix $(DEBUG_DIR)/, $(notdir $(SOURCES:.cpp=.o)))
-debug: CXXFLAGS = $(CXXFLAGS_COMMON) -g -O0
-debug: $(DEBUG_DIR)/PixelRenderer_debug.exe
+DEBUG_OUTPUT_DIR = build/debug
+DEBUG_OUTPUT = $(DEBUG_OUTPUT_DIR)/PixelRenderer_debug.exe
 
-$(DEBUG_DIR)/PixelRenderer_debug.exe: $(DEBUG_OBJS)
-	$(CXX) $^ -o $@ $(LIBS)
+RELEASE_OUTPUT_DIR = build/release
+RELEASE_OUTPUT = $(RELEASE_OUTPUT_DIR)/PixelRenderer_release.exe
 
-$(DEBUG_DIR)/%.o: %.cpp | $(DEBUG_DIR)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
-
-$(DEBUG_DIR):
-	mkdir -p $(DEBUG_DIR)
-
-# Release 模式
-RELEASE_DIR = build/release
-RELEASE_OBJS = $(addprefix $(RELEASE_DIR)/, $(notdir $(SOURCES:.cpp=.o)))
-release: CXXFLAGS = $(CXXFLAGS_COMMON) -O2
-release: $(RELEASE_DIR)/PixelRenderer_release.exe
-
-$(RELEASE_DIR)/PixelRenderer_release.exe: $(RELEASE_OBJS)
-	$(CXX) $^ -o $@ $(LIBS)
-
-$(RELEASE_DIR)/%.o: %.cpp | $(RELEASE_DIR)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
-
-$(RELEASE_DIR):
-	mkdir -p $(RELEASE_DIR)
-
-# 預設 + clean
+# 預設目標：debug
 all: debug
+
+# Debug 模式：帶除錯符號，無優化
+debug:
+	mkdir -p $(DEBUG_OUTPUT_DIR)
+	$(CXX) $(CXXFLAGS) -g $(SOURCES) -o $(DEBUG_OUTPUT) $(LIBS)
+
+# Release 模式：帶優化，無除錯符號
+release:
+	mkdir -p $(RELEASE_OUTPUT_DIR)
+	$(CXX) $(CXXFLAGS) -O2 $(SOURCES) -o $(RELEASE_OUTPUT) $(LIBS)
+
+# 清除輸出檔案
 clean:
 	rm -rf build
-	rm -f PixelRenderer_debug.exe PixelRenderer_release.exe
