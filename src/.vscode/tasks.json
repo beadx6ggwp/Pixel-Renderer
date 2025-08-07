@@ -1,0 +1,32 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build Pixel-Renderer",
+            "type": "shell",
+            "command": "C:/MinGW/mingw64/bin/g++.exe",
+            "args": [
+                "-fdiagnostics-color=always",
+                "-g",
+                "main.cpp",
+                "application.cpp",
+                "render_device.cpp",
+                "screen_manager.cpp",
+                "-o",
+                "PixelRenderer.exe",
+                "-lgdi32",
+                "-luser32"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [
+                "$gcc"
+            ]
+        }
+    ]
+}
