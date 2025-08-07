@@ -2,31 +2,37 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "build Pixel-Renderer",
+            "label": "make debug Pixel-Renderer",
             "type": "shell",
-            "command": "C:/MinGW/mingw64/bin/g++.exe",
-            "args": [
-                "-fdiagnostics-color=always",
-                "-g",
-                "main.cpp",
-                "application.cpp",
-                "render_device.cpp",
-                "screen_manager.cpp",
-                "-o",
-                "PixelRenderer.exe",
-                "-lgdi32",
-                "-luser32"
-            ],
+            "command": "make",
+            "args": ["debug"],
             "options": {
-                "cwd": "${workspaceFolder}"
+                "cwd": "${workspaceFolder}",
+                "shell": {
+                    "executable": "C:\\CodingTool\\Git\\bin\\bash.exe",  // 你的 Git Bash 路徑，用 \\ 轉義；如果不同，調整
+                    "args": ["-c"]  // -c 讓 bash 執行命令
+                }
             },
             "group": {
                 "kind": "build",
                 "isDefault": true
             },
-            "problemMatcher": [
-                "$gcc"
-            ]
+            "problemMatcher": ["$gcc"]
+        },
+        {
+            "label": "make release Pixel-Renderer",
+            "type": "shell",
+            "command": "make",
+            "args": ["release"],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "shell": {
+                    "executable": "C:\\CodingTool\\Git\\bin\\bash.exe",
+                    "args": ["-c"]
+                }
+            },
+            "group": "build",
+            "problemMatcher": ["$gcc"]
         }
     ]
 }

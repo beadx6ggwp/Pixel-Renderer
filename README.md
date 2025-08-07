@@ -24,8 +24,12 @@ Pixel-Renderer is a basic template for software rendering on Windows using the W
    ```
    git clone https://github.com/yourusername/Pixel-Renderer.git
    ```
-2. `g++ -g main.cpp application.cpp render_device.cpp screen_manager.cpp -o PixelRenderer.exe -lgdi32 -luser32`
-3. Run `PixelRenderer.exe` to see the demo (draws a line; press ESC to exit).
+2. Manual Build (in Git Bash terminal)
+    - Debug: make debug (outputs to build/debug/PixelRenderer_debug.exe)
+    - Release: make release (outputs to build/release/PixelRenderer_release.exe)
+    - Clean: make clean
+
+3. Open bulid dir to run `PixelRenderer_xxx.exe` to see the demo.
 
 ### Usage
 Inherit from `Application` and override methods:
