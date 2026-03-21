@@ -1,0 +1,46 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "make debug Pixel-Renderer",
+      "type": "shell",
+      "command": "mingw32-make",
+      "args": ["debug"],
+      "options": {
+        "cwd": "${workspaceFolder}/src",
+        "shell": {
+          "executable": "C:\\Program Files\\Git\\bin\\bash.exe",
+          "args": ["-c"]
+        }
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": ["$gcc"]
+    },
+    {
+      "label": "make release Pixel-Renderer",
+      "type": "shell",
+      "command": "mingw32-make",
+      "args": ["release"],
+      "options": {
+        "cwd": "${workspaceFolder}/src",
+        "shell": {
+          "executable": "C:\\Program Files\\Git\\bin\\bash.exe",
+          "args": ["-c"]
+        }
+      },
+      "group": "build",
+      "problemMatcher": ["$gcc"]
+    }
+  ]
+}
+
+// ## 整個流程
+// Ctrl+Shift+B
+//     → VSCode 呼叫 tasks.json
+//     → tasks.json 用 Git Bash 執行 mingw32-make debug
+//     → Git Bash 認識 mkdir -p
+//     → mingw32-make 找到 g++ 編譯
+//     → 輸出 exe 到 src/build/debug/
