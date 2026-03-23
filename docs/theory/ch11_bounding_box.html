@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Ch11 — 包圍盒掃描法</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:     #1e1e2e;
+  --bg1:    #181825;
+  --bg2:    #11111b;
+  --border: #313244;
+  --muted:  #6c7086;
+  --text:   #cdd6f4;
+  --blue:   #89b4fa;
+  --green:  #a6e3a1;
+  --yellow: #f9e2af;
+  --orange: #fab387;
+  --red:    #f38ba8;
+  --purple: #cba6f7;
+  --teal:   #94e2d5;
+}
+body {
+  background: var(--bg); color: var(--text);
+  font-family: 'Georgia', serif; font-size: 15px;
+  padding: 0 20px 80px; max-width: 900px; margin: 0 auto;
+  line-height: 1.9;
+}
+
+/* ── Nav ─────────────────────────────────────────────── */
+nav {
+  font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted);
+  padding: 14px 0; border-bottom: 1px solid var(--border);
+  margin-bottom: 36px; display: flex; align-items: center; gap: 10px;
+}
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--blue); }
+.nav-sep { color: var(--border); }
+.nav-cur { color: var(--text); }
+.nav-right { margin-left: auto; display: flex; gap: 16px; }
+
+/* ── Header ──────────────────────────────────────────── */
+.ch-header { margin-bottom: 40px; }
+.ch-label {
+  font-family: 'Consolas', monospace; font-size: 0.78em;
+  color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px;
+}
+.ch-title { color: var(--blue); font-size: 1.7em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub   { color: var(--muted); font-size: 0.88em; margin-bottom: 14px; }
+.ch-tags  { display: flex; gap: 6px; flex-wrap: wrap; }
+.ch-tag {
+  font-family: 'Consolas', monospace; font-size: 0.72em;
+  padding: 1px 7px; border-radius: 4px;
+  background: var(--bg2); color: var(--muted); border: 1px solid var(--border);
+}
+
+/* ── Typography ──────────────────────────────────────── */
+h2 {
+  color: var(--purple); font-size: 1em;
+  font-family: 'Consolas', monospace; letter-spacing: 0.05em;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+  margin: 44px 0 20px;
+  display: flex; align-items: center; gap: 12px;
+}
+h2 .n {
+  background: var(--purple); color: var(--bg2); font-weight: bold;
+  border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 0.85em;
+}
+h3 { color: var(--yellow); font-size: 0.95em; margin: 24px 0 10px; }
+p  { margin-bottom: 12px; }
+strong { color: var(--yellow); }
+em { color: var(--orange); font-style: normal; }
+ul, ol { margin: 8px 0 14px 26px; line-height: 2.2; }
+
+/* ── Boxes ────────────────────────────────────────────── */
+.box {
+  border-radius: 6px; padding: 14px 18px; margin: 16px 0;
+  font-size: 0.9em; line-height: 1.85;
+}
+.box-blue   { background: var(--bg); border-left: 4px solid var(--blue); }
+.box-green  { background: var(--bg); border-left: 4px solid var(--green); }
+.box-yellow { background: var(--bg); border-left: 4px solid var(--yellow); }
+.box-purple { background: var(--bg); border-left: 4px solid var(--purple); }
+.box-teal   { background: var(--bg); border-left: 4px solid var(--teal); }
+.box-red    { background: var(--bg); border-left: 4px solid var(--red); }
+
+/* ── Math ─────────────────────────────────────────────── */
+.math {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 6px;
+  padding: 16px 22px; margin: 14px 0;
+  font-family: 'Consolas', monospace; font-size: 0.87em; line-height: 2.4;
+}
+.math .r   { display: block; }
+.math .cmt { color: var(--muted); }
+.math .hi  { color: var(--yellow); font-weight: bold; }
+.math .ok  { color: var(--green); }
+.math .em  { color: var(--red); }
+.math .kw  { color: var(--purple); }
+.math .or  { color: var(--orange); }
+.math .tl  { color: var(--teal); }
+
+/* ── Code ─────────────────────────────────────────────── */
+.code {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em;
+  line-height: 2.1; margin: 14px 0;
+}
+.code .cmt { color: var(--muted); }
+.code .kw  { color: var(--purple); }
+.code .val { color: var(--orange); }
+.code .ok  { color: var(--green); }
+.code .tp  { color: var(--blue); }
+.code .fn  { color: var(--teal); }
+.code .hi  { color: var(--yellow); font-weight: bold; }
+
+/* ── Figures ──────────────────────────────────────────── */
+.fig { margin: 24px auto; text-align: center; }
+.fig figcaption { color: var(--muted); font-size: 0.82em; margin-top: 8px; font-style: italic; }
+
+/* ── Flow diagram ─────────────────────────────────────── */
+.flow {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 0; margin: 20px 0;
+}
+.flow-step {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 8px;
+  padding: 12px 24px; font-family: 'Consolas', monospace; font-size: 0.85em;
+  text-align: center; width: 380px;
+}
+.flow-step .ch-ref {
+  font-size: 0.75em; color: var(--muted); margin-bottom: 3px;
+}
+.flow-step .step-name { color: var(--text); }
+.flow-arrow {
+  color: var(--border); font-size: 1.3em; line-height: 1.4;
+  font-family: 'Consolas', monospace;
+}
+.flow-step.highlight { border-color: var(--blue); }
+.flow-step.highlight .step-name { color: var(--blue); }
+
+/* ── Compare table ────────────────────────────────────── */
+table {
+  width: 100%; border-collapse: collapse;
+  font-family: 'Consolas', monospace; font-size: 0.83em; margin: 14px 0;
+}
+th {
+  background: var(--bg1); color: var(--blue); padding: 9px 14px;
+  text-align: left; border-bottom: 2px solid var(--border);
+}
+td { padding: 8px 14px; border-bottom: 1px solid var(--bg1); vertical-align: top; }
+tr:hover td { background: var(--bg1); }
+.td-g { color: var(--green); }
+.td-r { color: var(--red); }
+.td-y { color: var(--yellow); }
+
+/* ── Impl link ────────────────────────────────────────── */
+.impl-link {
+  background: var(--bg1); border: 1px solid var(--border);
+  border-left: 3px solid var(--orange);
+  border-radius: 6px; padding: 12px 16px; margin: 20px 0;
+  font-size: 0.88em; color: var(--muted);
+  display: flex; align-items: center; gap: 12px;
+}
+.impl-link .label {
+  font-family: 'Consolas', monospace; font-size: 0.82em;
+  color: var(--orange); flex-shrink: 0;
+}
+.impl-link a { color: var(--blue); text-decoration: none; }
+.impl-link a:hover { text-decoration: underline; }
+
+/* ── Chapter nav ──────────────────────────────────────── */
+.chapter-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border);
+  font-family: 'Consolas', monospace; font-size: 0.82em;
+}
+.chapter-nav a {
+  color: var(--muted); text-decoration: none; padding: 8px 14px;
+  border: 1px solid var(--border); border-radius: 6px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.chapter-nav a:hover { color: var(--blue); border-color: var(--blue); }
+.chapter-nav .next { color: var(--text); border-color: var(--blue); }
+
+hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <a href="../index.html">軟體光柵化</a>
+  <span class="nav-sep">/</span>
+  <span class="nav-cur">Ch11 — 包圍盒掃描法</span>
+  <div class="nav-right">
+    <a href="ch10_barycentric.html">← Ch10</a>
+    <a href="../index.html">首頁</a>
+  </div>
+</nav>
+
+<!-- Header -->
+<div class="ch-header">
+  <div class="ch-label">PART 3 · CHAPTER 11</div>
+  <div class="ch-title">包圍盒掃描法</div>
+  <div class="ch-sub">整合 Ch08–Ch10，完成 DrawTriangle 演算法</div>
+  <div class="ch-tags">
+    <span class="ch-tag">bounding box</span>
+    <span class="ch-tag">rasterization</span>
+    <span class="ch-tag">DrawTriangle</span>
+    <span class="ch-tag">scanline vs bbox</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<p>
+  前三章分別建立了三個工具。現在把它們組合起來，就是完整的三角形填色演算法。
+</p>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">1</div>演算法全景</h2>
+
+<div class="flow">
+  <div class="flow-step">
+    <div class="ch-ref">輸入</div>
+    <div class="step-name">三頂點 V0, V1, V2（螢幕座標）+ 各自的屬性</div>
+  </div>
+  <div class="flow-arrow">↓</div>
+  <div class="flow-step">
+    <div class="ch-ref">Step 1</div>
+    <div class="step-name">計算 E_total（有向面積）→ 判斷是否退化／背面</div>
+  </div>
+  <div class="flow-arrow">↓</div>
+  <div class="flow-step">
+    <div class="ch-ref">Step 2 ← 本章重點</div>
+    <div class="step-name">計算包圍盒 [xmin,xmax] × [ymin,ymax]，clamp 到畫面邊界</div>
+  </div>
+  <div class="flow-arrow">↓</div>
+  <div class="flow-step">
+    <div class="ch-ref">Step 3 ← Ch09</div>
+    <div class="step-name">計算三條邊的 Edge Function 係數（a, b, c），算出首像素的 e0, e1, e2</div>
+  </div>
+  <div class="flow-arrow">↓</div>
+  <div class="flow-step highlight">
+    <div class="ch-ref">Step 4 — 掃描迴圈</div>
+    <div class="step-name">逐像素：增量更新 e → 同號測試 → 算重心座標 → 插值屬性 → SetPixel</div>
+  </div>
+  <div class="flow-arrow">↓</div>
+  <div class="flow-step">
+    <div class="ch-ref">輸出</div>
+    <div class="step-name">framebuffer 中三角形範圍的像素已填色</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">2</div>包圍盒計算</h2>
+
+<p>
+  三角形的包圍盒（Axis-Aligned Bounding Box, AABB）是最小的軸對齊矩形，
+  它能完全包含三角形。算法很直接：
+</p>
+
+<div class="math">
+  <span class="r"><span class="hi">xmin</span> = floor( min(V0.x, V1.x, V2.x) )</span>
+  <span class="r"><span class="hi">xmax</span> = ceil(  max(V0.x, V1.x, V2.x) )</span>
+  <span class="r"><span class="hi">ymin</span> = floor( min(V0.y, V1.y, V2.y) )</span>
+  <span class="r"><span class="hi">ymax</span> = ceil(  max(V0.y, V1.y, V2.y) )</span>
+  <span class="r"></span>
+  <span class="r cmt">Clamp 到畫面邊界：</span>
+  <span class="r">xmin = max(xmin, 0)        xmax = min(xmax, width-1)</span>
+  <span class="r">ymin = max(ymin, 0)        ymax = min(ymax, height-1)</span>
+</div>
+
+<div class="fig">
+  <svg width="400" height="260" viewBox="0 0 400 260">
+    <!-- Grid (subtle) -->
+    <g stroke="#1e1e2e" stroke-width="0.5" opacity="0.6">
+      <line x1="60" y1="20" x2="60" y2="240"/>
+      <line x1="100" y1="20" x2="100" y2="240"/>
+      <line x1="140" y1="20" x2="140" y2="240"/>
+      <line x1="180" y1="20" x2="180" y2="240"/>
+      <line x1="220" y1="20" x2="220" y2="240"/>
+      <line x1="260" y1="20" x2="260" y2="240"/>
+      <line x1="300" y1="20" x2="300" y2="240"/>
+      <line x1="340" y1="20" x2="340" y2="240"/>
+      <line x1="60" y1="20"  x2="340" y2="20"/>
+      <line x1="60" y1="60"  x2="340" y2="60"/>
+      <line x1="60" y1="100" x2="340" y2="100"/>
+      <line x1="60" y1="140" x2="340" y2="140"/>
+      <line x1="60" y1="180" x2="340" y2="180"/>
+      <line x1="60" y1="220" x2="340" y2="220"/>
+    </g>
+
+    <!-- Bounding box -->
+    <rect x="100" y="60" width="200" height="160"
+      fill="#89b4fa" fill-opacity="0.06"
+      stroke="#89b4fa" stroke-width="1.5" stroke-dasharray="6,4"/>
+
+    <!-- Triangle -->
+    <polygon points="160,80 120,200 280,220"
+      fill="#a6e3a1" fill-opacity="0.15"
+      stroke="#a6e3a1" stroke-width="2"/>
+
+    <!-- Vertices -->
+    <circle cx="160" cy="80"  r="4" fill="#a6e3a1"/>
+    <circle cx="120" cy="200" r="4" fill="#a6e3a1"/>
+    <circle cx="280" cy="220" r="4" fill="#a6e3a1"/>
+    <text x="165" y="75"  fill="#a6e3a1" font-size="11" font-family="Consolas">V0</text>
+    <text x="100" y="216" fill="#a6e3a1" font-size="11" font-family="Consolas">V1</text>
+    <text x="284" y="220" fill="#a6e3a1" font-size="11" font-family="Consolas">V2</text>
+
+    <!-- AABB labels -->
+    <text x="100" y="52" fill="#89b4fa" font-size="10" font-family="Consolas">xmin</text>
+    <text x="282" y="52" fill="#89b4fa" font-size="10" font-family="Consolas">xmax</text>
+    <text x="28"  y="63" fill="#89b4fa" font-size="10" font-family="Consolas">ymin</text>
+    <text x="28"  y="223" fill="#89b4fa" font-size="10" font-family="Consolas">ymax</text>
+
+    <!-- Arrows -->
+    <line x1="100" y1="55" x2="100" y2="62" stroke="#89b4fa" stroke-width="1"/>
+    <line x1="300" y1="55" x2="300" y2="62" stroke="#89b4fa" stroke-width="1"/>
+    <line x1="56"  y1="60" x2="62"  y2="60" stroke="#89b4fa" stroke-width="1"/>
+    <line x1="56"  y1="220" x2="62" y2="220" stroke="#89b4fa" stroke-width="1"/>
+
+    <!-- Wasted pixels annotation -->
+    <text x="310" y="110" fill="#6c7086" font-size="9" font-family="Consolas">包圍盒內</text>
+    <text x="310" y="122" fill="#6c7086" font-size="9" font-family="Consolas">但三角形外</text>
+    <text x="310" y="134" fill="#6c7086" font-size="9" font-family="Consolas">→ Edge Test</text>
+    <text x="310" y="146" fill="#6c7086" font-size="9" font-family="Consolas">   會排除</text>
+  </svg>
+  <figcaption>包圍盒（藍色虛線）包含三角形（綠色），盒內但盒外的像素由 Edge Function 過濾</figcaption>
+</div>
+
+<div class="box box-yellow">
+  <strong>為什麼要用整數？</strong><br>
+  頂點座標通常是浮點數（投影後的結果）。
+  floor/ceil 把它轉成整數像素座標，確保不會漏掉邊界上的像素。
+  xmax 需要 ceil 而非 floor，避免截掉最右邊那列。
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">3</div>為什麼用包圍盒，而不是掃描線法？</h2>
+
+<p>
+  傳統的掃描線法（Scanline）把三角形分成梯形，逐列找出左右邊界再填色。
+  這曾是最快的做法，因為它避免了對三角形外的像素做測試。
+  但現代 GPU 和 CPU 都更適合包圍盒法：
+</p>
+
+<table>
+  <tr>
+    <th>面向</th>
+    <th>掃描線法（Scanline）</th>
+    <th>包圍盒法（Bounding Box）</th>
+  </tr>
+  <tr>
+    <td>邏輯複雜度</td>
+    <td class="td-r">高：要找左右交點，處理各種頂點排列</td>
+    <td class="td-g">低：兩層迴圈 + 三次叉積</td>
+  </tr>
+  <tr>
+    <td>程式碼量</td>
+    <td class="td-r">多：mini3d.c 的梯形分割需要 ~100 行</td>
+    <td class="td-g">少：核心迴圈約 20 行</td>
+  </tr>
+  <tr>
+    <td>平行化</td>
+    <td class="td-r">難：掃描線之間有依賴</td>
+    <td class="td-g">易：每個像素獨立測試，GPU 並行</td>
+  </tr>
+  <tr>
+    <td>SIMD 友善</td>
+    <td class="td-r">不規則的邊界計算難向量化</td>
+    <td class="td-g">規則的矩形迴圈，SIMD 4/8 像素同時算</td>
+  </tr>
+  <tr>
+    <td>浪費的測試</td>
+    <td class="td-g">幾乎沒有（只掃描三角形覆蓋的行）</td>
+    <td class="td-y">有（包圍盒四角的區域），但 Edge Test 很快</td>
+  </tr>
+  <tr>
+    <td>現代 GPU 使用</td>
+    <td class="td-r">不使用</td>
+    <td class="td-g">標準做法（2×2 Quad 批次處理）</td>
+  </tr>
+</table>
+
+<div class="box box-teal">
+  <strong>一句話總結：</strong>
+  掃描線法用更少的測試換取更複雜的邊界計算；包圍盒法用更多的（但極快的）測試換取極簡的程式碼。
+  在現代硬體上，Edge Function 測試便宜到讓包圍盒法完勝。
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">4</div>完整演算法</h2>
+
+<div class="code">
+<span class="kw">void</span> <span class="fn">DrawTriangle</span>(<span class="tp">Vec2</span> V0, <span class="tp">Vec2</span> V1, <span class="tp">Vec2</span> V2,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tp">Color</span> C0, <span class="tp">Color</span> C1, <span class="tp">Color</span> C2) {<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="cmt">// ── Step 1：有向面積 & 退化檢查 ──────────────────────</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">float</span> area = (V1.x-V0.x)*(V2.y-V0.y) - (V1.y-V0.y)*(V2.x-V0.x);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> (area == <span class="val">0</span>) <span class="kw">return</span>;    <span class="cmt">// 退化三角形（共線），面積為 0</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">float</span> inv_area = <span class="val">1.0f</span> / area;<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="cmt">// ── Step 2：包圍盒 ────────────────────────────────────</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">int</span> xmin = <span class="fn">max</span>(<span class="val">0</span>,       (<span class="kw">int</span>)<span class="fn">floor</span>(<span class="fn">min</span>({V0.x, V1.x, V2.x})));<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">int</span> xmax = <span class="fn">min</span>(width-<span class="val">1</span>, (<span class="kw">int</span>)<span class="fn">ceil</span>( <span class="fn">max</span>({V0.x, V1.x, V2.x})));<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">int</span> ymin = <span class="fn">max</span>(<span class="val">0</span>,       (<span class="kw">int</span>)<span class="fn">floor</span>(<span class="fn">min</span>({V0.y, V1.y, V2.y})));<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">int</span> ymax = <span class="fn">min</span>(height-<span class="val">1</span>,(<span class="kw">int</span>)<span class="fn">ceil</span>( <span class="fn">max</span>({V0.y, V1.y, V2.y})));<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="cmt">// ── Step 3：Edge Function 係數 ────────────────────────</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="cmt">// E0(x,y) = a0*x + b0*y + c0  (對應邊 V0→V1，判斷 V2 所在側)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">float</span> a0=V1.y-V0.y, b0=V0.x-V1.x, c0=V1.x*V0.y-V0.x*V1.y;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">float</span> a1=V2.y-V1.y, b1=V1.x-V2.x, c1=V2.x*V1.y-V1.x*V2.y;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">float</span> a2=V0.y-V2.y, b2=V2.x-V0.x, c2=V0.x*V2.y-V2.x*V0.y;<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="cmt">// ── Step 4：掃描迴圈 ──────────────────────────────────</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">for</span> (<span class="kw">int</span> y = ymin; y <= ymax; y++) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="hi">float e0 = a0*xmin + b0*y + c0;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="hi">float e1 = a1*xmin + b1*y + c1;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="hi">float e2 = a2*xmin + b2*y + c2;</span><br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">for</span> (<span class="kw">int</span> x = xmin; x <= xmax; x++) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cmt">// Edge Function 內外測試</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> ((e0>=<span class="val">0</span>&&e1>=<span class="val">0</span>&&e2>=<span class="val">0</span>)||(e0<=<span class="val">0</span>&&e1<=<span class="val">0</span>&&e2<=<span class="val">0</span>)) {<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cmt">// 重心座標（Ch10）</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="ok">float w0 = e0 * inv_area;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="ok">float w1 = e1 * inv_area;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="ok">float w2 = e2 * inv_area;</span><br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cmt">// 插值顏色</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tp">Color</span> c = w0*C0 + w1*C1 + w2*C2;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="fn">SetPixel</span>(x, y, c);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cmt">// 增量：移到下一列（x+1）</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;e0 += a0;  e1 += a1;  e2 += a2;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+}
+</div>
+
+<p>
+  黃色高亮的三行是每列的「起始值計算」，之後靠 <code>e += a</code> 增量更新。
+  整個掃描過程，每個像素只做三次加法和三次比較——這就是效能的來源。
+</p>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">5</div>邊界情況處理</h2>
+
+<h3>退化三角形（面積 = 0）</h3>
+
+<p>
+  三個頂點共線時，有向面積為 0，<code>inv_area</code> 會是無限大。
+  在 Step 1 直接 <code>return</code> 處理，什麼都不畫——這是正確行為。
+</p>
+
+<div class="box box-red">
+  <strong>浮點數比較陷阱：</strong><br>
+  <code>area == 0</code> 對整數座標可行，但浮點座標建議用 <code>fabsf(area) &lt; 1e-6f</code>，
+  避免投影後極細的三角形因精度問題被錯誤跳過。
+</div>
+
+<h3>三角形完全在畫面外</h3>
+
+<p>
+  clamp 後若 xmin > xmax 或 ymin > ymax，包圍盒為空，迴圈直接不執行。
+  不需要額外的邊界檢查。
+</p>
+
+<h3>三角形部分超出畫面</h3>
+
+<p>
+  clamp 到 <code>[0, width-1]</code> 之後，掃描範圍自動縮小到畫面內。
+  Edge Function 仍然正確（係數 a/b/c 不受 clamp 影響），
+  只是有些「本來在三角形內」的像素被 clamp 截掉了——這正是我們想要的行為。
+</p>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">6</div>對應實作章節</h2>
+
+<p>
+  上面的 pseudocode 是演算法層面的說明。
+  Pixel-Renderer 的實際 C++ 實作見 Impl-03：
+</p>
+
+<div class="impl-link">
+  <span class="label">IMPL-03</span>
+  <span>
+    <a href="../impl/ch03_drawtriangle.html">DrawTriangle 實作解析</a> —
+    render_device.cpp 中的完整程式碼，包含頂點轉換、邊界處理、以及與 IShader 接軌的設計。
+  </span>
+</div>
+
+<p>
+  讀完本章後再去看實作，你會發現每一行都有對應的理論根據。
+</p>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">7</div>Part 3 完結：你現在能做什麼</h2>
+
+<p>完成 Ch08–Ch11 後，你掌握了：</p>
+
+<div class="math">
+  <span class="r ok">✓  叉積       — 判斷點在線段哪一側</span>
+  <span class="r ok">✓  Edge Function — 三角形內外測試，線性增量</span>
+  <span class="r ok">✓  重心座標   — 任意頂點屬性在三角形內插值</span>
+  <span class="r ok">✓  包圍盒掃描  — 完整的 DrawTriangle 演算法</span>
+</div>
+
+<p>
+  目前的 DrawTriangle 是「畫一個孤立三角形」——沒有深度測試，
+  所以多個三角形重疊時，後畫的會蓋掉先畫的，不管遠近。
+  下一章（Ch12）解決這個問題：<strong>Z-buffer 深度測試</strong>。
+</p>
+
+<div class="box box-purple">
+  <strong>你現在可以動手試的事：</strong><br>
+  在 render_device.cpp 加入 DrawTriangle，畫一個紅綠藍三頂點的彩色三角形。
+  確認重心座標插值正確後，再嘗試畫兩個重疊的三角形——
+  觀察沒有 Z-buffer 時的問題，為 Ch12 做準備。
+</div>
+
+<!-- ── Chapter nav ─────────────────────────────────────────────── -->
+<div class="chapter-nav">
+  <a href="ch10_barycentric.html">← Ch10 重心座標</a>
+  <a class="next" href="../index.html">回首頁（Ch12 規劃中）</a>
+</div>
+
+</body>
+</html>

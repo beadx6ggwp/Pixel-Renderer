@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Bresenham 白話推導</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #1e1e2e; color: #cdd6f4;
+  font-family: 'Georgia', serif; font-size: 15px;
+  padding: 32px 20px; line-height: 1.9;
+  max-width: 860px; margin: 0 auto;
+}
+h1 { color: #89b4fa; font-size: 1.5em; margin-bottom: 6px; }
+.tagline { color: #6c7086; margin-bottom: 36px; font-size: 0.88em; }
+
+/* Section headers */
+.sec {
+  margin-bottom: 36px;
+}
+.sec-title {
+  font-family: 'Consolas', monospace;
+  font-size: 1em;
+  color: #cba6f7;
+  letter-spacing: 0.05em;
+  padding: 10px 0 10px 0;
+  border-bottom: 1px solid #313244;
+  margin-bottom: 20px;
+  display: flex; align-items: center; gap: 12px;
+}
+.sec-num {
+  background: #cba6f7; color: #1e1e2e;
+  font-weight: bold; border-radius: 50%;
+  width: 28px; height: 28px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.85em;
+}
+
+p { margin-bottom: 12px; }
+strong { color: #f9e2af; }
+em { color: #fab387; font-style: normal; }
+
+/* Callout boxes */
+.box {
+  border-radius: 6px; padding: 14px 18px; margin: 16px 0;
+  font-size: 0.9em; line-height: 1.8;
+}
+.box-q  { background: #1e1e2e; border-left: 4px solid #89b4fa; }
+.box-ok { background: #1e1e2e; border-left: 4px solid #a6e3a1; color: #a6e3a1; }
+.box-warn { background: #1e1e2e; border-left: 4px solid #f9e2af; }
+.box-key { background: #1e1e2e; border-left: 4px solid #f38ba8; }
+
+/* Grid SVG */
+.fig { margin: 20px auto; text-align: center; }
+.fig figcaption { color: #6c7086; font-size: 0.82em; margin-top: 8px; }
+
+/* Step trace table */
+table {
+  width: 100%; border-collapse: collapse;
+  font-family: 'Consolas', monospace; font-size: 0.83em;
+  margin: 16px 0;
+}
+th {
+  background: #181825; color: #89b4fa;
+  padding: 8px 12px; text-align: left;
+  border-bottom: 2px solid #313244;
+}
+td { padding: 7px 12px; border-bottom: 1px solid #1e1e2e; }
+tr:hover td { background: #1e1e2e; }
+.td-draw { color: #89b4fa; font-weight: bold; }
+.td-step { color: #6c7086; }
+.td-err  { color: #f9e2af; }
+.td-move-x { color: #fab387; }
+.td-move-y { color: #a6e3a1; }
+.td-both { color: #f38ba8; }
+.td-hi { background: #2a2733 !important; }
+
+/* Math */
+.math {
+  background: #181825; border: 1px solid #313244;
+  border-radius: 6px; padding: 14px 20px; margin: 14px 0;
+  font-family: 'Consolas', monospace; font-size: 0.88em;
+  line-height: 2.2;
+}
+.math .row { display: block; }
+.math .cmt { color: #6c7086; }
+.math .hi  { color: #f9e2af; font-weight: bold; }
+.math .ok  { color: #a6e3a1; }
+.math .em  { color: #f38ba8; }
+.math .kw  { color: #cba6f7; }
+
+/* Pixel grid drawn in SVG inline */
+svg text { font-family: 'Consolas', monospace; }
+
+/* Code */
+.code {
+  background: #0d0d14; border: 1px solid #313244; border-radius: 8px;
+  padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em;
+  line-height: 2; margin: 14px 0;
+}
+.code .cmt { color: #6c7086; }
+.code .kw  { color: #cba6f7; }
+.code .val { color: #fab387; }
+.code .ok  { color: #a6e3a1; }
+.code .em  { color: #f38ba8; }
+
+/* Two-col layout */
+.two-col { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+.two-col > * { flex: 1; min-width: 280px; }
+
+hr { border: none; border-top: 1px solid #313244; margin: 32px 0; }
+
+/* Annotation arrow */
+.arrow-label {
+  display: flex; align-items: center; gap: 10px;
+  margin: 10px 0; font-size: 0.88em;
+}
+.dot { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<nav style="font-family:'Consolas',monospace;font-size:0.78em;color:#6c7086;padding:14px 0;border-bottom:1px solid #313244;margin-bottom:32px;display:flex;align-items:center;gap:10px;">
+  <a href="../index.html" style="color:#6c7086;text-decoration:none;">軟體光柵化</a>
+  <span style="color:#313244">/</span>
+  <span style="color:#cdd6f4">Ch04 — 推導一：誤差累積法</span>
+  <span style="margin-left:auto;display:flex;gap:16px;">
+    <a href="ch02_dda.html" style="color:#6c7086;text-decoration:none;">← Ch02</a>
+    <a href="ch05_bresenham_d1d2.html" style="color:#6c7086;text-decoration:none;">Ch05 →</a>
+  </span>
+</nav>
+
+<h1>Bresenham 直線演算法 — 白話推導</h1>
+<p class="tagline">從「每步要做什麼決定」出發，一個 case 一個 case 講清楚</p>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-title"><div class="sec-num">1</div>問題到底是什麼？</div>
+
+  <p>想畫一條從 <strong>(0, 0)</strong> 到 <strong>(7, 3)</strong> 的直線。</p>
+  <p>螢幕是格子，每個格子是一個像素，只能點亮整數座標。</p>
+  <p>理想的直線是連續的，但我們只能選格子。所以問題是：</p>
+
+  <div class="box box-q">
+    每走一格 x（x → x+1），y 要不要也往上加一格？
+  </div>
+
+  <div class="fig">
+    <svg width="520" height="200" viewBox="0 0 520 200">
+      <defs>
+        <marker id="ah" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#6c7086"/>
+        </marker>
+      </defs>
+      <!-- Grid -->
+      <g stroke="#313244" stroke-width="0.5">
+        <line x1="20" y1="20" x2="20" y2="180"/><line x1="80" y1="20" x2="80" y2="180"/>
+        <line x1="140" y1="20" x2="140" y2="180"/><line x1="200" y1="20" x2="200" y2="180"/>
+        <line x1="260" y1="20" x2="260" y2="180"/><line x1="320" y1="20" x2="320" y2="180"/>
+        <line x1="380" y1="20" x2="380" y2="180"/><line x1="440" y1="20" x2="440" y2="180"/>
+        <line x1="500" y1="20" x2="500" y2="180"/>
+        <line x1="20" y1="20" x2="500" y2="20"/>
+        <line x1="20" y1="60" x2="500" y2="60"/>
+        <line x1="20" y1="100" x2="500" y2="100"/>
+        <line x1="20" y1="140" x2="500" y2="140"/>
+        <line x1="20" y1="180" x2="500" y2="180"/>
+      </g>
+      <!-- Ideal line -->
+      <line x1="20" y1="180" x2="500" y2="60" stroke="#f38ba8" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.6"/>
+      <!-- Lit pixels -->
+      <rect x="20" y="140" width="60" height="40" fill="#89b4fa" opacity="0.7" rx="2"/>
+      <rect x="80" y="140" width="60" height="40" fill="#89b4fa" opacity="0.7" rx="2"/>
+      <rect x="140" y="100" width="60" height="40" fill="#89b4fa" opacity="0.7" rx="2"/>
+      <rect x="200" y="100" width="60" height="40" fill="#89b4fa" opacity="0.7" rx="2"/>
+      <rect x="260" y="60" width="60" height="40" fill="#89b4fa" opacity="0.7" rx="2"/>
+      <rect x="320" y="60" width="60" height="40" fill="#89b4fa" opacity="0.7" rx="2"/>
+      <rect x="380" y="20" width="60" height="40" fill="#a6e3a1" opacity="0.7" rx="2"/>
+      <rect x="440" y="20" width="60" height="40" fill="#a6e3a1" opacity="0.7" rx="2"/>
+      <!-- X labels -->
+      <g fill="#6c7086" font-size="11" text-anchor="middle">
+        <text x="50" y="196">x=0</text><text x="110" y="196">1</text>
+        <text x="170" y="196">2</text><text x="230" y="196">3</text>
+        <text x="290" y="196">4</text><text x="350" y="196">5</text>
+        <text x="410" y="196">6</text><text x="470" y="196">7</text>
+      </g>
+      <!-- Y labels -->
+      <g fill="#6c7086" font-size="11" text-anchor="end">
+        <text x="18" y="175">y=0</text><text x="18" y="135">1</text>
+        <text x="18" y="95">2</text><text x="18" y="55">3</text>
+      </g>
+      <!-- Question marks at decision points -->
+      <text x="110" y="88" fill="#f9e2af" font-size="16" text-anchor="middle">?</text>
+      <text x="290" y="48" fill="#f9e2af" font-size="16" text-anchor="middle">?</text>
+    </svg>
+    <figcaption>藍格 = 最終選擇；紅虛線 = 理想直線；? = 需要決定要不要升 y</figcaption>
+  </div>
+
+  <p>這條線斜率 = 3/7 ≈ 0.43，意思是「每走 7 格 x，y 才升 3 格」。
+  不是每步都升 y，所以要判斷。</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-title"><div class="sec-num">2</div>最直覺的想法：追蹤「欠了多少 y」</div>
+
+  <p>理想直線的斜率 m = dy/dx = 3/7。</p>
+  <p>每走一步 x，理想的 y 應該增加 <strong>3/7</strong>。
+  但我們不能畫 0.43 個像素——只能等「欠的夠多了」再升一格。</p>
+
+  <p>定義一個 <strong>誤差值 err</strong>，表示「理想 y 比目前像素的 y 多出來多少」：</p>
+
+  <div class="math">
+    <span class="row cmt">// 初始：還沒走，誤差為 0</span>
+    <span class="row">err = 0</span>
+    <span class="row cmt"></span>
+    <span class="row cmt">// 每走一步 x：</span>
+    <span class="row">err += m  <span class="cmt">// 理想 y 增加了 m = dy/dx</span></span>
+    <span class="row cmt"></span>
+    <span class="row cmt">// 判斷：誤差超過 0.5，代表理想 y 已經超過下一個整數格的一半</span>
+    <span class="row"><span class="kw">if</span> err ≥ 0.5 :  y += 1;  err -= 1</span>
+  </div>
+
+  <p>來跑一遍 (0,0) → (7,3)，m = 3/7：</p>
+
+  <table>
+    <tr><th>步</th><th>畫</th><th>err 之前</th><th>err += 3/7 後</th><th>≥ 0.5？</th><th>動作</th><th>err 最後</th></tr>
+    <tr><td class="td-step">0</td><td class="td-draw">(0,0)</td><td>0</td><td>3/7 ≈ 0.43</td><td>否</td><td>—</td><td class="td-err">0.43</td></tr>
+    <tr class="td-hi"><td class="td-step">1</td><td class="td-draw">(1,0)</td><td>0.43</td><td>6/7 ≈ 0.86</td><td><strong>是</strong></td><td class="td-move-y">y++, err-=1</td><td class="td-err">-0.14</td></tr>
+    <tr><td class="td-step">2</td><td class="td-draw">(2,1)</td><td>-0.14</td><td>3/7 ≈ 0.29</td><td>否</td><td>—</td><td class="td-err">0.29</td></tr>
+    <tr class="td-hi"><td class="td-step">3</td><td class="td-draw">(3,1)</td><td>0.29</td><td>6/7 ≈ 0.71</td><td><strong>是</strong></td><td class="td-move-y">y++, err-=1</td><td class="td-err">-0.29</td></tr>
+    <tr><td class="td-step">4</td><td class="td-draw">(4,2)</td><td>-0.29</td><td>1/7 ≈ 0.14</td><td>否</td><td>—</td><td class="td-err">0.14</td></tr>
+    <tr class="td-hi"><td class="td-step">5</td><td class="td-draw">(5,2)</td><td>0.14</td><td>4/7 ≈ 0.57</td><td><strong>是</strong></td><td class="td-move-y">y++, err-=1</td><td class="td-err">-0.43</td></tr>
+    <tr><td class="td-step">6</td><td class="td-draw">(6,3)</td><td>-0.43</td><td>0</td><td>否</td><td>—</td><td class="td-err">0</td></tr>
+    <tr><td class="td-step">7</td><td class="td-draw">(7,3)</td><td colspan="4" style="color:#6c7086">抵達終點</td><td>—</td></tr>
+  </table>
+
+  <p>結果：(0,0) (1,0) (2,1) (3,1) (4,2) (5,2) (6,3) (7,3) ← 完全正確！</p>
+
+  <div class="box box-warn">
+    但這裡有浮點數（3/7）。Bresenham 的目標是：<strong>只用整數</strong>，避免浮點運算。
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-title"><div class="sec-num">3</div>消掉浮點數：兩步整數化</div>
+
+  <p><strong>第一步：用 dy、dx 取代 m = dy/dx</strong></p>
+  <p>把 err 乘以 dx，就不用除法了：</p>
+
+  <div class="math">
+    <span class="row cmt">// 原本</span>
+    <span class="row">err = 0</span>
+    <span class="row">err += dy/dx  →  判斷 err ≥ 0.5  →  y++; err -= 1</span>
+    <span class="row cmt"></span>
+    <span class="row cmt">// 兩側全部 × dx（dx > 0，不影響大小關係）</span>
+    <span class="row"><span class="hi">err = 0</span></span>
+    <span class="row"><span class="hi">err += dy</span>       <span class="cmt">// 原來的 dy/dx × dx</span></span>
+    <span class="row"><span class="hi">判斷 err ≥ dx/2</span> <span class="cmt">// 原來的 0.5 × dx</span></span>
+    <span class="row"><span class="hi">y++; err -= dx</span>  <span class="cmt">// 原來的 1 × dx</span></span>
+  </div>
+
+  <p>還剩一個問題：<strong>dx/2</strong> 如果 dx 是奇數就還是分數。</p>
+
+  <p><strong>第二步：全部再乘以 2</strong>，徹底消掉 /2：</p>
+
+  <div class="math">
+    <span class="row"><span class="hi">err = 0</span></span>
+    <span class="row"><span class="hi">err += 2·dy</span></span>
+    <span class="row"><span class="hi">判斷 err ≥ dx</span>   <span class="cmt">// 原來的 dx/2 × 2 = dx</span></span>
+    <span class="row"><span class="hi">y++; err -= 2·dx</span></span>
+  </div>
+
+  <div class="box box-ok">
+    現在全是整數加減比較，沒有任何浮點數、沒有乘法（只有 ×2 可用位移）。
+  </div>
+
+  <p>用整數版跑一遍同樣的例子（dx=7, dy=3）：</p>
+
+  <table>
+    <tr><th>步</th><th>畫</th><th>err 之前</th><th>err += 6</th><th>≥ 7？</th><th>動作</th><th>err 最後</th></tr>
+    <tr><td class="td-step">0</td><td class="td-draw">(0,0)</td><td>0</td><td>6</td><td>否</td><td>—</td><td class="td-err">6</td></tr>
+    <tr class="td-hi"><td class="td-step">1</td><td class="td-draw">(1,0)</td><td>6</td><td>12</td><td><strong>是</strong></td><td class="td-move-y">y++, err-=14</td><td class="td-err">-2</td></tr>
+    <tr><td class="td-step">2</td><td class="td-draw">(2,1)</td><td>-2</td><td>4</td><td>否</td><td>—</td><td class="td-err">4</td></tr>
+    <tr class="td-hi"><td class="td-step">3</td><td class="td-draw">(3,1)</td><td>4</td><td>10</td><td><strong>是</strong></td><td class="td-move-y">y++, err-=14</td><td class="td-err">-4</td></tr>
+    <tr><td class="td-step">4</td><td class="td-draw">(4,2)</td><td>-4</td><td>2</td><td>否</td><td>—</td><td class="td-err">2</td></tr>
+    <tr class="td-hi"><td class="td-step">5</td><td class="td-draw">(5,2)</td><td>2</td><td>8</td><td><strong>是</strong></td><td class="td-move-y">y++, err-=14</td><td class="td-err">-6</td></tr>
+    <tr><td class="td-step">6</td><td class="td-draw">(6,3)</td><td>-6</td><td>0</td><td>否</td><td>—</td><td class="td-err">0</td></tr>
+    <tr><td class="td-step">7</td><td class="td-draw">(7,3)</td><td colspan="5" style="color:#6c7086">終點</td></tr>
+  </table>
+
+  <p>結果完全一樣，但現在全是整數運算。</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-title"><div class="sec-num">4</div>斜率 > 1 的情況（陡線）</div>
+
+  <p>上面的版本只對 0 ≤ 斜率 ≤ 1 有效。如果斜率 > 1 呢？</p>
+
+  <div class="box box-q">
+    舉例：(0,0) → (3,7)，斜率 = 7/3 ≈ 2.3。
+    每走一步 y，x 才加 3/7。主軸換成 y！
+  </div>
+
+  <div class="two-col">
+    <div>
+      <p><strong>斜率 ≤ 1（x 是主軸）：</strong></p>
+      <div class="math">
+        <span class="row">每步 x 必走 +1</span>
+        <span class="row">判斷 y 要不要 +1</span>
+      </div>
+    </div>
+    <div>
+      <p><strong>斜率 > 1（y 是主軸）：</strong></p>
+      <div class="math">
+        <span class="row">每步 y 必走 +1</span>
+        <span class="row">判斷 x 要不要 +1</span>
+      </div>
+    </div>
+  </div>
+
+  <p>解決方法很簡單：<strong>把兩個 case 合併成同一個邏輯</strong>。
+  用 dx 和 dy 的大小關係決定誰是主軸——不需要分開寫兩段。</p>
+
+  <div class="fig">
+    <svg width="480" height="160" viewBox="0 0 480 160">
+      <!-- Two examples side by side -->
+      <!-- Left: gentle slope dx > dy -->
+      <g>
+        <text x="90" y="14" fill="#6c7086" font-size="11" text-anchor="middle">dx=7, dy=3（緩坡）</text>
+        <g stroke="#313244" stroke-width="0.5">
+          <line x1="10" y1="20" x2="10" y2="140"/><line x1="50" y1="20" x2="50" y2="140"/>
+          <line x1="90" y1="20" x2="90" y2="140"/><line x1="130" y1="20" x2="130" y2="140"/>
+          <line x1="170" y1="20" x2="170" y2="140"/>
+          <line x1="10" y1="20" x2="170" y2="20"/><line x1="10" y1="60" x2="170" y2="60"/>
+          <line x1="10" y1="100" x2="170" y2="100"/><line x1="10" y1="140" x2="170" y2="140"/>
+        </g>
+        <line x1="10" y1="140" x2="170" y2="28" stroke="#f38ba8" stroke-dasharray="4,3" stroke-width="1.2" opacity="0.5"/>
+        <rect x="10" y="100" width="40" height="40" fill="#89b4fa" opacity="0.7" rx="1"/>
+        <rect x="50" y="100" width="40" height="40" fill="#89b4fa" opacity="0.7" rx="1"/>
+        <rect x="90" y="60" width="40" height="40" fill="#89b4fa" opacity="0.7" rx="1"/>
+        <rect x="130" y="60" width="40" height="40" fill="#89b4fa" opacity="0.7" rx="1"/>
+        <!-- arrows showing x is primary -->
+        <text x="90" y="155" fill="#fab387" font-size="10" text-anchor="middle">→ x 是主軸，每步 x 必走</text>
+      </g>
+      <!-- Right: steep slope dy > dx -->
+      <g transform="translate(260,0)">
+        <text x="70" y="14" fill="#6c7086" font-size="11" text-anchor="middle">dx=3, dy=7（陡坡）</text>
+        <g stroke="#313244" stroke-width="0.5">
+          <line x1="40" y1="20" x2="40" y2="140"/><line x1="80" y1="20" x2="80" y2="140"/>
+          <line x1="120" y1="20" x2="120" y2="140"/>
+          <line x1="40" y1="20" x2="120" y2="20"/><line x1="40" y1="40" x2="120" y2="40"/>
+          <line x1="40" y1="60" x2="120" y2="60"/><line x1="40" y1="80" x2="120" y2="80"/>
+          <line x1="40" y1="100" x2="120" y2="100"/><line x1="40" y1="120" x2="120" y2="120"/>
+          <line x1="40" y1="140" x2="120" y2="140"/>
+        </g>
+        <line x1="40" y1="140" x2="120" y2="24" stroke="#f38ba8" stroke-dasharray="4,3" stroke-width="1.2" opacity="0.5"/>
+        <rect x="40" y="120" width="40" height="20" fill="#89b4fa" opacity="0.7" rx="1"/>
+        <rect x="40" y="100" width="40" height="20" fill="#89b4fa" opacity="0.7" rx="1"/>
+        <rect x="40" y="80" width="40" height="20" fill="#89b4fa" opacity="0.7" rx="1"/>
+        <rect x="80" y="60" width="40" height="20" fill="#89b4fa" opacity="0.7" rx="1"/>
+        <rect x="80" y="40" width="40" height="20" fill="#89b4fa" opacity="0.7" rx="1"/>
+        <rect x="80" y="20" width="40" height="20" fill="#89b4fa" opacity="0.7" rx="1"/>
+        <text x="70" y="155" fill="#a6e3a1" font-size="10" text-anchor="middle">↑ y 是主軸，每步 y 必走</text>
+      </g>
+    </svg>
+    <figcaption>斜率決定主軸——但可以用同一套 err 機制處理</figcaption>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-title"><div class="sec-num">5</div>負方向：sx 和 sy</div>
+
+  <p>上面都假設往右往上。如果 x2 &lt; x1 或 y2 &lt; y1 呢？</p>
+  <p>只需要改步進方向，誤差邏輯完全不變：</p>
+
+  <div class="math">
+    <span class="row">sx = (x1 &lt; x2) ? +1 : -1   <span class="cmt">// x 走哪個方向</span></span>
+    <span class="row">sy = (y1 &lt; y2) ? +1 : -1   <span class="cmt">// y 走哪個方向</span></span>
+    <span class="row cmt"></span>
+    <span class="row cmt">// 用絕對值 dx, dy 計算誤差（保持正數）</span>
+    <span class="row">dx = |x2 - x1|</span>
+    <span class="row">dy = |y2 - y1|</span>
+  </div>
+
+  <p>這樣 8 個方向全部統一成同一套邏輯，不用 8 個 if-else。</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-title"><div class="sec-num">6</div>合併成通用公式（程式碼的寫法）</div>
+
+  <p>現在把「x 是主軸」和「y 是主軸」兩個 case 合併。
+  秘訣是把誤差的初始值改成 <strong>dx − dy</strong>，
+  讓同一個 err 能同時表達兩個方向的狀態：</p>
+
+  <div class="box box-key">
+    <strong>換個角度理解 err：</strong><br>
+    <code>err = dx − dy</code> 相當於「x 還剩多少空間」減「y 還剩多少空間」。<br>
+    正值 → x 方向空間多，主要走 x；負值 → y 方向空間多，主要走 y。
+  </div>
+
+  <p>判斷條件變成：</p>
+
+  <div class="math">
+    <span class="row">err = dx − dy   <span class="cmt">// 初始</span></span>
+    <span class="row cmt"></span>
+    <span class="row kw">每步：</span>
+    <span class="row">  e2 = 2 × err  <span class="cmt">// 先快照，避免 err 被改掉後影響第二個判斷</span></span>
+    <span class="row cmt"></span>
+    <span class="row cmt">  // Case A：要不要走 x？</span>
+    <span class="row">  <span class="kw">if</span> e2 &gt; <span class="em">−dy</span> :  x += sx;  err -= dy</span>
+    <span class="row cmt"></span>
+    <span class="row cmt">  // Case B：要不要走 y？</span>
+    <span class="row">  <span class="kw">if</span> e2 &lt;  <span class="ok">dx</span>  :  y += sy;  err += dx</span>
+  </div>
+
+  <p>為什麼是 <strong>&gt; −dy</strong> 和 <strong>&lt; dx</strong>？
+  讓我們把兩個 case 分開看：</p>
+
+  <hr>
+
+  <p><strong>Case A：走 x 的條件</strong></p>
+  <p>回到第 3 節的整數化結果（x 是主軸時），每步都走 x，
+  所以條件是「err 還沒超過 y 需要走的門檻」，也就是 <em>err 不太負</em>：</p>
+
+  <div class="math">
+    <span class="row cmt">// 等價於：誤差還沒讓 y 走太多，x 可以繼續走</span>
+    <span class="row">e2 = 2·err</span>
+    <span class="row ok">e2 &gt; −dy   ⟺   err &gt; −dy/2</span>
+    <span class="row cmt">// 也就是說，誤差還沒負到讓 y 反過來壓制 x 的程度</span>
+    <span class="row cmt">// 走 x：err -= dy（因為 x 走了一步，y 的「欠債」減少）</span>
+  </div>
+
+  <p><strong>Case B：走 y 的條件</strong></p>
+  <div class="math">
+    <span class="row cmt">// 等價於：誤差讓 y 已經欠得夠多，該升一格</span>
+    <span class="row ok">e2 &lt; dx   ⟺   err &lt; dx/2</span>
+    <span class="row cmt">// 走 y：err += dx（y 走了一步，還清了 dx 的債）</span>
+  </div>
+
+  <p><strong>注意：兩個條件可以同時成立！</strong></p>
+  <div class="box box-q">
+    當斜率 ≈ 1（dx ≈ dy）時，某些步驟 x 和 y 都需要走一步（對角線移動）。
+    兩個 if 都觸發 → x+1, y+1，這是正確的！
+  </div>
+
+  <p>用 <strong>e2（err 的快照）</strong> 而不是即時的 err 判斷兩個條件，
+  就是為了讓這兩個判斷基於同一個時間點的值。</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-title"><div class="sec-num">7</div>跑一遍（通用版，跟程式碼一樣）</div>
+
+  <p>用同一個例子 (0,0) → (7,3)，dx=7, dy=3，sx=1, sy=1：</p>
+  <p>初始 err = dx − dy = 7 − 3 = <strong>4</strong></p>
+
+  <table>
+    <tr>
+      <th>步</th><th>畫</th><th>err</th><th>e2=2·err</th>
+      <th>e2 &gt; −3？→走x</th><th>e2 &lt; 7？→走y</th><th>新 err</th>
+    </tr>
+    <tr>
+      <td class="td-step">0</td><td class="td-draw">(0,0)</td><td class="td-err">4</td><td>8</td>
+      <td class="td-move-x">是 → x=1, err=1</td>
+      <td style="color:#6c7086">否</td>
+      <td class="td-err">1</td>
+    </tr>
+    <tr class="td-hi">
+      <td class="td-step">1</td><td class="td-draw">(1,0)</td><td class="td-err">1</td><td>2</td>
+      <td class="td-move-x">是 → x=2, err=-2</td>
+      <td class="td-move-y">是 → y=1, err=5</td>
+      <td class="td-err">5</td>
+    </tr>
+    <tr>
+      <td class="td-step">2</td><td class="td-draw">(2,1)</td><td class="td-err">5</td><td>10</td>
+      <td class="td-move-x">是 → x=3, err=2</td>
+      <td style="color:#6c7086">否</td>
+      <td class="td-err">2</td>
+    </tr>
+    <tr class="td-hi">
+      <td class="td-step">3</td><td class="td-draw">(3,1)</td><td class="td-err">2</td><td>4</td>
+      <td class="td-move-x">是 → x=4, err=-1</td>
+      <td class="td-move-y">是 → y=2, err=6</td>
+      <td class="td-err">6</td>
+    </tr>
+    <tr>
+      <td class="td-step">4</td><td class="td-draw">(4,2)</td><td class="td-err">6</td><td>12</td>
+      <td class="td-move-x">是 → x=5, err=3</td>
+      <td style="color:#6c7086">否</td>
+      <td class="td-err">3</td>
+    </tr>
+    <tr class="td-hi">
+      <td class="td-step">5</td><td class="td-draw">(5,2)</td><td class="td-err">3</td><td>6</td>
+      <td class="td-move-x">是 → x=6, err=0</td>
+      <td class="td-move-y">是 → y=3, err=7</td>
+      <td class="td-err">7</td>
+    </tr>
+    <tr>
+      <td class="td-step">6</td><td class="td-draw">(6,3)</td><td class="td-err">7</td><td>14</td>
+      <td class="td-move-x">是 → x=7, err=4</td>
+      <td style="color:#6c7086">否</td>
+      <td class="td-err">4</td>
+    </tr>
+    <tr>
+      <td class="td-step">7</td><td class="td-draw">(7,3)</td>
+      <td colspan="5" style="color:#a6e3a1">x==x2 && y==y2 → break ✓</td>
+    </tr>
+  </table>
+
+  <p>注意 <span class="td-hi" style="display:inline-block; padding:2px 8px; border-radius:3px;">高亮行</span> 是兩個條件都成立的步驟（x 和 y 都走），對應斜率讓直線「跨過對角線」的時刻。</p>
+  <p>結果：(0,0) (1,0) (2,1) (3,1) (4,2) (5,2) (6,3) (7,3) — 和第 2 節的浮點版完全一致！</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-title"><div class="sec-num">8</div>對應回程式碼</div>
+
+  <div class="code">
+<span class="cmt">// dx=7, dy=3, sx=1, sy=1</span><br>
+<br>
+<span class="kw">int</span> dx = abs(x2-x1);   <span class="cmt">// = 7</span><br>
+<span class="kw">int</span> dy = abs(y2-y1);   <span class="cmt">// = 3</span><br>
+<span class="kw">int</span> sx = (x1 &lt; x2) ? <span class="val">1</span> : <span class="val">-1</span>;   <span class="cmt">// 步進方向</span><br>
+<span class="kw">int</span> sy = (y1 &lt; y2) ? <span class="val">1</span> : <span class="val">-1</span>;<br>
+<span class="kw">int</span> err = dx - dy;     <span class="cmt">// 初始 = 7-3 = 4</span><br>
+<br>
+<span class="kw">while</span>(true) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;SetPixel(x1, y1, color);           <span class="cmt">// 畫這格</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> (x1==x2 &amp;&amp; y1==y2) <span class="kw">break</span>;    <span class="cmt">// 到終點了</span><br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">int</span> e2 = <span class="val">2</span> * err;                 <span class="cmt">// 快照，避免兩個 if 互相干擾</span><br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> (e2 &gt; -dy) {                    <span class="cmt">// Case A：走 x</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;err -= dy;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;x1 += sx;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> (e2 &lt; dx) {                     <span class="cmt">// Case B：走 y（可以同時）</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;err += dx;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;y1 += sy;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+}
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-title"><div class="sec-num">互動</div>err 累積演示</div>
+
+  <p>同樣以 (0,0) → (7,3) 為例。觀察 <strong>err</strong>（欠了多少 y）如何每步變化，以及兩個獨立的 if 如何各自決定要不要走 x 和 y。</p>
+
+<style>
+.bp-layout{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;margin:16px 0}
+.bp-panel{flex:1;min-width:230px;font-family:'Consolas',monospace;font-size:0.81em}
+.bp-sec{background:#181825;border:1px solid #313244;border-radius:6px;padding:12px 14px;margin-bottom:10px}
+.bp-sec h4{color:#89b4fa;margin-bottom:10px;font-size:0.88em;letter-spacing:0.04em}
+.bp-vars{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.bp-var{background:#1e1e2e;border-radius:5px;padding:6px 10px}
+.bp-lbl{color:#6c7086;font-size:0.72em;margin-bottom:1px}
+.bp-val{font-size:1.1em;font-weight:bold;color:#a6e3a1}
+.bp-bar-row{display:flex;justify-content:space-between;font-size:0.7em;color:#6c7086;margin-bottom:3px}
+.bp-bar-bg{height:18px;background:#1e1e2e;border-radius:4px;overflow:hidden;position:relative}
+.bp-bar-mid{position:absolute;left:50%;top:0;bottom:0;width:2px;background:#45475a}
+.bp-bar-fill{position:absolute;top:0;height:100%;border-radius:4px;transition:all 0.3s}
+.bp-err-lbl{text-align:center;margin-top:4px;font-size:1em;color:#89b4fa;font-weight:bold}
+.bp-dec{margin-top:8px}
+.bp-dec-row{display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:5px;margin-bottom:4px;font-size:0.8em;transition:background 0.25s}
+.bp-dec-row.on{background:#1e1e2e}
+.bp-dec-row.off{opacity:0.28}
+.bp-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.bp-controls{display:flex;gap:6px;flex-wrap:wrap}
+.bp-controls button{padding:6px 11px;border:none;border-radius:5px;cursor:pointer;font-family:inherit;font-size:0.82em}
+.bp-step{text-align:center;color:#6c7086;font-size:0.8em;margin-bottom:6px}
+#bp-log{max-height:150px;overflow-y:auto;font-size:0.75em;margin-top:6px}
+#bp-log::-webkit-scrollbar{width:3px}
+#bp-log::-webkit-scrollbar-thumb{background:#45475a;border-radius:2px}
+.bp-log-entry{padding:3px 7px;border-left:3px solid #313244;margin-bottom:3px;line-height:1.5}
+.bp-log-entry.cur{border-left-color:#89b4fa;background:#1e1e2e}
+</style>
+
+<div class="bp-layout">
+  <div>
+    <canvas id="bp-canvas" width="380" height="220" style="border:1px solid #313244;background:#181825;display:block"></canvas>
+    <div style="display:flex;gap:14px;margin-top:8px;font-size:0.75em;flex-wrap:wrap">
+      <span style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:12px;height:12px;background:#89b4fa;border-radius:2px"></span>已畫像素</span>
+      <span style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:12px;height:12px;background:#f5c2e7;border-radius:2px;opacity:.7"></span>目前</span>
+      <span style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:12px;height:2px;background:#f38ba8"></span>理想線</span>
+    </div>
+  </div>
+
+  <div class="bp-panel">
+    <div class="bp-sec">
+      <h4>當前變數</h4>
+      <div class="bp-vars">
+        <div class="bp-var"><div class="bp-lbl">x</div><div class="bp-val" id="bp-x">0</div></div>
+        <div class="bp-var"><div class="bp-lbl">y</div><div class="bp-val" id="bp-y">0</div></div>
+        <div class="bp-var"><div class="bp-lbl">err</div><div class="bp-val" id="bp-err" style="color:#89b4fa">4</div></div>
+        <div class="bp-var"><div class="bp-lbl">e2 = 2×err</div><div class="bp-val" id="bp-e2">—</div></div>
+      </div>
+      <div style="margin-top:10px">
+        <div class="bp-bar-row"><span>−dy(−3)</span><span>err</span><span>+dx(+7)</span></div>
+        <div class="bp-bar-bg">
+          <div class="bp-bar-mid"></div>
+          <div class="bp-bar-fill" id="bp-bar"></div>
+        </div>
+        <div class="bp-err-lbl" id="bp-err-lbl">err = 4</div>
+      </div>
+      <div class="bp-dec" id="bp-dec" style="display:none">
+        <div class="bp-dec-row" id="bp-dx"><div class="bp-dot" style="background:#fab387"></div><span id="bp-dx-txt"></span></div>
+        <div class="bp-dec-row" id="bp-dy"><div class="bp-dot" style="background:#a6e3a1"></div><span id="bp-dy-txt"></span></div>
+      </div>
+    </div>
+    <div class="bp-sec">
+      <div class="bp-step" id="bp-step">步驟 0 / 8</div>
+      <div class="bp-controls">
+        <button id="bp-prev" style="background:#45475a;color:#cdd6f4">◀</button>
+        <button id="bp-next" style="background:#89b4fa;color:#1e1e2e;font-weight:bold">下一步 ▶</button>
+        <button id="bp-play" style="background:#a6e3a1;color:#1e1e2e;font-weight:bold">▶ 播放</button>
+        <button id="bp-reset" style="background:#f38ba8;color:#1e1e2e">重置</button>
+      </div>
+      <div id="bp-log" style="margin-top:8px"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+const COLS=9,ROWS=5,CELL=36,OX=10,OY=10;
+const P1={x:0,y:0},P2={x:7,y:3};
+const DX=Math.abs(P2.x-P1.x),DY=Math.abs(P2.y-P1.y);
+const SX=P1.x<P2.x?1:-1,SY=P1.y<P2.y?1:-1;
+
+function computeSteps(){
+  let x=P1.x,y=P1.y,err=DX-DY;
+  const s=[];
+  while(true){
+    s.push({x,y,err,e2:null,mx:false,my:false});
+    if(x===P2.x&&y===P2.y)break;
+    const e2=2*err;
+    const t=s[s.length-1];
+    t.e2=e2;t.mx=e2>-DY;t.my=e2<DX;
+    if(t.mx){err-=DY;x+=SX;}
+    if(t.my){err+=DX;y+=SY;}
+  }
+  return s;
+}
+const STEPS=computeSteps();
+let cur=0,timer=null;
+
+const cv=document.getElementById('bp-canvas');
+const ctx=cv.getContext('2d');
+
+function cx(c){return OX+c*CELL;}
+function cy(r){return OY+r*CELL;}
+
+function draw(){
+  ctx.clearRect(0,0,cv.width,cv.height);
+  ctx.strokeStyle='#313244';ctx.lineWidth=0.5;
+  for(let c=0;c<=COLS;c++){ctx.beginPath();ctx.moveTo(cx(c),OY);ctx.lineTo(cx(c),OY+ROWS*CELL);ctx.stroke();}
+  for(let r=0;r<=ROWS;r++){ctx.beginPath();ctx.moveTo(OX,cy(r));ctx.lineTo(OX+COLS*CELL,cy(r));ctx.stroke();}
+  ctx.save();ctx.strokeStyle='rgba(243,139,168,0.45)';ctx.lineWidth=1.5;ctx.setLineDash([4,4]);
+  ctx.beginPath();ctx.moveTo(cx(P1.x),cy(P1.y));ctx.lineTo(cx(P2.x),cy(P2.y));ctx.stroke();ctx.restore();
+  for(let i=0;i<cur;i++){
+    const s=STEPS[i];
+    ctx.fillStyle='rgba(137,180,250,0.7)';
+    ctx.fillRect(cx(s.x)+1,cy(s.y)+1,CELL-2,CELL-2);
+    ctx.fillStyle='rgba(30,30,46,0.85)';ctx.font='9px Consolas';ctx.textAlign='center';
+    ctx.fillText(s.x+','+s.y,cx(s.x)+CELL/2,cy(s.y)+CELL/2+3);
+  }
+  const sc=STEPS[cur];
+  ctx.fillStyle=cur===STEPS.length-1?'rgba(166,227,161,0.85)':'rgba(245,194,231,0.75)';
+  ctx.fillRect(cx(sc.x)+1,cy(sc.y)+1,CELL-2,CELL-2);
+  ctx.fillStyle='#1e1e2e';ctx.font='bold 9px Consolas';ctx.textAlign='center';
+  ctx.fillText(sc.x+','+sc.y,cx(sc.x)+CELL/2,cy(sc.y)+CELL/2+3);
+  ctx.fillStyle='#89b4fa';ctx.font='bold 10px Consolas';
+  ctx.fillText('S',cx(P1.x)+CELL/2,cy(P1.y)-4);
+  ctx.fillStyle='#a6e3a1';
+  ctx.fillText('E',cx(P2.x)+CELL/2,cy(P2.y)-4);
+}
+
+function updateBar(err){
+  const lo=-DY,hi=DX;
+  const pct=(err-lo)/(hi-lo);
+  const bar=document.getElementById('bp-bar');
+  const mid=DY/(hi-lo);
+  if(err>=0){bar.style.left=(mid*100)+'%';bar.style.width=((pct-mid)*100)+'%';bar.style.background='#89b4fa';}
+  else{bar.style.left=(pct*100)+'%';bar.style.width=((mid-pct)*100)+'%';bar.style.background='#f38ba8';}
+  document.getElementById('bp-err-lbl').textContent='err = '+err;
+}
+
+function updateUI(){
+  const s=STEPS[cur];
+  document.getElementById('bp-x').textContent=s.x;
+  document.getElementById('bp-y').textContent=s.y;
+  document.getElementById('bp-err').textContent=s.err;
+  updateBar(s.err);
+  if(s.e2!==null){
+    document.getElementById('bp-e2').textContent=s.e2;
+    document.getElementById('bp-dec').style.display='block';
+    document.getElementById('bp-dx-txt').innerHTML='e2('+s.e2+') > −dy('+(-DY)+')  → <strong style="color:#fab387">'+(s.mx?'x 步進 ✓':'x 不動 ✗')+'</strong>';
+    document.getElementById('bp-dy-txt').innerHTML='e2('+s.e2+') < &nbsp;dx('+DX+')  → <strong style="color:#a6e3a1">'+(s.my?'y 步進 ✓':'y 不動 ✗')+'</strong>';
+    document.getElementById('bp-dx').className='bp-dec-row '+(s.mx?'on':'off');
+    document.getElementById('bp-dy').className='bp-dec-row '+(s.my?'on':'off');
+  } else {
+    document.getElementById('bp-e2').textContent='—';
+    document.getElementById('bp-dec').style.display='none';
+  }
+  document.getElementById('bp-step').textContent='步驟 '+cur+' / '+(STEPS.length-1);
+}
+
+function buildLog(){
+  const log=document.getElementById('bp-log');
+  log.innerHTML='';
+  for(let i=0;i<STEPS.length;i++){
+    const s=STEPS[i];
+    const d=document.createElement('div');
+    d.className='bp-log-entry'+(i===cur?' cur':'');
+    let h='<span style="color:#6c7086">#'+i+'</span> 畫('+s.x+','+s.y+') err='+s.err;
+    if(s.e2!==null){
+      if(s.mx)h+=' <span style="color:#fab387">→x</span>';
+      if(s.my)h+=' <span style="color:#a6e3a1">↓y</span>';
+    } else h+=' <span style="color:#a6e3a1">終點</span>';
+    d.innerHTML=h;log.appendChild(d);
+  }
+  const el=document.getElementById('bp-log-'+cur);
+  const cur_el=log.children[cur];
+  if(cur_el)cur_el.scrollIntoView({block:'nearest'});
+}
+
+function render(){draw();updateUI();buildLog();}
+function stopTimer(){if(timer){clearInterval(timer);timer=null;document.getElementById('bp-play').textContent='▶ 播放';}}
+
+document.getElementById('bp-next').onclick=()=>{if(cur<STEPS.length-1){cur++;render();}};
+document.getElementById('bp-prev').onclick=()=>{if(cur>0){cur--;render();}};
+document.getElementById('bp-reset').onclick=()=>{stopTimer();cur=0;render();};
+document.getElementById('bp-play').onclick=function(){
+  if(timer){stopTimer();return;}
+  document.getElementById('bp-play').textContent='⏸ 暫停';
+  timer=setInterval(()=>{if(cur>=STEPS.length-1){stopTimer();return;}cur++;render();},700);
+};
+
+render();
+})();
+</script>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-title"><div class="sec-num">總結</div>完整推導脈絡</div>
+
+  <table>
+    <tr><th style="width:10%">節</th><th>做了什麼</th><th>核心想法</th></tr>
+    <tr><td>2</td><td>用浮點 err 追蹤「欠了多少 y」</td><td>理想 y 的小數部分超過 0.5 就升格</td></tr>
+    <tr><td>3</td><td>第一次整數化：err × dx</td><td>用 dy/dx 比較 → 用 dy 比較 dx</td></tr>
+    <tr><td>3</td><td>第二次整數化：全部 × 2</td><td>消掉 dx/2，全程無分數</td></tr>
+    <tr><td>4</td><td>處理陡坡（dy > dx）</td><td>主軸換成 y，邏輯對稱</td></tr>
+    <tr><td>5</td><td>處理負方向</td><td>加 sx, sy，err 用絕對值算</td></tr>
+    <tr><td>6</td><td>合併成 err = dx−dy 通用式</td><td>兩個獨立 if，可同時觸發（對角走）</td></tr>
+    <tr><td>7</td><td>數值驗證</td><td>每步 err 的變化和第 2 節浮點版一致</td></tr>
+  </table>
+</div>
+
+</body>
+</html>

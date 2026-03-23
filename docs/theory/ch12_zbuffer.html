@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Ch12 — Z-buffer 與背面剔除</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:     #1e1e2e;
+  --bg1:    #181825;
+  --bg2:    #11111b;
+  --border: #313244;
+  --muted:  #6c7086;
+  --text:   #cdd6f4;
+  --blue:   #89b4fa;
+  --green:  #a6e3a1;
+  --yellow: #f9e2af;
+  --orange: #fab387;
+  --red:    #f38ba8;
+  --purple: #cba6f7;
+  --teal:   #94e2d5;
+}
+body {
+  background: var(--bg); color: var(--text);
+  font-family: 'Georgia', serif; font-size: 15px;
+  padding: 0 20px 80px; max-width: 900px; margin: 0 auto;
+  line-height: 1.9;
+}
+
+/* ── Nav ─────────────────────────────────────────────── */
+nav {
+  font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted);
+  padding: 14px 0; border-bottom: 1px solid var(--border);
+  margin-bottom: 36px; display: flex; align-items: center; gap: 10px;
+}
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--blue); }
+.nav-sep { color: var(--border); }
+.nav-cur { color: var(--text); }
+.nav-right { margin-left: auto; display: flex; gap: 16px; }
+
+/* ── Header ──────────────────────────────────────────── */
+.ch-header { margin-bottom: 40px; }
+.ch-label {
+  font-family: 'Consolas', monospace; font-size: 0.78em;
+  color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px;
+}
+.ch-title { color: var(--blue); font-size: 1.7em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub   { color: var(--muted); font-size: 0.88em; margin-bottom: 14px; }
+.ch-tags  { display: flex; gap: 6px; flex-wrap: wrap; }
+.ch-tag {
+  font-family: 'Consolas', monospace; font-size: 0.75em;
+  padding: 2px 10px; border-radius: 99px;
+  border: 1px solid var(--border); color: var(--muted);
+}
+
+/* ── Section headings ────────────────────────────────── */
+h2 {
+  color: var(--purple); font-size: 1em;
+  font-family: 'Consolas', monospace; letter-spacing: 0.05em;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+  margin: 40px 0 20px;
+  display: flex; align-items: center; gap: 12px;
+}
+h2 .n {
+  background: var(--purple); color: var(--bg2); font-weight: bold;
+  border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 0.85em;
+}
+h3 { color: var(--yellow); font-size: 0.95em; margin: 22px 0 10px; font-family: 'Georgia', serif; }
+p  { margin-bottom: 12px; }
+strong { color: var(--yellow); }
+em { color: var(--orange); font-style: normal; }
+
+/* ── Callout boxes ───────────────────────────────────── */
+.box {
+  border-radius: 6px; padding: 14px 18px; margin: 16px 0;
+  font-size: 0.9em; line-height: 1.85;
+}
+.box-blue   { background: var(--bg1); border-left: 4px solid var(--blue); }
+.box-green  { background: var(--bg1); border-left: 4px solid var(--green); }
+.box-yellow { background: var(--bg1); border-left: 4px solid var(--yellow); }
+.box-red    { background: var(--bg1); border-left: 4px solid var(--red); }
+.box-purple { background: var(--bg1); border-left: 4px solid var(--purple); }
+.box-gray   { background: var(--bg1); border: 1px solid var(--border); border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 0.9em; }
+
+/* ── Math blocks ─────────────────────────────────────── */
+.math {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 6px;
+  padding: 16px 22px; margin: 14px 0;
+  font-family: 'Consolas', monospace; font-size: 0.87em; line-height: 2.3;
+}
+.math .r   { display: block; }
+.math .cmt { color: var(--muted); }
+.math .hi  { color: var(--yellow); font-weight: bold; }
+.math .ok  { color: var(--green); }
+.math .em  { color: var(--red); }
+.math .kw  { color: var(--purple); }
+
+/* ── Code blocks ─────────────────────────────────────── */
+.code {
+  background: #0d0d14; border: 1px solid var(--border); border-radius: 8px;
+  padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em;
+  line-height: 2.0; margin: 14px 0; white-space: pre;
+}
+.code .cmt { color: var(--muted); }
+.code .kw  { color: var(--purple); }
+.code .val { color: var(--orange); }
+.code .ok  { color: var(--green); }
+.code .em  { color: var(--red); }
+.code .hi  { color: var(--yellow); }
+.code .fn  { color: var(--blue); }
+.code .ty  { color: var(--teal); }
+
+/* ── Pseudocode table ────────────────────────────────── */
+.pseudo {
+  background: #0d0d14; border: 1px solid var(--border); border-radius: 8px;
+  margin: 14px 0; font-family: 'Consolas', monospace; font-size: 0.84em;
+  overflow: hidden;
+}
+.pseudo table { width: 100%; border-collapse: collapse; }
+.pseudo td.ln {
+  color: var(--muted); text-align: right; padding: 1px 12px 1px 14px;
+  border-right: 1px solid var(--border); user-select: none;
+  white-space: nowrap; vertical-align: top; width: 36px; line-height: 1.9;
+}
+.pseudo td.cd { padding: 1px 16px; white-space: pre; line-height: 1.9; vertical-align: top; }
+.pseudo tr.blank td { height: 7px; background: transparent !important; }
+.pseudo tr.s0  td.cd { background: rgba(243,139,168,0.09); }
+.pseudo tr.s1  td.cd { background: rgba(249,226,175,0.06); }
+.pseudo tr.s23 td.cd { background: rgba(203,166,247,0.08); }
+.pseudo tr.s4  td.cd { background: rgba(137,180,250,0.09); }
+.pseudo tr.s5  td.cd { background: rgba(166,227,161,0.11); }
+.pseudo .kw  { color: var(--purple); }
+.pseudo .fn  { color: var(--blue); }
+.pseudo .ty  { color: var(--teal); }
+.pseudo .val { color: var(--orange); }
+.pseudo .cmt { color: var(--muted); }
+
+/* ── Figures ──────────────────────────────────────────── */
+.fig { margin: 24px auto; text-align: center; }
+.fig figcaption { color: var(--muted); font-size: 0.82em; margin-top: 8px; font-style: italic; }
+
+/* ── Two-col layout ──────────────────────────────────── */
+.two-col {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 16px; margin: 16px 0;
+}
+.two-col > div {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 8px;
+  padding: 16px 18px;
+}
+.col-title { font-family: 'Consolas', monospace; font-size: 0.85em;
+  margin-bottom: 10px; color: var(--blue); }
+
+/* ── Flow diagram ─────────────────────────────────────── */
+.flow { margin: 20px 0; }
+.flow-step {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 6px;
+  padding: 12px 18px; display: flex; align-items: center; gap: 14px;
+}
+.flow-step.highlight { border-color: var(--green); }
+.flow-step.warn      { border-color: var(--red); }
+.flow-arrow { text-align: center; color: var(--muted); padding: 4px 0; font-size: 1.2em; }
+.ch-ref {
+  font-family: 'Consolas', monospace; font-size: 0.75em;
+  color: var(--muted); white-space: nowrap; min-width: 80px;
+}
+.step-name { font-size: 0.9em; }
+
+/* ── Table ────────────────────────────────────────────── */
+table { width: 100%; border-collapse: collapse; font-size: 0.87em; margin: 14px 0; }
+th { background: var(--bg1); color: var(--blue); padding: 9px 14px;
+  text-align: left; border-bottom: 2px solid var(--border);
+  font-family: 'Consolas', monospace; }
+td { padding: 8px 14px; border-bottom: 1px solid var(--bg1); vertical-align: top; }
+tr:hover td { background: var(--bg1); }
+
+/* ── Next chapter preview ────────────────────────────── */
+.next-ch {
+  margin-top: 56px; padding: 20px 24px;
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 8px;
+  display: flex; align-items: center; gap: 20px;
+}
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+.next-title { color: var(--blue); font-size: 1em; }
+.next-desc  { color: var(--muted); font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: var(--blue); font-size: 1.6em; text-decoration: none; }
+.next-arrow:hover { color: var(--purple); }
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <a href="../index.html">軟體光柵化</a>
+  <span class="nav-sep">/</span>
+  <span>理論</span>
+  <span class="nav-sep">/</span>
+  <span class="nav-cur">Ch12</span>
+  <div class="nav-right">
+    <a href="ch11_bounding_box.html">← Ch11</a>
+    <a href="#">Ch13 →</a>
+  </div>
+</nav>
+
+<!-- Header -->
+<div class="ch-header">
+  <div class="ch-label">PART 3 · CHAPTER 12</div>
+  <div class="ch-title">Z-buffer 與背面剔除</div>
+  <div class="ch-sub">解決「哪個三角形在前面」的問題，以及「根本不用畫背面」的優化</div>
+  <div class="ch-tags">
+    <span class="ch-tag">Z-buffer</span>
+    <span class="ch-tag">depth test</span>
+    <span class="ch-tag">backface culling</span>
+    <span class="ch-tag">winding order</span>
+    <span class="ch-tag">深度插值</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<p>
+  到目前為止，DrawTriangle 已經能正確填滿一個三角形。
+  但當場景裡有多個三角形，而且它們在 3D 空間中前後交疊時，問題就出現了：
+  <strong>後畫的三角形會蓋掉先畫的，不管它實際上是在前面還是後面。</strong>
+</p>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">1</div>畫家算法（Painter's Algorithm）的問題</h2>
+
+<p>
+  最直觀的解法是「<strong>畫家算法</strong>」：先把所有三角形按深度排序，
+  從最遠的畫到最近的，這樣近的自然蓋住遠的，跟真實世界一樣。
+</p>
+<p>
+  畫家算法有個致命缺陷：<em>有些三角形根本排不出前後順序。</em>
+</p>
+
+<div class="fig">
+  <svg width="540" height="200" viewBox="0 0 540 200">
+    <defs>
+      <marker id="arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0 0,8 3,0 6" fill="#f38ba8"/>
+      </marker>
+    </defs>
+
+    <!-- Left: normal case -->
+    <g transform="translate(20,10)">
+      <text x="110" y="14" fill="#6c7086" font-size="11" font-family="Consolas" text-anchor="middle">正常情況：可排序</text>
+      <!-- far triangle (blue) -->
+      <polygon points="30,160 100,60 190,150" fill="#1a2a3d" stroke="#89b4fa" stroke-width="1.5"/>
+      <text x="105" y="130" fill="#89b4fa" font-size="11" font-family="Consolas" text-anchor="middle">遠</text>
+      <!-- near triangle (orange) -->
+      <polygon points="80,155 155,75 210,160" fill="#2d1a0a" stroke="#fab387" stroke-width="1.5"/>
+      <text x="155" y="140" fill="#fab387" font-size="11" font-family="Consolas" text-anchor="middle">近</text>
+      <!-- arrow -->
+      <text x="110" y="186" fill="#a6e3a1" font-size="11" font-family="Consolas" text-anchor="middle">先畫遠，再畫近 → 正確</text>
+    </g>
+
+    <!-- Right: cyclic case -->
+    <g transform="translate(280,10)">
+      <text x="110" y="14" fill="#6c7086" font-size="11" font-family="Consolas" text-anchor="middle">循環遮擋：無法排序</text>
+      <!-- A covers B's left, B covers C's left, C covers A's left -->
+      <polygon points="60,50 200,80 130,170" fill="none" stroke="#f38ba8" stroke-width="1.5" stroke-dasharray="4,2"/>
+      <polygon points="30,130 175,50 195,160" fill="none" stroke="#cba6f7" stroke-width="1.5" stroke-dasharray="4,2"/>
+      <polygon points="50,90 180,150 100,40"  fill="none" stroke="#f9e2af" stroke-width="1.5" stroke-dasharray="4,2"/>
+      <text x="55"  y="100" fill="#f38ba8" font-size="12" font-family="Consolas">A</text>
+      <text x="175" y="95"  fill="#cba6f7" font-size="12" font-family="Consolas">B</text>
+      <text x="105" y="170" fill="#f9e2af" font-size="12" font-family="Consolas">C</text>
+      <!-- cyclic arrows -->
+      <text x="110" y="186" fill="#f38ba8" font-size="11" font-family="Consolas" text-anchor="middle">A 蓋 B，B 蓋 C，C 蓋 A</text>
+    </g>
+  </svg>
+  <figcaption>畫家算法在循環遮擋（cyclic occlusion）時無解</figcaption>
+</div>
+
+<p>
+  更根本的問題是：即使三角形不互相穿插，光是「對每個三角形選一個代表深度來排序」本身就不精確——
+  兩個三角形可能在不同像素位置各有前後。
+</p>
+
+<div class="box box-red">
+  <strong>畫家算法的問題總結：</strong><br>
+  · 排序時間 O(n log n)，每幀都要重新排<br>
+  · 循環遮擋無解（A 蓋 B，B 蓋 C，C 蓋 A）<br>
+  · 三角形互相穿插（intersecting）時一定出錯<br>
+  · 每個三角形代表深度難以定義
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">2</div>Z-buffer：把問題推到像素層級</h2>
+
+<p>
+  Z-buffer（也叫 Depth Buffer）的思路完全不同。
+  它不試圖對三角形排序，而是把「哪個最近」的問題推到<em>每個像素</em>來解決：
+</p>
+
+<div class="box box-blue">
+  對每個像素 (x, y)，額外維護一個值 <strong>zbuffer[y][x]</strong>，記錄「目前為止畫到這個像素的最近深度」。<br>
+  當有新的三角形要畫這個像素時，只有它的深度比 zbuffer 裡記錄的更小（更近），才真正寫入 framebuffer 並更新 zbuffer。
+</div>
+
+<div class="fig">
+  <svg width="560" height="220" viewBox="0 0 560 220">
+    <!-- 3D scene hint -->
+    <g transform="translate(20,10)">
+      <text x="80" y="14" fill="#6c7086" font-size="11" font-family="Consolas" text-anchor="middle">場景（側視圖）</text>
+      <!-- camera -->
+      <polygon points="10,100 30,88 30,112" fill="#89b4fa"/>
+      <text x="8" y="136" fill="#89b4fa" font-size="10" font-family="Consolas">cam</text>
+      <!-- near triangle -->
+      <line x1="50" y1="75" x2="50" y2="125" stroke="#a6e3a1" stroke-width="2"/>
+      <text x="55" y="105" fill="#a6e3a1" font-size="10" font-family="Consolas">z=0.3</text>
+      <!-- far triangle -->
+      <line x1="110" y1="65" x2="110" y2="135" stroke="#f38ba8" stroke-width="2"/>
+      <text x="115" y="108" fill="#f38ba8" font-size="10" font-family="Consolas">z=0.8</text>
+      <!-- screen -->
+      <line x1="160" y1="40" x2="160" y2="160" stroke="#313244" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="162" y="30" fill="#6c7086" font-size="10" font-family="Consolas">screen</text>
+      <!-- depth rays -->
+      <line x1="32" y1="100" x2="158" y2="100" stroke="#6c7086" stroke-width="1" stroke-dasharray="2,2"/>
+    </g>
+
+    <!-- zbuffer array -->
+    <g transform="translate(210,30)">
+      <text x="60" y="0" fill="#6c7086" font-size="11" font-family="Consolas" text-anchor="middle">zbuffer[ ]</text>
+      <!-- cells -->
+      <rect x="0"  y="10" width="36" height="30" fill="#181825" stroke="#313244"/>
+      <rect x="36" y="10" width="36" height="30" fill="#181825" stroke="#313244"/>
+      <rect x="72" y="10" width="36" height="30" fill="#1a2a10" stroke="#a6e3a1" stroke-width="2"/>
+      <rect x="108" y="10" width="36" height="30" fill="#181825" stroke="#313244"/>
+      <text x="18"  y="31" fill="#6c7086" font-size="10" font-family="Consolas" text-anchor="middle">∞</text>
+      <text x="54"  y="31" fill="#6c7086" font-size="10" font-family="Consolas" text-anchor="middle">∞</text>
+      <text x="90"  y="31" fill="#a6e3a1" font-size="10" font-family="Consolas" text-anchor="middle">0.3</text>
+      <text x="126" y="31" fill="#6c7086" font-size="10" font-family="Consolas" text-anchor="middle">∞</text>
+      <text x="60" y="56" fill="#6c7086" font-size="10" font-family="Consolas" text-anchor="middle">初始值 ∞，更新後 0.3</text>
+
+      <!-- second triangle attempt -->
+      <text x="60" y="86" fill="#6c7086" font-size="11" font-family="Consolas" text-anchor="middle">第二個三角形到來</text>
+      <rect x="72" y="96" width="36" height="30" fill="#2d0a0a" stroke="#f38ba8" stroke-width="1.5" stroke-dasharray="4,2"/>
+      <text x="90" y="117" fill="#f38ba8" font-size="10" font-family="Consolas" text-anchor="middle">0.8</text>
+      <text x="60" y="143" fill="#f38ba8" font-size="10" font-family="Consolas" text-anchor="middle">0.8 &gt; 0.3 → 丟棄</text>
+    </g>
+
+    <!-- framebuffer result -->
+    <g transform="translate(380,30)">
+      <text x="60" y="0" fill="#6c7086" font-size="11" font-family="Consolas" text-anchor="middle">framebuffer[ ]</text>
+      <rect x="0"  y="10" width="36" height="30" fill="#181825" stroke="#313244"/>
+      <rect x="36" y="10" width="36" height="30" fill="#181825" stroke="#313244"/>
+      <rect x="72" y="10" width="36" height="30" fill="#1a3a10" stroke="#a6e3a1" stroke-width="2"/>
+      <rect x="108" y="10" width="36" height="30" fill="#181825" stroke="#313244"/>
+      <text x="90" y="31" fill="#a6e3a1" font-size="10" font-family="Consolas" text-anchor="middle">green</text>
+      <text x="60" y="56" fill="#a6e3a1" font-size="10" font-family="Consolas" text-anchor="middle">近的三角形（綠）獲勝</text>
+    </g>
+  </svg>
+  <figcaption>Z-buffer 在每個像素層級做深度比較：0.3（近）勝出，0.8（遠）丟棄</figcaption>
+</div>
+
+<p>
+  這個做法的美妙之處在於：<strong>不需要排序</strong>。
+  三角形可以任意順序送進來，Z-buffer 自動保證每個像素顯示最近的那個。
+  複雜度從 O(n log n) 降到 O(1)（每個像素只做一次比較）。
+</p>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">3</div>Z-buffer 的資料結構</h2>
+
+<p>
+  Z-buffer 是一個和 framebuffer 同樣大小的浮點陣列：
+</p>
+
+<div class="code"><span class="cmt">// render_device.h 中新增</span>
+<span class="kw">float</span>* zbuffer;  <span class="cmt">// 大小 = width × height</span></div>
+
+<h3>初始化</h3>
+<p>
+  每幀開始時，和 Clear() 一起重置：所有值設為「正無窮大」，
+  表示「還沒有任何三角形畫到這個像素」。
+</p>
+
+<div class="code"><span class="kw">void</span> <span class="ty">RenderDevice</span>::<span class="fn">ClearDepth</span>() {
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="val">0</span>; i &lt; width * height; i++)
+        zbuffer[i] = std::numeric_limits&lt;<span class="kw">float</span>&gt;::infinity();
+}</div>
+
+<div class="box box-yellow">
+  <strong>慣例：z 值的範圍</strong><br>
+  在標準化裝置座標（NDC）中，z 的範圍是 [0, 1]（Near Plane = 0，Far Plane = 1）。
+  初始值設為 <em>+∞</em> 或 <em>1.0f</em> 都可以——任何有效的三角形 z 值都會勝過它。
+  <br><br>
+  我們的 Vertex 的 <code>z</code> 目前還在螢幕座標（可以是任意值），
+  後面引入投影矩陣後才會有正規化的 [0, 1] 範圍。
+</div>
+
+<h3>深度測試</h3>
+
+<div class="code"><span class="cmt">// DrawTriangle 內層迴圈中，通過重心座標測試後：</span>
+<span class="kw">float</span> z = w1 * v1.z + w2 * v2.z + w3 * v3.z;  <span class="cmt">// 深度插值</span>
+
+<span class="kw">int</span> idx = y * width + x;
+<span class="kw">if</span> (z &lt; zbuffer[idx]) {          <span class="cmt">// 比目前記錄的更近？</span>
+    zbuffer[idx] = z;             <span class="cmt">// 更新深度緩衝</span>
+    <span class="fn">SetPixel</span>(x, y, color);        <span class="cmt">// 寫入顏色</span>
+}</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">4</div>深度插值：重心座標的第一個實際應用</h2>
+
+<p>
+  像素 (x, y) 的深度不是三個頂點深度的隨便一個——它應該根據像素的位置，
+  在三個頂點之間<em>線性插值</em>：
+</p>
+
+<div class="math">
+<span class="r"><span class="hi">z_P</span> = w1 · z1 + w2 · z2 + w3 · z3</span>
+<span class="r cmt">──────────────────────────────────────────</span>
+<span class="r">w1, w2, w3  ← 重心座標（Ch10 求得）</span>
+<span class="r">z1, z2, z3  ← 三個頂點的 z 值（Vertex.z）</span>
+<span class="r"><span class="hi">z_P</span>         ← 插值後像素的深度</span>
+</div>
+
+<p>
+  這就是「重心座標可以插值任何頂點屬性」的第一個具體例子。
+  後面的顏色、UV、法向量，全部用同樣的公式。
+</p>
+
+<div class="box box-blue">
+  <strong>注意：這裡暫時使用線性插值。</strong><br>
+  在 3D 投影後，z 值的線性插值其實是不精確的（透視失真）。
+  正確做法是對 1/z 做插值，叫做<em>透視正確插值（Perspective Correct Interpolation）</em>。
+  這個問題在引入 MVP 矩陣後（Part 4+）會詳細討論。
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">5</div>背面剔除（Backface Culling）</h2>
+
+<p>
+  Z-buffer 解決了「畫錯像素」的問題，但它還是讓 GPU（或我們的 CPU）浪費時間
+  <em>光柵化一個最後完全被擋住的三角形</em>。
+  背面剔除（Backface Culling）是一個更早的優化：
+  <strong>在進入光柵化之前，直接丟棄「朝後」的三角形。</strong>
+</p>
+
+<h3>什麼是「背面」？</h3>
+
+<p>
+  一個三角形有兩個面。哪一面是「正面」（朝向攝影機）由<em>頂點繞向（Winding Order）</em>定義：
+</p>
+
+<div class="fig">
+  <svg width="480" height="180" viewBox="0 0 480 180">
+    <defs>
+      <marker id="arr-g" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0 0,8 3,0 6" fill="#a6e3a1"/>
+      </marker>
+      <marker id="arr-r" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0 0,8 3,0 6" fill="#f38ba8"/>
+      </marker>
+    </defs>
+
+    <!-- CCW (front face): V0=(95,30) V1=(30,145) V2=(160,145) -->
+    <g transform="translate(30,20)">
+      <text x="95" y="12" fill="#a6e3a1" font-size="12" font-family="Consolas" text-anchor="middle">逆時針（CCW）＝ 正面</text>
+      <polygon points="95,30 30,145 160,145" fill="#0d1f0d" stroke="#a6e3a1" stroke-width="1.5"/>
+      <!-- CCW arrows (drawn before circles so circles cover endpoints) -->
+      <!-- V0→V1: dir=(-65,115)/132.1, offset 6px -->
+      <line x1="92" y1="35" x2="33" y2="140" stroke="#a6e3a1" stroke-width="1.5" marker-end="url(#arr-g)"/>
+      <!-- V1→V2: dir=(130,0)/130, offset 6px -->
+      <line x1="36" y1="145" x2="154" y2="145" stroke="#a6e3a1" stroke-width="1.5" marker-end="url(#arr-g)"/>
+      <!-- V2→V0: dir=(-65,-115)/132.1, offset 6px -->
+      <line x1="157" y1="140" x2="98" y2="35" stroke="#a6e3a1" stroke-width="1.5" marker-end="url(#arr-g)"/>
+      <!-- vertices on top -->
+      <circle cx="95"  cy="30"  r="4" fill="#a6e3a1"/>
+      <circle cx="30"  cy="145" r="4" fill="#a6e3a1"/>
+      <circle cx="160" cy="145" r="4" fill="#a6e3a1"/>
+      <text x="95"  y="22"  fill="#a6e3a1" font-size="11" font-family="Consolas" text-anchor="middle">V0</text>
+      <text x="14"  y="160" fill="#a6e3a1" font-size="11" font-family="Consolas">V1</text>
+      <text x="162" y="160" fill="#a6e3a1" font-size="11" font-family="Consolas">V2</text>
+      <text x="95" y="105" fill="#a6e3a1" font-size="11" font-family="Consolas" text-anchor="middle">cross &gt; 0</text>
+    </g>
+
+    <!-- CW (back face): V0=(95,30) V1=(160,145) V2=(30,145) -->
+    <g transform="translate(270,20)">
+      <text x="95" y="12" fill="#f38ba8" font-size="12" font-family="Consolas" text-anchor="middle">順時針（CW）＝ 背面</text>
+      <polygon points="95,30 160,145 30,145" fill="#1f0a0d" stroke="#f38ba8" stroke-width="1.5" stroke-dasharray="5,3"/>
+      <!-- CW arrows (drawn before circles) -->
+      <!-- V0→V1: dir=(65,115)/132.1, offset 6px -->
+      <line x1="98" y1="35"  x2="157" y2="140" stroke="#f38ba8" stroke-width="1.5" marker-end="url(#arr-r)"/>
+      <!-- V1→V2: dir=(-130,0)/130, offset 6px -->
+      <line x1="154" y1="145" x2="36"  y2="145" stroke="#f38ba8" stroke-width="1.5" marker-end="url(#arr-r)"/>
+      <!-- V2→V0: dir=(65,-115)/132.1, offset 6px -->
+      <line x1="33"  y1="140" x2="92"  y2="35"  stroke="#f38ba8" stroke-width="1.5" marker-end="url(#arr-r)"/>
+      <!-- vertices on top -->
+      <circle cx="95"  cy="30"  r="4" fill="#f38ba8"/>
+      <circle cx="160" cy="145" r="4" fill="#f38ba8"/>
+      <circle cx="30"  cy="145" r="4" fill="#f38ba8"/>
+      <text x="95"  y="22"  fill="#f38ba8" font-size="11" font-family="Consolas" text-anchor="middle">V0</text>
+      <text x="162" y="160" fill="#f38ba8" font-size="11" font-family="Consolas">V1</text>
+      <text x="14"  y="160" fill="#f38ba8" font-size="11" font-family="Consolas">V2</text>
+      <text x="95" y="105" fill="#f38ba8" font-size="11" font-family="Consolas" text-anchor="middle">cross &lt; 0</text>
+    </g>
+  </svg>
+  <figcaption>CCW（逆時針）= 正面；CW（順時針）= 背面。用叉積符號直接判斷。</figcaption>
+</div>
+
+<h3>用叉積判斷繞向</h3>
+
+<p>
+  三角形的「有向面積」就是 Ch08 學的 2D 叉積——它的符號正好反映了頂點的繞向：
+</p>
+
+<div class="math">
+<span class="r"><span class="kw">edge01</span> = V1 - V0  <span class="cmt">= (V1.x - V0.x, V1.y - V0.y)</span></span>
+<span class="r"><span class="kw">edge02</span> = V2 - V0  <span class="cmt">= (V2.x - V0.x, V2.y - V0.y)</span></span>
+<span class="r"></span>
+<span class="r"><span class="hi">E_total</span> = edge01.x × edge02.y − edge01.y × edge02.x</span>
+<span class="r"></span>
+<span class="r"><span class="ok">E_total &gt; 0</span>  →  CCW，正面，繼續光柵化</span>
+<span class="r"><span class="em">E_total &lt; 0</span>  →  CW，背面，丟棄</span>
+<span class="r"><span class="cmt">E_total = 0   →  退化三角形（三點共線），丟棄</span></span>
+</div>
+
+<div class="box box-yellow">
+  <strong>CCW 還是 CW 是正面？這是約定，不是真理。</strong><br>
+  OpenGL 預設 CCW 為正面；Direct3D 預設 CW 為正面。
+  只要整個管線（建模工具、程式碼）統一即可。
+  我們的實作和 OpenGL 同一慣例：<em>CCW = 正面（E_total &gt; 0）</em>。
+</div>
+
+<h3>為什麼這個優化有效？</h3>
+
+<p>
+  一個封閉的 3D 物體（球、盒子、角色）有一半的三角形永遠朝後。
+  這些三角形在投影到螢幕後，它們的頂點繞向會反轉，
+  叉積符號就會跟著反轉——可以在光柵化前直接丟棄。
+  理想情況下<em>省掉一半的工作量</em>。
+</p>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">6</div>整合後的完整演算法</h2>
+
+<p>
+  把背面剔除和 Z-buffer 加進 DrawTriangle，流程變成：
+</p>
+
+<div class="flow">
+  <div class="flow-step">
+    <div class="ch-ref">輸入</div>
+    <div class="step-name">三頂點 V0, V1, V2（含 z 座標）</div>
+  </div>
+  <div class="flow-arrow">↓</div>
+  <div class="flow-step warn">
+    <div class="ch-ref">Step 0 ← 新增</div>
+    <div class="step-name">計算 E_total（有向面積）；E_total ≤ 0 → return（背面剔除）</div>
+  </div>
+  <div class="flow-arrow">↓</div>
+  <div class="flow-step">
+    <div class="ch-ref">Step 1 ← Ch11</div>
+    <div class="step-name">計算包圍盒，clamp 到畫面邊界</div>
+  </div>
+  <div class="flow-arrow">↓</div>
+  <div class="flow-step">
+    <div class="ch-ref">Step 2 ← Ch09</div>
+    <div class="step-name">對包圍盒內每個像素做 Edge Function 測試</div>
+  </div>
+  <div class="flow-arrow">↓</div>
+  <div class="flow-step">
+    <div class="ch-ref">Step 3 ← Ch10</div>
+    <div class="step-name">通過測試 → 計算重心座標 w1, w2, w3</div>
+  </div>
+  <div class="flow-arrow">↓</div>
+  <div class="flow-step warn">
+    <div class="ch-ref">Step 4 ← 新增</div>
+    <div class="step-name">插值深度 z_P = w1·z1 + w2·z2 + w3·z3；比較 zbuffer[y][x] → 失敗則 continue</div>
+  </div>
+  <div class="flow-arrow">↓</div>
+  <div class="flow-step highlight">
+    <div class="ch-ref">Step 5</div>
+    <div class="step-name">更新 zbuffer[y][x] = z_P；SetPixel(x, y, color)</div>
+  </div>
+</div>
+
+<h3>偽碼</h3>
+<div class="pseudo"><table>
+<tr><td class="ln">1</td><td class="cd"><span class="kw">void</span> <span class="fn">DrawTriangle</span>(<span class="ty">Vertex</span> v0, <span class="ty">Vertex</span> v1, <span class="ty">Vertex</span> v2) {</td></tr>
+<tr class="blank"><td class="ln"></td><td class="cd"></td></tr>
+<tr class="s0"><td class="ln">3</td><td class="cd">    <span class="cmt">// ── Step 0：背面剔除 ─────────────────────────────────────────</span></td></tr>
+<tr class="s0"><td class="ln">4</td><td class="cd">    <span class="kw">float</span> e_total = (v1.x-v0.x)*(v2.y-v0.y) - (v1.y-v0.y)*(v2.x-v0.x);</td></tr>
+<tr class="s0"><td class="ln">5</td><td class="cd">    <span class="kw">if</span> (e_total &lt;= <span class="val">0.0f</span>) <span class="kw">return</span>;   <span class="cmt">// 背面或退化三角形，直接跳過</span></td></tr>
+<tr class="blank"><td class="ln"></td><td class="cd"></td></tr>
+<tr class="s1"><td class="ln">7</td><td class="cd">    <span class="cmt">// ── Step 1：包圍盒 ───────────────────────────────────────────</span></td></tr>
+<tr class="s1"><td class="ln">8</td><td class="cd">    <span class="kw">int</span> xmin = max(min(v0.x, v1.x, v2.x), <span class="val">0</span>);</td></tr>
+<tr class="s1"><td class="ln">9</td><td class="cd">    <span class="kw">int</span> xmax = min(max(v0.x, v1.x, v2.x), width-<span class="val">1</span>);</td></tr>
+<tr class="s1"><td class="ln">10</td><td class="cd">    <span class="kw">int</span> ymin = max(min(v0.y, v1.y, v2.y), <span class="val">0</span>);</td></tr>
+<tr class="s1"><td class="ln">11</td><td class="cd">    <span class="kw">int</span> ymax = min(max(v0.y, v1.y, v2.y), height-<span class="val">1</span>);</td></tr>
+<tr class="blank"><td class="ln"></td><td class="cd"></td></tr>
+<tr><td class="ln">13</td><td class="cd">    <span class="kw">for</span> (<span class="kw">int</span> y = ymin; y &lt;= ymax; y++) {</td></tr>
+<tr><td class="ln">14</td><td class="cd">        <span class="kw">for</span> (<span class="kw">int</span> x = xmin; x &lt;= xmax; x++) {</td></tr>
+<tr class="blank"><td class="ln"></td><td class="cd"></td></tr>
+<tr class="s23"><td class="ln">16</td><td class="cd">            <span class="cmt">// ── Step 2-3：Edge Function + 重心座標 ───────────────</span></td></tr>
+<tr class="s23"><td class="ln">17</td><td class="cd">            <span class="kw">float</span> w0 = <span class="fn">edge</span>(v1, v2, x, y);</td></tr>
+<tr class="s23"><td class="ln">18</td><td class="cd">            <span class="kw">float</span> w1 = <span class="fn">edge</span>(v2, v0, x, y);</td></tr>
+<tr class="s23"><td class="ln">19</td><td class="cd">            <span class="kw">float</span> w2 = <span class="fn">edge</span>(v0, v1, x, y);</td></tr>
+<tr class="s23"><td class="ln">20</td><td class="cd">            <span class="kw">if</span> (w0 &lt; <span class="val">0</span> || w1 &lt; <span class="val">0</span> || w2 &lt; <span class="val">0</span>) <span class="kw">continue</span>;</td></tr>
+<tr class="s23"><td class="ln">21</td><td class="cd">            w0 /= e_total;  w1 /= e_total;  w2 /= e_total;  <span class="cmt">// 正規化</span></td></tr>
+<tr class="blank"><td class="ln"></td><td class="cd"></td></tr>
+<tr class="s4"><td class="ln">23</td><td class="cd">            <span class="cmt">// ── Step 4：深度測試 ──────────────────────────────────</span></td></tr>
+<tr class="s4"><td class="ln">24</td><td class="cd">            <span class="kw">float</span> z = w0*v0.z + w1*v1.z + w2*v2.z;</td></tr>
+<tr class="s4"><td class="ln">25</td><td class="cd">            <span class="kw">if</span> (z &gt;= zbuffer[y*width+x]) <span class="kw">continue</span>;  <span class="cmt">// 更遠，丟棄</span></td></tr>
+<tr class="blank"><td class="ln"></td><td class="cd"></td></tr>
+<tr class="s5"><td class="ln">27</td><td class="cd">            <span class="cmt">// ── Step 5：寫入 ──────────────────────────────────────</span></td></tr>
+<tr class="s5"><td class="ln">28</td><td class="cd">            zbuffer[y*width+x] = z;</td></tr>
+<tr class="s5"><td class="ln">29</td><td class="cd">            <span class="fn">SetPixel</span>(x, y, color);</td></tr>
+<tr class="blank"><td class="ln"></td><td class="cd"></td></tr>
+<tr><td class="ln">31</td><td class="cd">        }  <span class="cmt">// end x</span></td></tr>
+<tr><td class="ln">32</td><td class="cd">    }  <span class="cmt">// end y</span></td></tr>
+<tr><td class="ln">33</td><td class="cd">}</td></tr>
+</table></div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">7</div>Z-buffer 的限制與現代做法</h2>
+
+<table>
+  <tr>
+    <th>問題</th>
+    <th>說明</th>
+    <th>現代解法</th>
+  </tr>
+  <tr>
+    <td style="color:var(--yellow)">Z-fighting</td>
+    <td>兩個三角形幾乎同深度，浮點誤差導致像素交替閃爍</td>
+    <td>Polygon Offset / Reverse-Z</td>
+  </tr>
+  <tr>
+    <td style="color:var(--yellow)">精度不均勻</td>
+    <td>Near Plane 附近精度高，Far Plane 附近精度極差</td>
+    <td>Reverse-Z（把 Near 對應 1.0，Far 對應 0.0）</td>
+  </tr>
+  <tr>
+    <td style="color:var(--yellow)">透明物件</td>
+    <td>透明三角形需要從後往前混合（blend），Z-buffer 會阻擋</td>
+    <td>OIT（Order Independent Transparency）/ 分層排序</td>
+  </tr>
+  <tr>
+    <td style="color:var(--yellow)">記憶體頻寬</td>
+    <td>每個像素每幀都要讀寫 zbuffer，頻寬壓力大</td>
+    <td>HZB（Hierarchical Z-Buffer）/ Early-Z</td>
+  </tr>
+</table>
+
+<div class="box box-gray">
+  <strong>Reverse-Z 是現代引擎的標準做法。</strong>
+  把 z 範圍反過來（Near = 1.0, Far = 0.0），搭配 32-bit float，
+  讓精度集中在遠處（浮點數在 0 附近精度更高）。
+  Unreal Engine 5 和 Unity HDRP 都預設使用 Reverse-Z。
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">8</div>Part 3 總結</h2>
+
+<p>
+  到這裡，三角形光柵化的核心已經完整了：
+</p>
+
+<div class="two-col">
+  <div>
+    <div class="col-title" style="color:var(--green)">✓ 已掌握的概念</div>
+    <ul style="font-size:0.88em;line-height:2.2;margin-left:16px;color:var(--text)">
+      <li>2D 叉積 / 有向面積（Ch08）</li>
+      <li>Edge Function 三角形內外測試（Ch09）</li>
+      <li>重心座標 / 屬性插值（Ch10）</li>
+      <li>包圍盒掃描法（Ch11）</li>
+      <li>Z-buffer 深度測試（Ch12）</li>
+      <li>背面剔除 / 繞向判斷（Ch12）</li>
+    </ul>
+  </div>
+  <div>
+    <div class="col-title" style="color:var(--blue)">→ Part 4 即將學習</div>
+    <ul style="font-size:0.88em;line-height:2.2;margin-left:16px;color:var(--text)">
+      <li>3D 點積與叉積（法向量、光照）</li>
+      <li>矩陣與線性變換（縮放、旋轉）</li>
+      <li>齊次座標（統一仿射變換）</li>
+      <li>MVP 管線：物件空間 → 螢幕座標</li>
+    </ul>
+  </div>
+</div>
+
+<p>
+  目前的光柵化是在「螢幕座標」直接操作頂點。
+  Part 4 之後，頂點會從 3D 世界座標，經過 Model → View → Projection 矩陣，
+  最終投影到螢幕——那才是真正的 3D 渲染管線開始。
+</p>
+
+<!-- Next chapter -->
+<div class="next-ch">
+  <div>
+    <div class="next-label">PART 4 · CHAPTER 13</div>
+    <div class="next-title">向量幾何：點積與叉積（3D 版）</div>
+    <div class="next-desc">點積 = 投影 = 光照角度；3D 叉積 = 法向量 = 面的朝向。
+    Phong 光照模型 N·L 的根基。</div>
+  </div>
+  <a href="#" class="next-arrow">→</a>
+</div>
+
+</body>
+</html>

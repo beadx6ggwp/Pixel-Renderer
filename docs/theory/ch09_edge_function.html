@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Ch09 — 邊緣函數（Edge Function）</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:     #1e1e2e;
+  --bg1:    #181825;
+  --bg2:    #11111b;
+  --border: #313244;
+  --muted:  #6c7086;
+  --text:   #cdd6f4;
+  --blue:   #89b4fa;
+  --green:  #a6e3a1;
+  --yellow: #f9e2af;
+  --orange: #fab387;
+  --red:    #f38ba8;
+  --purple: #cba6f7;
+  --teal:   #94e2d5;
+}
+body {
+  background: var(--bg); color: var(--text);
+  font-family: 'Georgia', serif; font-size: 15px;
+  padding: 0 20px 80px; max-width: 900px; margin: 0 auto;
+  line-height: 1.9;
+}
+
+/* ── Nav ─────────────────────────────────────────────── */
+nav {
+  font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted);
+  padding: 14px 0; border-bottom: 1px solid var(--border);
+  margin-bottom: 36px; display: flex; align-items: center; gap: 10px;
+}
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--blue); }
+.nav-sep { color: var(--border); }
+.nav-cur { color: var(--text); }
+.nav-right { margin-left: auto; display: flex; gap: 16px; }
+
+/* ── Header ──────────────────────────────────────────── */
+.ch-header { margin-bottom: 40px; }
+.ch-label {
+  font-family: 'Consolas', monospace; font-size: 0.78em;
+  color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px;
+}
+.ch-title { color: var(--blue); font-size: 1.7em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub   { color: var(--muted); font-size: 0.88em; margin-bottom: 14px; }
+.ch-tags  { display: flex; gap: 6px; flex-wrap: wrap; }
+.ch-tag {
+  font-family: 'Consolas', monospace; font-size: 0.72em;
+  padding: 1px 7px; border-radius: 4px;
+  background: var(--bg2); color: var(--muted); border: 1px solid var(--border);
+}
+
+/* ── Typography ──────────────────────────────────────── */
+h2 {
+  color: var(--purple); font-size: 1em;
+  font-family: 'Consolas', monospace; letter-spacing: 0.05em;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+  margin: 44px 0 20px;
+  display: flex; align-items: center; gap: 12px;
+}
+h2 .n {
+  background: var(--purple); color: var(--bg2); font-weight: bold;
+  border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 0.85em;
+}
+h3 { color: var(--yellow); font-size: 0.95em; margin: 24px 0 10px; }
+p  { margin-bottom: 12px; }
+strong { color: var(--yellow); }
+em { color: var(--orange); font-style: normal; }
+ul, ol { margin: 8px 0 14px 26px; line-height: 2.2; }
+
+/* ── Boxes ────────────────────────────────────────────── */
+.box {
+  border-radius: 6px; padding: 14px 18px; margin: 16px 0;
+  font-size: 0.9em; line-height: 1.85;
+}
+.box-blue   { background: var(--bg); border-left: 4px solid var(--blue); }
+.box-green  { background: var(--bg); border-left: 4px solid var(--green); }
+.box-yellow { background: var(--bg); border-left: 4px solid var(--yellow); }
+.box-red    { background: var(--bg); border-left: 4px solid var(--red); }
+.box-purple { background: var(--bg); border-left: 4px solid var(--purple); }
+.box-teal   { background: var(--bg); border-left: 4px solid var(--teal); }
+
+/* ── Math ─────────────────────────────────────────────── */
+.math {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 6px;
+  padding: 16px 22px; margin: 14px 0;
+  font-family: 'Consolas', monospace; font-size: 0.87em; line-height: 2.4;
+}
+.math .r   { display: block; }
+.math .cmt { color: var(--muted); }
+.math .hi  { color: var(--yellow); font-weight: bold; }
+.math .ok  { color: var(--green); }
+.math .em  { color: var(--red); }
+.math .kw  { color: var(--purple); }
+.math .or  { color: var(--orange); }
+.math .tl  { color: var(--teal); }
+
+/* ── Code ─────────────────────────────────────────────── */
+.code {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em;
+  line-height: 2.1; margin: 14px 0;
+}
+.code .cmt { color: var(--muted); }
+.code .kw  { color: var(--purple); }
+.code .val { color: var(--orange); }
+.code .ok  { color: var(--green); }
+.code .tp  { color: var(--blue); }
+.code .fn  { color: var(--teal); }
+.code .em  { color: var(--red); }
+
+/* ── Figures ──────────────────────────────────────────── */
+.fig { margin: 24px auto; text-align: center; }
+.fig figcaption { color: var(--muted); font-size: 0.82em; margin-top: 8px; font-style: italic; }
+
+/* ── Two-column ───────────────────────────────────────── */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+.two-col > div {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 8px;
+  padding: 16px 18px;
+}
+.col-title { font-family: 'Consolas', monospace; font-size: 0.85em; margin-bottom: 10px; color: var(--muted); }
+
+/* ── Step list ────────────────────────────────────────── */
+.steps { margin: 16px 0; }
+.step { display: flex; gap: 16px; margin-bottom: 20px; }
+.step-num {
+  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+  background: var(--purple); color: var(--bg2);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Consolas', monospace; font-size: 0.82em; font-weight: bold;
+  margin-top: 2px;
+}
+.step-body { flex: 1; }
+.step-title { color: var(--yellow); font-size: 0.9em; margin-bottom: 4px; }
+.step-desc  { color: var(--muted); font-size: 0.85em; line-height: 1.7; }
+
+/* ── Chapter nav ──────────────────────────────────────── */
+.chapter-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border);
+  font-family: 'Consolas', monospace; font-size: 0.82em;
+}
+.chapter-nav a {
+  color: var(--muted); text-decoration: none; padding: 8px 14px;
+  border: 1px solid var(--border); border-radius: 6px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.chapter-nav a:hover { color: var(--blue); border-color: var(--blue); }
+.chapter-nav .next { color: var(--text); border-color: var(--blue); }
+
+hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <a href="../index.html">軟體光柵化</a>
+  <span class="nav-sep">/</span>
+  <span class="nav-cur">Ch09 — 邊緣函數</span>
+  <div class="nav-right">
+    <a href="ch08_cross_product.html">← Ch08</a>
+    <a href="ch10_barycentric.html">Ch10 →</a>
+  </div>
+</nav>
+
+<!-- Header -->
+<div class="ch-header">
+  <div class="ch-label">PART 3 · CHAPTER 09</div>
+  <div class="ch-title">邊緣函數（Edge Function）</div>
+  <div class="ch-sub">把叉積用在三條邊上，判斷點是否在三角形內</div>
+  <div class="ch-tags">
+    <span class="ch-tag">edge function</span>
+    <span class="ch-tag">inside test</span>
+    <span class="ch-tag">winding order</span>
+    <span class="ch-tag">tie-breaking rule</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<p>
+  上一章我們建立了一個工具：<strong>cross(AB, AP) 的正負號告訴你 P 在 AB 的哪一側</strong>。
+</p>
+<p>
+  現在把這個工具用在三角形的三條邊上——這就是 Edge Function。
+</p>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">1</div>核心概念：三條邊，三次測試</h2>
+
+<p>
+  給定三角形頂點 V0、V1、V2，它有三條邊：
+</p>
+
+<div class="math">
+  <span class="r">邊 0：V0 → V1</span>
+  <span class="r">邊 1：V1 → V2</span>
+  <span class="r">邊 2：V2 → V0</span>
+</div>
+
+<p>
+  對每條邊，做一次 Ch08 的 <code>edgeTest()</code>：
+</p>
+
+<div class="math">
+  <span class="r"><span class="hi">E0(P)</span> = cross(V1−V0, P−V0)</span>
+  <span class="r"><span class="hi">E1(P)</span> = cross(V2−V1, P−V1)</span>
+  <span class="r"><span class="hi">E2(P)</span> = cross(V0−V2, P−V2)</span>
+</div>
+
+<p>
+  這三個值就是三角形的 <em>邊緣函數</em>（Edge Function）。
+</p>
+
+<div class="box box-blue">
+  <strong>判斷法則：</strong><br>
+  如果 E0(P)、E1(P)、E2(P) 三個值<em>同號</em>（都 ≥ 0 或都 ≤ 0），
+  則 P 在三角形內（或邊上）。
+</div>
+
+<div class="fig">
+  <svg width="540" height="260" viewBox="0 0 540 260">
+    <defs>
+      <marker id="arb" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto">
+        <polygon points="0 0, 7 2.5, 0 5" fill="#89b4fa"/>
+      </marker>
+    </defs>
+
+    <!-- Triangle -->
+    <polygon points="270,30 90,210 450,210"
+      fill="#89b4fa" fill-opacity="0.06"
+      stroke="#89b4fa" stroke-width="1.5"/>
+
+    <!-- Vertices -->
+    <circle cx="270" cy="30" r="5" fill="#89b4fa"/>
+    <circle cx="90"  cy="210" r="5" fill="#89b4fa"/>
+    <circle cx="450" cy="210" r="5" fill="#89b4fa"/>
+    <text x="264" y="20"  fill="#89b4fa" font-size="13" font-family="Consolas" text-anchor="middle">V0</text>
+    <text x="70"  y="228" fill="#89b4fa" font-size="13" font-family="Consolas">V1</text>
+    <text x="452" y="228" fill="#89b4fa" font-size="13" font-family="Consolas">V2</text>
+
+    <!-- Edge labels -->
+    <text x="156" y="112" fill="#6c7086" font-size="11" font-family="Consolas" text-anchor="middle" transform="rotate(-52,156,112)">E0: V0→V1</text>
+    <text x="270" y="225" fill="#6c7086" font-size="11" font-family="Consolas" text-anchor="middle">E1: V1→V2</text>
+    <text x="378" y="112" fill="#6c7086" font-size="11" font-family="Consolas" text-anchor="middle" transform="rotate(52,378,112)">E2: V2→V0</text>
+
+    <!-- Point P inside -->
+    <circle cx="270" cy="150" r="6" fill="#a6e3a1"/>
+    <text x="278" y="155" fill="#a6e3a1" font-size="12" font-family="Consolas">P</text>
+    <text x="270" y="174" fill="#a6e3a1" font-size="10" font-family="Consolas" text-anchor="middle">E0&gt;0, E1&gt;0, E2&gt;0 → 在內部</text>
+
+    <!-- Point Q outside -->
+    <circle cx="100" cy="100" r="6" fill="#f38ba8"/>
+    <text x="108" y="105" fill="#f38ba8" font-size="12" font-family="Consolas">Q</text>
+    <text x="100" y="122" fill="#f38ba8" font-size="10" font-family="Consolas" text-anchor="middle">E0&lt;0 → 在外部</text>
+  </svg>
+  <figcaption>P 對三條邊的測試都通過（同號）→ 在三角形內；Q 對 E0 測試失敗 → 在外部</figcaption>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">2</div>繞向（Winding Order）決定「哪個符號算通過」</h2>
+
+<p>
+  注意「同號」這個條件——是都正，還是都負？
+  這取決於三角形頂點的排列順序，也就是<strong>繞向（Winding Order）</strong>。
+</p>
+
+<div class="two-col">
+  <div>
+    <div class="col-title" style="color:var(--green)">▌ 逆時針（CCW）</div>
+    <p>V0 → V1 → V2 逆時針排列<br>
+    三個 Edge Function 對內部點<em>都是正值</em></p>
+    <p style="color:var(--muted);font-size:0.85em">數學座標系（y 朝上）的慣例。<br>
+    OpenGL 預設使用 CCW 為正面。</p>
+  </div>
+  <div>
+    <div class="col-title" style="color:var(--orange)">▌ 順時針（CW）</div>
+    <p>V0 → V1 → V2 順時針排列<br>
+    三個 Edge Function 對內部點<em>都是負值</em></p>
+    <p style="color:var(--muted);font-size:0.85em">螢幕座標系（y 朝下）常見。<br>
+    DirectX 預設使用 CW 為正面。</p>
+  </div>
+</div>
+
+<div class="box box-yellow">
+  <strong>實作建議：</strong>統一標準，不要混用。<br>
+  一種做法：把三個值都取絕對值再判正負——但這樣無法判斷背面。<br>
+  更好的做法：先用 <code>signedArea</code> 知道繞向，再決定「&gt;= 0 還是 &lt;= 0」算通過。<br>
+  或者更簡單：<em>直接要求三個值同號即可</em>，不在乎繞向。
+</div>
+
+<h3>用程式碼表達</h3>
+
+<div class="code">
+<span class="cmt">// 判斷 P 是否在三角形 (V0, V1, V2) 內</span><br>
+<span class="kw">bool</span> <span class="fn">insideTriangle</span>(<span class="tp">Vec2</span> V0, <span class="tp">Vec2</span> V1, <span class="tp">Vec2</span> V2, <span class="tp">Vec2</span> P) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">float</span> e0 = <span class="fn">edgeTest</span>(V0, V1, P);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">float</span> e1 = <span class="fn">edgeTest</span>(V1, V2, P);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">float</span> e2 = <span class="fn">edgeTest</span>(V2, V0, P);<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="cmt">// 三個值同號（都 >= 0 或都 <= 0）即為在三角形內</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> (e0 >= <span class="val">0</span> && e1 >= <span class="val">0</span> && e2 >= <span class="val">0</span>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|| (e0 <= <span class="val">0</span> && e1 <= <span class="val">0</span> && e2 <= <span class="val">0</span>);<br>
+}
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">3</div>邊緣函數是線性函數</h2>
+
+<p>
+  Edge Function 有一個非常重要的性質：<strong>它是 P 的線性函數</strong>。
+</p>
+
+<p>
+  把 E0 展開：
+</p>
+
+<div class="math">
+  <span class="r"><span class="hi">E0(P)</span> = (V1<sub>x</sub>−V0<sub>x</sub>)(P<sub>y</sub>−V0<sub>y</sub>) − (V1<sub>y</sub>−V0<sub>y</sub>)(P<sub>x</sub>−V0<sub>x</sub>)</span>
+  <span class="r"></span>
+  <span class="r cmt">令 a = (V1y−V0y)，b = −(V1x−V0x)，整理後：</span>
+  <span class="r"></span>
+  <span class="r"><span class="hi">E0(x, y)</span> = <span class="ok">a · x  +  b · y  +  c</span>     ← 一次多項式</span>
+  <span class="r cmt">              a, b, c 都是常數（只依賴頂點位置）</span>
+</div>
+
+<p>
+  這意味著：<em>當 x 增加 1，E0 增加固定量 a；當 y 增加 1，E0 增加固定量 b。</em>
+</p>
+
+<div class="box box-purple">
+  <strong>增量更新（Incremental Update）</strong><br><br>
+  假設你已經算出像素 (x, y) 的 E0 值，那麼：<br><br>
+  E0(x+1, y) = E0(x, y) + a<br>
+  E0(x, y+1) = E0(x, y) + b<br><br>
+  移到下一個像素，只需要一次加法——不需要重新算叉積！<br>
+  GPU 硬體的光柵化單元正是用這個技巧，以常數時間處理每個像素。
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">4</div>完整的光柵化結構</h2>
+
+<p>
+  把 Edge Function 接上掃描框架，就得到完整的三角形填色演算法：
+</p>
+
+<div class="steps">
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <div class="step-title">計算 a、b、c（三條邊各一組）</div>
+      <div class="step-desc">只需做一次，與像素數量無關。</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <div class="step-title">找包圍盒（下一章詳述）</div>
+      <div class="step-desc">限制要測試的像素範圍，避免掃描整張畫面。</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <div class="step-title">掃描包圍盒，每列用增量更新</div>
+      <div class="step-desc">每換一列，E 值重新從該列左端算起（加 b）；每換一行，加 a。</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <div class="step-title">三個 E 同號 → 點亮像素</div>
+      <div class="step-desc">並記錄 E0、E1、E2 值（下一章用來算重心座標）。</div>
+    </div>
+  </div>
+</div>
+
+<div class="code">
+<span class="cmt">// 計算 E0 的增量係數</span><br>
+<span class="cmt">// E0(x,y) = a0*x + b0*y + c0</span><br>
+<span class="kw">float</span> a0 = V1.y - V0.y;<br>
+<span class="kw">float</span> b0 = V0.x - V1.x;<br>
+<span class="kw">float</span> c0 = V1.x*V0.y - V0.x*V1.y;<br>
+<span class="cmt">// （同樣計算 a1,b1,c1 和 a2,b2,c2）</span><br>
+<br>
+<span class="cmt">// 掃描包圍盒（[xmin,xmax] × [ymin,ymax]）</span><br>
+<span class="kw">for</span> (<span class="kw">int</span> y = ymin; y <= ymax; y++) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="cmt">// 每列開頭重新計算三個 E 的起始值</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">float</span> e0 = a0*xmin + b0*y + c0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">float</span> e1 = a1*xmin + b1*y + c1;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">float</span> e2 = a2*xmin + b2*y + c2;<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">for</span> (<span class="kw">int</span> x = xmin; x <= xmax; x++) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> ((e0 >= <span class="val">0</span> && e1 >= <span class="val">0</span> && e2 >= <span class="val">0</span>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||  (e0 <= <span class="val">0</span> && e1 <= <span class="val">0</span> && e2 <= <span class="val">0</span>)) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="fn">SetPixel</span>(x, y, color);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cmt">// 增量更新：x+1 → 每個 E 加對應的 a</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;e0 += a0;  e1 += a1;  e2 += a2;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+}
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">5</div>邊界像素的歸屬：Tie-breaking Rule</h2>
+
+<p>
+  如果兩個三角形共享一條邊，這條邊上的像素可能被兩個三角形都聲稱「通過測試」
+  （E = 0，剛好在邊上）。<strong>這會導致重複渲染，產生閃爍或混色。</strong>
+</p>
+
+<div class="fig">
+  <svg width="400" height="160" viewBox="0 0 400 160">
+    <!-- Two adjacent triangles -->
+    <polygon points="50,140 200,20 200,140" fill="#89b4fa" fill-opacity="0.15" stroke="#89b4fa" stroke-width="1.5"/>
+    <polygon points="200,20 350,140 200,140" fill="#fab387" fill-opacity="0.15" stroke="#fab387" stroke-width="1.5"/>
+
+    <!-- Shared edge -->
+    <line x1="200" y1="20" x2="200" y2="140" stroke="#a6e3a1" stroke-width="2.5" stroke-dasharray="5,3"/>
+    <text x="208" y="85" fill="#a6e3a1" font-size="11" font-family="Consolas">共用邊</text>
+    <text x="208" y="100" fill="#a6e3a1" font-size="11" font-family="Consolas">E = 0</text>
+
+    <!-- Pixel on shared edge -->
+    <circle cx="200" cy="90" r="5" fill="#f38ba8"/>
+    <text x="208" y="115" fill="#f38ba8" font-size="10" font-family="Consolas">哪個三角形的？</text>
+  </svg>
+  <figcaption>共用邊上的像素對兩個三角形的邊緣函數都是 0，需要規則決定歸屬</figcaption>
+</div>
+
+<p>
+  解法是 <strong>Tie-breaking Rule</strong>（也叫 Top-Left Rule）：
+</p>
+
+<div class="box box-teal">
+  <strong>Top-Left Rule（OpenGL / DirectX 標準）</strong><br><br>
+  只有當邊是「頂邊（top edge）」或「左邊（left edge）」時，才把 E = 0 的像素算作通過。<br><br>
+  <strong>頂邊</strong>：水平邊，且在三角形的上方（螢幕座標 y 最小）。<br>
+  <strong>左邊</strong>：非水平邊，且往下走（dy > 0，螢幕座標）。<br><br>
+  其他方向的邊遇到 E = 0 時，用嚴格不等式（<code>&gt; 0</code> 而非 <code>&gt;= 0</code>）排除該像素。<br><br>
+  這樣每個共用邊上的像素恰好只屬於一個三角形，不重不漏。
+</div>
+
+<p>
+  實作上，可以對每條邊的判斷條件加上微調：
+</p>
+
+<div class="code">
+<span class="cmt">// 判斷這條邊是否為 top edge 或 left edge</span><br>
+<span class="kw">bool</span> <span class="fn">isTopLeft</span>(<span class="tp">Vec2</span> A, <span class="tp">Vec2</span> B) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="tp">Vec2</span> edge = { B.x - A.x, B.y - A.y };<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">bool</span> isTop  = (edge.y == <span class="val">0</span> && edge.x > <span class="val">0</span>);  <span class="cmt">// 水平且向右</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">bool</span> isLeft = (edge.y < <span class="val">0</span>);                   <span class="cmt">// 向上（螢幕 y 向下，所以 dy&lt;0 = 向上）</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> isTop || isLeft;<br>
+}<br>
+<br>
+<span class="cmt">// 測試時：top/left edge 用 >=0，其他用 >0</span><br>
+<span class="kw">float</span> bias0 = <span class="fn">isTopLeft</span>(V0, V1) ? <span class="val">0</span> : <span class="val">-1</span>;<br>
+<span class="kw">float</span> bias1 = <span class="fn">isTopLeft</span>(V1, V2) ? <span class="val">0</span> : <span class="val">-1</span>;<br>
+<span class="kw">float</span> bias2 = <span class="fn">isTopLeft</span>(V2, V0) ? <span class="val">0</span> : <span class="val">-1</span>;<br>
+<br>
+<span class="kw">if</span> (e0 + bias0 >= <span class="val">0</span> && e1 + bias1 >= <span class="val">0</span> && e2 + bias2 >= <span class="val">0</span>) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="fn">SetPixel</span>(x, y, color);<br>
+}
+</div>
+
+<div class="box box-blue">
+  <strong>實作上的優先順序：</strong><br>
+  初學實作時，<em>可以先不做 Tie-breaking Rule</em>——只是偶爾共用邊會有一個像素重複畫，
+  視覺上幾乎看不出來。<br>
+  等到整個管線跑起來再回來加這個細節。
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">6</div>與 GPU 的連結</h2>
+
+<p>
+  你剛才看到的結構，就是現代 GPU 光柵化單元的核心邏輯：
+</p>
+
+<div class="math">
+  <span class="r cmt">GPU 光柵化（簡化版）：</span>
+  <span class="r"></span>
+  <span class="r"><span class="ok">1.</span> 頂點 Shader → 得到三角形頂點的螢幕座標</span>
+  <span class="r"><span class="ok">2.</span> 計算三條邊的 Edge Function 係數（a, b, c）</span>
+  <span class="r"><span class="ok">3.</span> 找包圍盒</span>
+  <span class="r"><span class="ok">4.</span> 以 <span class="tl">2×2 像素 Quad</span> 為單位，同時測試四個像素</span>
+  <span class="r"><span class="ok">5.</span> 通過的像素送入片段 Shader</span>
+  <span class="r"><span class="ok">6.</span> Top-Left Rule 處理共用邊</span>
+</div>
+
+<p>
+  第 4 步的 2×2 Quad 是 GPU 特有的設計——
+  同時處理四個相鄰像素，是為了讓 fragment shader 可以用差分計算偏微分
+  （<code>dFdx</code>、<code>dFdy</code>，用於 mipmap 選層）。
+  Quad 中即使有像素在三角形外面，也會執行 shader（只是結果被丟棄），
+  這就是為什麼很細的三角形特別浪費 GPU。
+</p>
+
+<div class="box box-yellow">
+  <strong>Mileff 論文（你參考資料裡的那篇）</strong><br>
+  <em>«Incremental Triangle Rasterization»</em> 深入分析了 Edge Function 的增量優化，
+  包括如何利用 SIMD 同時計算多個像素，以及 Tile-based 光柵化的結構。
+  現在讀 §1-3 足夠理解基本框架。
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">7</div>本章小結</h2>
+
+<div class="box box-green">
+  <strong>本章學到的三件事：</strong><br><br>
+  1. <em>Edge Function = 叉積用在三條邊上</em>，三值同號 → 點在三角形內。<br>
+  2. Edge Function 是<em>線性函數</em>，可以用增量加法（a / b）避免重複計算。<br>
+  3. 共用邊用 <em>Top-Left Rule</em> 決定歸屬，保證每個像素只被渲染一次。
+</div>
+
+<p>
+  目前我們只是知道「哪些像素在三角形內」，還不知道要填什麼顏色。
+  下一章：<strong>重心座標（Barycentric Coordinates）</strong>——
+  Edge Function 算出的 E0、E1、E2 值，可以直接轉換成插值係數，
+  用來在三角形內插值任何頂點屬性（顏色、UV、法線…）。
+</p>
+
+<!-- ── Chapter nav ─────────────────────────────────────────────── -->
+<div class="chapter-nav">
+  <a href="ch08_cross_product.html">← Ch08 叉積與有向面積</a>
+  <a class="next" href="ch10_barycentric.html">Ch10 重心座標 →</a>
+</div>
+
+</body>
+</html>

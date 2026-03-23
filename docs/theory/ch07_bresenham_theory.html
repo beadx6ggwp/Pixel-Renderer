@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Bresenham — 兩種推導視角與背後理論</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #1e1e2e; color: #cdd6f4;
+  font-family: 'Georgia', serif; font-size: 15px;
+  padding: 32px 20px; line-height: 1.9;
+  max-width: 900px; margin: 0 auto;
+}
+
+/* ── Typography ─────────────────────────────── */
+h1 { color: #89b4fa; font-size: 1.5em; margin-bottom: 6px; }
+h2 {
+  color: #cba6f7; font-size: 1em;
+  font-family: 'Consolas', monospace; letter-spacing: 0.05em;
+  padding: 10px 0; border-bottom: 1px solid #313244;
+  margin: 40px 0 20px;
+  display: flex; align-items: center; gap: 12px;
+}
+h2 .n {
+  background: #cba6f7; color: #1e1e2e; font-weight: bold;
+  border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 0.85em;
+}
+h3 { color: #f9e2af; font-size: 0.95em; margin: 22px 0 10px; font-family: 'Georgia', serif; }
+p  { margin-bottom: 12px; }
+strong { color: #f9e2af; }
+em { color: #fab387; font-style: normal; }
+ul, ol { margin: 8px 0 12px 24px; line-height: 2.2; }
+.tagline { color: #6c7086; margin-bottom: 40px; font-size: 0.88em; }
+
+/* ── Callout boxes ───────────────────────────── */
+.box {
+  border-radius: 6px; padding: 14px 18px; margin: 16px 0;
+  font-size: 0.9em; line-height: 1.85;
+}
+.box-blue   { background: #1e1e2e; border-left: 4px solid #89b4fa; }
+.box-green  { background: #1e1e2e; border-left: 4px solid #a6e3a1; }
+.box-yellow { background: #1e1e2e; border-left: 4px solid #f9e2af; }
+.box-red    { background: #1e1e2e; border-left: 4px solid #f38ba8; }
+.box-purple { background: #1e1e2e; border-left: 4px solid #cba6f7; }
+.box-gray   { background: #181825; border: 1px solid #313244; border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 0.9em; }
+
+/* ── Math blocks ─────────────────────────────── */
+.math {
+  background: #181825; border: 1px solid #313244; border-radius: 6px;
+  padding: 16px 22px; margin: 14px 0;
+  font-family: 'Consolas', monospace; font-size: 0.87em; line-height: 2.3;
+}
+.math .r   { display: block; }
+.math .cmt { color: #6c7086; }
+.math .hi  { color: #f9e2af; font-weight: bold; }
+.math .ok  { color: #a6e3a1; }
+.math .em  { color: #f38ba8; }
+.math .kw  { color: #cba6f7; }
+.math .dim { color: #45475a; }
+
+/* ── Tables ──────────────────────────────────── */
+table {
+  width: 100%; border-collapse: collapse;
+  font-family: 'Consolas', monospace; font-size: 0.83em; margin: 14px 0;
+}
+th { background: #181825; color: #89b4fa; padding: 9px 14px;
+  text-align: left; border-bottom: 2px solid #313244; }
+td { padding: 8px 14px; border-bottom: 1px solid #181825; vertical-align: top; }
+tr:hover td { background: #1e1e2e; }
+.td-a { color: #89b4fa; }
+.td-b { color: #a6e3a1; }
+
+/* ── Code ────────────────────────────────────── */
+.code {
+  background: #0d0d14; border: 1px solid #313244; border-radius: 8px;
+  padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em;
+  line-height: 2.1; margin: 14px 0;
+}
+.code .cmt { color: #6c7086; }
+.code .kw  { color: #cba6f7; }
+.code .val { color: #fab387; }
+.code .ok  { color: #a6e3a1; }
+.code .em  { color: #f38ba8; }
+.code .hi  { color: #f9e2af; }
+
+/* ── Layout ──────────────────────────────────── */
+.two-col {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 16px; margin: 16px 0;
+}
+.two-col > div {
+  background: #181825; border: 1px solid #313244; border-radius: 8px;
+  padding: 16px 18px;
+}
+.col-title { font-family: 'Consolas', monospace; font-size: 0.85em; margin-bottom: 10px; }
+
+.fig { margin: 20px auto; text-align: center; }
+.fig figcaption { color: #6c7086; font-size: 0.82em; margin-top: 8px; font-style: italic; }
+
+hr { border: none; border-top: 1px solid #313244; margin: 32px 0; }
+
+/* ── Knowledge map ───────────────────────────── */
+.kmap {
+  background: #181825; border: 1px solid #313244; border-radius: 8px;
+  padding: 20px 24px; margin: 14px 0;
+}
+.kmap-row { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 14px; }
+.kmap-icon {
+  width: 32px; height: 32px; border-radius: 6px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.85em; font-weight: bold; font-family: 'Consolas', monospace;
+}
+.kmap-body { flex: 1; }
+.kmap-title { color: #f9e2af; font-size: 0.9em; margin-bottom: 3px; }
+.kmap-desc  { color: #6c7086; font-size: 0.83em; line-height: 1.6; }
+
+/* Timeline */
+.timeline { margin: 16px 0; }
+.tl-item { display: flex; gap: 16px; margin-bottom: 16px; }
+.tl-year {
+  font-family: 'Consolas', monospace; font-size: 0.82em;
+  color: #89b4fa; width: 48px; flex-shrink: 0; padding-top: 2px;
+}
+.tl-line { width: 2px; background: #313244; flex-shrink: 0; position: relative; }
+.tl-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: #89b4fa;
+  position: absolute; left: -3px; top: 6px;
+}
+.tl-body { flex: 1; padding-bottom: 8px; }
+.tl-name { color: #f9e2af; font-size: 0.9em; margin-bottom: 2px; }
+.tl-desc { color: #6c7086; font-size: 0.83em; line-height: 1.6; }
+
+/* Comparison indicator */
+.eq-badge {
+  display: inline-block; background: #313244; color: #89b4fa;
+  border-radius: 4px; padding: 2px 8px;
+  font-family: 'Consolas', monospace; font-size: 0.8em;
+}
+</style>
+</head>
+<body>
+
+<nav style="font-family:'Consolas',monospace;font-size:0.78em;color:#6c7086;padding:14px 0;border-bottom:1px solid #313244;margin-bottom:32px;display:flex;align-items:center;gap:10px;">
+  <a href="../index.html" style="color:#6c7086;text-decoration:none;">軟體光柵化</a>
+  <span style="color:#313244">/</span>
+  <span style="color:#cdd6f4">Ch07 — 兩種推導的理論比較</span>
+  <span style="margin-left:auto;display:flex;gap:16px;">
+    <a href="ch06_bresenham_octants.html" style="color:#6c7086;text-decoration:none;">← Ch06</a>
+    <a href="../index.html" style="color:#6c7086;text-decoration:none;">首頁</a>
+  </span>
+</nav>
+
+<h1>兩種推導視角與背後理論</h1>
+<p class="tagline">誤差累積法 vs d₁d₂ 距離法 — 它們是同一件事嗎？哪裡不同？能推廣到哪裡？</p>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">1</div>兩種方法的哲學差異</h2>
+
+<p>兩種方法產生完全相同的像素序列，但出發點不同：</p>
+
+<div class="two-col">
+  <div>
+    <div class="col-title" style="color:#89b4fa">▌ 誤差累積法</div>
+    <p style="font-size:0.88em">問的問題：</p>
+    <p style="font-size:0.88em; color:#f9e2af">「我累積欠了多少 y？欠得夠多就還一格。」</p>
+    <hr style="margin:10px 0">
+    <ul style="font-size:0.85em; margin-left:16px;">
+      <li>視角：<strong>動態</strong>，追蹤狀態</li>
+      <li>思考單位：時間序列，累積量</li>
+      <li>發現它需要：程式設計直覺</li>
+      <li>推廣性：直線專用</li>
+    </ul>
+  </div>
+  <div>
+    <div class="col-title" style="color:#a6e3a1">▌ d₁d₂ 距離法</div>
+    <p style="font-size:0.88em">問的問題：</p>
+    <p style="font-size:0.88em; color:#f9e2af">「兩個候選像素，哪個離理想線更近？」</p>
+    <hr style="margin:10px 0">
+    <ul style="font-size:0.85em; margin-left:16px;">
+      <li>視角：<strong>靜態</strong>，比較兩個選項</li>
+      <li>思考單位：空間距離，幾何關係</li>
+      <li>發現它需要：幾何 + 計算幾何概念</li>
+      <li>推廣性：可推廣到任何隱式曲線</li>
+    </ul>
+  </div>
+</div>
+
+<div class="box box-blue">
+  類比：你要過河。<br>
+  誤差累積法像是：「我走了幾步了，偏移了多少，要不要修正？」<br>
+  d₁d₂ 法像是：「左腳踩這塊石頭近，還是右腳踩那塊近？」<br>
+  兩個判斷等價，但思考方式完全不同。
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">2</div>數學上它們是同一件事</h2>
+
+<p>用具體數字說明。(0,0) → (7,3)，dx=7，dy=3。</p>
+
+<h3>誤差累積法的 err</h3>
+<div class="math">
+  <span class="r">初始：err = 0</span>
+  <span class="r">每步 x：err += 2dy = 6</span>
+  <span class="r">當 err ≥ dx（= 7）：y++, err -= 2dx = 14</span>
+</div>
+
+<h3>d₁d₂ 法的 P</h3>
+<div class="math">
+  <span class="r">初始：P₀ = 2dy − dx = 6 − 7 = −1</span>
+  <span class="r">P &lt; 0：P += 2dy = 6</span>
+  <span class="r">P ≥ 0：y++, P += 2dy − 2dx = 6 − 14 = −8</span>
+</div>
+
+<h3>兩者對照</h3>
+<table>
+  <tr><th>步</th><th>畫</th><th class="td-a">err（累積法）</th><th class="td-b">P（d₁d₂法）</th><th>關係</th></tr>
+  <tr><td>0</td><td>(0,0)</td><td class="td-a">0</td><td class="td-b">−1</td><td>P = err − dx/2×2 + ... </td></tr>
+  <tr><td>1</td><td>(1,0)</td><td class="td-a">6</td><td class="td-b">5</td><td rowspan="7" style="color:#6c7086; vertical-align:middle; text-align:center;">
+    <div style="color:#f9e2af; font-size:1.1em;">P = err − dx</div>
+    <div style="font-size:0.8em; margin-top:4px;">（常數差，正負判斷等價）</div>
+  </td></tr>
+  <tr><td>2</td><td>(2,1)</td><td class="td-a">−2</td><td class="td-b">−3</td></tr>
+  <tr><td>3</td><td>(3,1)</td><td class="td-a">4</td><td class="td-b">3</td></tr>
+  <tr><td>4</td><td>(4,2)</td><td class="td-a">−4</td><td class="td-b">−5</td></tr>
+  <tr><td>5</td><td>(5,2)</td><td class="td-a">2</td><td class="td-b">1</td></tr>
+  <tr><td>6</td><td>(6,3)</td><td class="td-a">−6</td><td class="td-b">−7</td></tr>
+  <tr><td>7</td><td>(7,3)</td><td class="td-a">0</td><td class="td-b">−1</td></tr>
+</table>
+
+<div class="math">
+  <span class="r cmt">// 兩者的精確關係</span>
+  <span class="r hi">P = err − dx</span>
+  <span class="r cmt">// 等價性：</span>
+  <span class="r">err ≥ dx  ⟺  err − dx ≥ 0  ⟺  P ≥ 0   （升 y 的條件）</span>
+  <span class="r">err &lt;  dx  ⟺  P &lt; 0              （不升 y 的條件）</span>
+</div>
+
+<div class="box box-yellow">
+  兩個方法追蹤的是同一個量，只差一個常數 dx 的位移。<br>
+  判斷「err 是否 ≥ dx」等價於判斷「P 是否 ≥ 0」。<br>
+  任何時刻，兩個方法做出<strong>完全相同的決定</strong>。
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">3</div>中點測試（Midpoint Test）—— d₁d₂ 的真正來源</h2>
+
+<p>d₁d₂ 法不是為直線特別設計的。它的核心是一個更通用的技巧：</p>
+
+<div class="box box-purple">
+  <strong>中點測試（Midpoint Test）</strong><br>
+  有一條曲線 F(x, y) = 0。F > 0 在曲線一側，F < 0 在另一側。<br>
+  面對兩個候選格點 A 和 B，取它們的中點 M。<br>
+  計算 F(M) 的符號 → 告訴你曲線偏向哪側 → 選那一側的格點。
+</div>
+
+<h3>直線的中點測試</h3>
+<p>直線：F(x, y) = dy·x − dx·y + C = 0</p>
+<div class="math">
+  <span class="r">候選像素：(x+1, Yᵢ) 和 (x+1, Yᵢ+1)</span>
+  <span class="r">中點 M = (x+1, Yᵢ + 0.5)</span>
+  <span class="r cmt"></span>
+  <span class="r">F(M) = dy·(x+1) − dx·(Yᵢ+0.5) + C</span>
+  <span class="r ok">F(M) &gt; 0  →  曲線在中點下方  →  選上方像素 Yᵢ+1</span>
+  <span class="r em">F(M) &lt; 0  →  曲線在中點上方  →  選下方像素 Yᵢ</span>
+  <span class="r cmt"></span>
+  <span class="r cmt">// F(M) × 2（消掉 0.5）= d₁d₂ 法的 P！</span>
+</div>
+
+<h3>圓的中點測試（推廣）</h3>
+<p>圓：F(x, y) = x² + y² − r² = 0</p>
+<div class="math">
+  <span class="r cmt">// 畫圓的第一象限，y 從 r 往下，x 從 0 往右</span>
+  <span class="r">候選像素：E = (x+1, y) 或 SE = (x+1, y-1)</span>
+  <span class="r">中點 M = (x+1, y − 0.5)</span>
+  <span class="r cmt"></span>
+  <span class="r">F(M) = (x+1)² + (y−0.5)² − r²</span>
+  <span class="r ok">F(M) &gt; 0  →  M 在圓外  →  選 SE（往內走）</span>
+  <span class="r em">F(M) ≤ 0  →  M 在圓內  →  選 E（保持高度）</span>
+  <span class="r cmt"></span>
+  <span class="r cmt">// 增量更新（同樣的技巧）：</span>
+  <span class="r">P₀ = 1 − r</span>
+  <span class="r em">P ≤ 0: P += 2x + 3              （選 E）</span>
+  <span class="r ok">P &gt; 0: P += 2x − 2y + 5; y−−   （選 SE）</span>
+</div>
+
+<div class="fig">
+  <svg width="440" height="220" viewBox="0 0 440 220">
+    <!-- Line midpoint test -->
+    <g>
+      <text x="90" y="14" fill="#6c7086" font-size="11" font-family="Consolas" text-anchor="middle">直線</text>
+      <g stroke="#313244" stroke-width="0.5">
+        <line x1="20" y1="40" x2="20" y2="200"/><line x1="100" y1="40" x2="100" y2="200"/>
+        <line x1="180" y1="40" x2="180" y2="200"/>
+        <line x1="20" y1="40" x2="180" y2="40"/>
+        <line x1="20" y1="120" x2="180" y2="120"/>
+        <line x1="20" y1="200" x2="180" y2="200"/>
+      </g>
+      <!-- ideal line -->
+      <line x1="20" y1="190" x2="180" y2="68" stroke="#f38ba8" stroke-width="1.5" stroke-dasharray="5,4" opacity="0.7"/>
+      <!-- current -->
+      <rect x="20" y="120" width="80" height="80" fill="#89b4fa" opacity="0.5" rx="2"/>
+      <!-- upper candidate -->
+      <rect x="100" y="40" width="80" height="80" fill="#313244" opacity="0.5" rx="2"/>
+      <text x="140" y="82" fill="#fab387" font-size="10" text-anchor="middle" font-family="Consolas">Yᵢ+1</text>
+      <!-- lower candidate -->
+      <rect x="100" y="120" width="80" height="80" fill="#313244" opacity="0.3" rx="2"/>
+      <text x="140" y="165" fill="#a6e3a1" font-size="10" text-anchor="middle" font-family="Consolas">Yᵢ</text>
+      <!-- midpoint -->
+      <circle cx="140" cy="120" r="5" fill="#f9e2af"/>
+      <text x="150" y="115" fill="#f9e2af" font-size="9" font-family="Georgia">M=(x+1, Yᵢ+0.5)</text>
+      <!-- ideal y at x+1 -->
+      <circle cx="140" cy="103" r="3" fill="#f38ba8"/>
+      <!-- F(M) indicator -->
+      <line x1="140" y1="103" x2="140" y2="120" stroke="#f38ba8" stroke-width="1" stroke-dasharray="2,2"/>
+      <text x="152" y="112" fill="#f38ba8" font-size="9" font-family="Consolas">F(M)&lt;0</text>
+      <text x="152" y="122" fill="#f38ba8" font-size="9" font-family="Consolas">→選Yᵢ</text>
+    </g>
+    <!-- Circle midpoint test -->
+    <g transform="translate(220,0)">
+      <text x="100" y="14" fill="#6c7086" font-size="11" font-family="Consolas" text-anchor="middle">圓（同樣的概念）</text>
+      <g stroke="#313244" stroke-width="0.5">
+        <line x1="20" y1="40" x2="20" y2="200"/><line x1="100" y1="40" x2="100" y2="200"/>
+        <line x1="180" y1="40" x2="180" y2="200"/>
+        <line x1="20" y1="40" x2="200" y2="40"/>
+        <line x1="20" y1="120" x2="200" y2="120"/>
+        <line x1="20" y1="200" x2="200" y2="200"/>
+      </g>
+      <!-- arc -->
+      <path d="M 20,40 Q 100,32 180,120" fill="none" stroke="#f38ba8" stroke-width="1.5" stroke-dasharray="5,4" opacity="0.7"/>
+      <!-- current -->
+      <rect x="20" y="40" width="80" height="80" fill="#89b4fa" opacity="0.5" rx="2"/>
+      <!-- E candidate -->
+      <rect x="100" y="40" width="80" height="80" fill="#313244" opacity="0.5" rx="2"/>
+      <text x="140" y="82" fill="#a6e3a1" font-size="10" text-anchor="middle" font-family="Consolas">E</text>
+      <!-- SE candidate -->
+      <rect x="100" y="120" width="80" height="80" fill="#313244" opacity="0.3" rx="2"/>
+      <text x="140" y="162" fill="#fab387" font-size="10" text-anchor="middle" font-family="Consolas">SE</text>
+      <!-- midpoint -->
+      <circle cx="140" cy="120" r="5" fill="#f9e2af"/>
+      <text x="150" y="115" fill="#f9e2af" font-size="9" font-family="Georgia">M=(x+1, y−0.5)</text>
+      <!-- arc point -->
+      <circle cx="140" cy="88" r="3" fill="#f38ba8"/>
+      <text x="150" y="88" fill="#f38ba8" font-size="9" font-family="Consolas">F(M)&gt;0</text>
+      <text x="150" y="100" fill="#f38ba8" font-size="9" font-family="Consolas">→選SE</text>
+    </g>
+  </svg>
+  <figcaption>左：直線的中點測試 F(M) 判斷｜右：圓的中點測試，結構完全相同，只換了 F</figcaption>
+</div>
+
+<div class="box box-green">
+  <strong>這就是為什麼 d₁d₂ 法重要：</strong><br>
+  把「選哪個像素」這個問題，統一成「對某個 F(x,y) 在中點求符號」。<br>
+  只要能寫出曲線的隱式方程，套用同樣的框架，就能推導出它的 Midpoint 演算法。<br>
+  這個框架推廣到了：直線 → 圓 → 橢圓 → 貝茲曲線 → 任何代數曲線。
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">4</div>跟數值分析的關係</h2>
+
+<h3>關係一：符號判斷（Bisection Method 的本質）</h3>
+
+<p>數值分析找根的二分法：</p>
+<div class="math">
+  <span class="r cmt">// f(a) 和 f(b) 符號相反 → 根在 [a,b] 之間</span>
+  <span class="r">f(a) · f(b) &lt; 0   →   根在 [a, b]</span>
+  <span class="r">取中點 m = (a+b)/2，判斷 f(m) 符號，縮小區間</span>
+</div>
+
+<p>Bresenham 的中點測試：</p>
+<div class="math">
+  <span class="r cmt">// 兩個候選格點之間的中點 M</span>
+  <span class="r">F(M) &gt; 0   →   曲線在 M 的這一側   →   選那一側的格點</span>
+</div>
+
+<p>同樣的概念：<strong>用函數在中間點的符號，判斷目標在哪一側</strong>。
+二分法在連續區間上做，Bresenham 在離散格點上做。</p>
+
+<hr>
+
+<h3>關係二：DDA 和有限差分（Finite Difference）</h3>
+
+<p>Bresenham 的前身是 <strong>DDA（Digital Differential Analyzer）</strong>，
+1950 年代的硬體，直接計算微分方程：</p>
+
+<div class="math">
+  <span class="r cmt">// DDA：把微分方程數值積分</span>
+  <span class="r dim">// 直線 dy/dx = m 的數值解：</span>
+  <span class="r">y(x + Δx) = y(x) + m · Δx</span>
+  <span class="r cmt"></span>
+  <span class="r dim">// 在像素上：Δx = 1，所以</span>
+  <span class="r">y_next = y + m          // 浮點加法，每步一次</span>
+</div>
+
+<p>這就是數值分析的 <strong>Euler 方法</strong>：用差分近似微分。</p>
+<p>DDA 的問題是每步都做浮點運算，在 1960 年代很昂貴。</p>
+<p>Bresenham（1965）的貢獻：把 DDA 的浮點累積替換成整數決策，
+本質上是把「連續的 y 值追蹤」轉成「離散的格點選擇」：</p>
+
+<div class="math">
+  <span class="r hi">DDA：追蹤 y（連續）      → Bresenham：追蹤 err（離散決策）</span>
+  <span class="r">y += m             → err += dy（整數），判斷是否 ≥ dx</span>
+</div>
+
+<hr>
+
+<h3>關係三：增量計算（Incremental Computation）</h3>
+
+<p>兩種方法共用的核心優化技巧：</p>
+<div class="math">
+  <span class="r cmt">// 笨方法：每步重算</span>
+  <span class="r dim">P_i = 2dy·xᵢ − 2dx·Yᵢ + C   // 需要乘法</span>
+  <span class="r cmt"></span>
+  <span class="r cmt">// 聰明方法：只算增量</span>
+  <span class="r">P_{i+1} − P_i = 2dy − 2dx·(Yᵢ₊₁ − Yᵢ)</span>
+  <span class="r hi">P_{i+1} = P_i + 常數           // 只需要加法</span>
+</div>
+
+<p>這個技巧在數值分析叫 <strong>差分法（Method of Differences）</strong>，
+17 世紀 Newton、Gregory 就在用：計算多項式值時，用逐階差分取代重新代入。</p>
+
+<div class="math">
+  <span class="r cmt">// Newton Forward Difference 計算 f(x+h)</span>
+  <span class="r">f(x+h) = f(x) + Δf(x) + Δ²f(x)/2! + ...</span>
+  <span class="r cmt"></span>
+  <span class="r cmt">// Bresenham 的增量更新就是一階差分</span>
+  <span class="r hi">P_{i+1} = P_i + ΔP   （ΔP 是常數，因為 P 是 x 的一次函數）</span>
+</div>
+
+<hr>
+
+<h3>關係四：格點近似（Lattice Point Approximation）</h3>
+
+<p>「哪個整數格點最接近連續曲線」這個問題屬於
+<strong>數論幾何（Geometry of Numbers）</strong> 和
+<strong>Diophantine 近似</strong> 的領域。</p>
+<p>直線的格點問題相對簡單；推廣到代數曲線（圓、橢圓）就是計算幾何的研究對象。
+Bresenham 把它做成了 O(1) 每像素的演算法。</p>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">5</div>歷史脈絡</h2>
+
+<div class="timeline">
+  <div class="tl-item">
+    <div class="tl-year">1940s</div>
+    <div class="tl-line"><div class="tl-dot"></div></div>
+    <div class="tl-body">
+      <div class="tl-name">DDA 硬體</div>
+      <div class="tl-desc">Digital Differential Analyzer。類比/數位混合硬體，用 Euler 方法積分微分方程。直線就是解 dy/dx = m，每步 y += m（浮點）。</div>
+    </div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-year">1965</div>
+    <div class="tl-line"><div class="tl-dot" style="background:#a6e3a1"></div></div>
+    <div class="tl-body">
+      <div class="tl-name" style="color:#a6e3a1">Bresenham 直線演算法</div>
+      <div class="tl-desc">J. E. Bresenham 在 IBM 發表。把 DDA 的浮點累積整數化，用誤差累積法。論文的推導是誤差累積視角，非常工程導向。</div>
+    </div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-year">1967</div>
+    <div class="tl-line"><div class="tl-dot"></div></div>
+    <div class="tl-body">
+      <div class="tl-name">Pitteway 的推廣</div>
+      <div class="tl-desc">M. L. V. Pitteway 重新推導，用幾何距離視角，並推廣到圓錐曲線（圓、橢圓、拋物線）。這是 d₁d₂ / 中點法的前身。</div>
+    </div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-year">1977</div>
+    <div class="tl-line"><div class="tl-dot"></div></div>
+    <div class="tl-body">
+      <div class="tl-name">Bresenham 圓演算法</div>
+      <div class="tl-desc">Bresenham 本人也發表了圓的版本。同樣用整數誤差，但被認為比 Midpoint 版略難理解。</div>
+    </div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-year">1985</div>
+    <div class="tl-line"><div class="tl-dot" style="background:#a6e3a1"></div></div>
+    <div class="tl-body">
+      <div class="tl-name" style="color:#a6e3a1">Midpoint Circle / Ellipse Algorithm</div>
+      <div class="tl-desc">Van Aken、Foley 等人在計算機圖形學教科書（FVFH）中系統化 Midpoint 方法，統一了直線和曲線的推導框架。這才是現代教科書的標準版本。</div>
+    </div>
+  </div>
+</div>
+
+<div class="box box-gray">
+  <strong>有趣的歷史細節：</strong><br>
+  Bresenham 1965 年論文的推導其實很接近誤差累積法，不是教科書現在教的 d₁d₂ 版。
+  d₁d₂ / 中點法是後人重新詮釋和推廣的結果。
+  所以你筆記裡的推導方式其實是「現代版」，比原始論文更有系統。
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">6</div>要能「自己發現」d₁d₂ 需要的知識地圖</h2>
+
+<div class="kmap">
+
+  <div class="kmap-row">
+    <div class="kmap-icon" style="background:#313244; color:#89b4fa">必</div>
+    <div class="kmap-body">
+      <div class="kmap-title">隱式曲線 F(x,y) = 0</div>
+      <div class="kmap-desc">
+        知道任何曲線都可以寫成「F(x,y) 等於零的點的集合」。<br>
+        直線：F = dy·x − dx·y + C。圓：F = x² + y² − r²。<br>
+        更重要的是：F > 0 和 F < 0 代表在曲線的不同側。<br>
+        <em>來源：解析幾何、微積分的隱函數定理。</em>
+      </div>
+    </div>
+  </div>
+
+  <div class="kmap-row">
+    <div class="kmap-icon" style="background:#313244; color:#89b4fa">必</div>
+    <div class="kmap-body">
+      <div class="kmap-title">中點測試的模式</div>
+      <div class="kmap-desc">
+        「面對兩個選項 A 和 B，在它們中間代入 F，判斷曲線偏向哪側，就選那側。」<br>
+        這個模式不是直覺能想到的，需要見過至少一次（才能知道這是個可用的工具）。<br>
+        <em>來源：計算幾何、Foley 等人的 Computer Graphics 教科書。</em>
+      </div>
+    </div>
+  </div>
+
+  <div class="kmap-row">
+    <div class="kmap-icon" style="background:#313244; color:#f9e2af">加</div>
+    <div class="kmap-body">
+      <div class="kmap-title">增量計算的意識</div>
+      <div class="kmap-desc">
+        知道「如果某個量每步只差一個常數，就不用重算，只做加法」。<br>
+        這是一般的演算法設計直覺，不需要特別的數學背景。<br>
+        <em>來源：任何演算法入門課都會建立這個直覺。</em>
+      </div>
+    </div>
+  </div>
+
+  <div class="kmap-row">
+    <div class="kmap-icon" style="background:#313244; color:#f9e2af">加</div>
+    <div class="kmap-body">
+      <div class="kmap-title">整數代替浮點的技巧</div>
+      <div class="kmap-desc">
+        知道「乘以分母可以消掉除法，不影響正負號的比較」。<br>
+        這是很基本的代數操作，但需要有意識地去用。<br>
+        <em>來源：基礎代數。</em>
+      </div>
+    </div>
+  </div>
+
+  <div class="kmap-row">
+    <div class="kmap-icon" style="background:#181825; color:#6c7086">選</div>
+    <div class="kmap-body">
+      <div class="kmap-title">數值分析（非必要，但有幫助）</div>
+      <div class="kmap-desc">
+        知道 DDA / Euler 方法，能幫你理解「Bresenham 在改進什麼」。<br>
+        知道差分法（Newton Forward Difference），能幫你理解增量計算的數學基礎。<br>
+        知道二分法，能幫你理解中點測試的更深連結。<br>
+        <em>這些是「理解更深」的背景，不是「發現演算法」的必要條件。</em>
+      </div>
+    </div>
+  </div>
+
+  <div class="kmap-row">
+    <div class="kmap-icon" style="background:#181825; color:#6c7086">選</div>
+    <div class="kmap-body">
+      <div class="kmap-title">數論幾何（更深層的理論）</div>
+      <div class="kmap-desc">
+        「連續曲線上最近的整數格點」是數論幾何的問題。<br>
+        這個連結更多是事後理解，不是發現演算法的路徑。<br>
+        <em>非常 optional，屬於理論電腦科學 / 數學的範疇。</em>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">7</div>兩種方法各自適合的場景</h2>
+
+<table>
+  <tr><th>場景</th><th>建議用哪種</th><th>原因</th></tr>
+  <tr>
+    <td>第一次學直線柵格化</td>
+    <td style="color:#89b4fa">誤差累積法</td>
+    <td>直覺，容易和程式碼對應</td>
+  </tr>
+  <tr>
+    <td>要推廣到圓和橢圓</td>
+    <td style="color:#a6e3a1">d₁d₂ / 中點法</td>
+    <td>框架統一，可直接套用</td>
+  </tr>
+  <tr>
+    <td>要向別人解釋「為什麼這樣是對的」</td>
+    <td style="color:#a6e3a1">d₁d₂ / 中點法</td>
+    <td>幾何意義清晰，選最近像素的理由顯然</td>
+  </tr>
+  <tr>
+    <td>要理解程式碼在做什麼</td>
+    <td style="color:#89b4fa">誤差累積法</td>
+    <td>err 的物理意義（欠了多少）直接對應迴圈狀態</td>
+  </tr>
+  <tr>
+    <td>要推廣到任意隱式代數曲線</td>
+    <td style="color:#a6e3a1">d₁d₂ / 中點法</td>
+    <td>只需要換 F(x,y) 的定義，其餘框架不變</td>
+  </tr>
+  <tr>
+    <td>實作效能最佳化</td>
+    <td>兩者等價</td>
+    <td>最終都化成同樣的整數加法迴圈</td>
+  </tr>
+</table>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">總結</div></h2>
+
+<div class="box box-blue">
+  <strong>兩種方法的差異不在結果，在問題的提法。</strong><br><br>
+  誤差累積法問的是：「現在的狀態是什麼？下一步怎麼修正？」<br>
+  d₁d₂ 法問的是：「哪個選項更接近正確答案？」<br><br>
+  前者的語言是演算法和狀態機；後者的語言是幾何和最佳化。<br><br>
+  理解兩種視角，才能知道「當曲線從直線換成圓的時候，改變的只有 F，其餘不變」。
+  這個遷移能力，才是學 d₁d₂ 法的真正收穫。
+</div>
+
+</body>
+</html>

@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Bresenham — d1 d2 距離法推導</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #1e1e2e; color: #cdd6f4;
+  font-family: 'Georgia', serif; font-size: 15px;
+  padding: 32px 20px; line-height: 1.9;
+  max-width: 860px; margin: 0 auto;
+}
+h1 { color: #89b4fa; font-size: 1.45em; margin-bottom: 6px; }
+.tagline { color: #6c7086; margin-bottom: 36px; font-size: 0.88em; }
+
+.sec { margin-bottom: 36px; }
+.sec-title {
+  font-family: 'Consolas', monospace; font-size: 1em;
+  color: #cba6f7; letter-spacing: 0.05em;
+  padding: 10px 0; border-bottom: 1px solid #313244;
+  margin-bottom: 20px;
+  display: flex; align-items: center; gap: 12px;
+}
+.sec-num {
+  background: #cba6f7; color: #1e1e2e;
+  font-weight: bold; border-radius: 50%;
+  width: 28px; height: 28px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.85em;
+}
+p { margin-bottom: 12px; }
+strong { color: #f9e2af; }
+
+.math {
+  background: #181825; border: 1px solid #313244;
+  border-radius: 6px; padding: 16px 22px; margin: 14px 0;
+  font-family: 'Consolas', monospace; font-size: 0.88em;
+  line-height: 2.3;
+}
+.math .row { display: block; }
+.math .cmt { color: #6c7086; }
+.math .hi  { color: #f9e2af; font-weight: bold; }
+.math .ok  { color: #a6e3a1; }
+.math .em  { color: #f38ba8; }
+.math .kw  { color: #cba6f7; }
+.math .dim { color: #585b70; }
+.math .box {
+  display: inline-block;
+  border: 1px solid #f9e2af; border-radius: 4px;
+  padding: 1px 8px; color: #f9e2af; margin: 2px 0;
+}
+
+.box-note {
+  border-radius: 6px; padding: 13px 18px; margin: 14px 0;
+  font-size: 0.9em; line-height: 1.8;
+}
+.box-blue  { background: #1e1e2e; border-left: 4px solid #89b4fa; }
+.box-green { background: #1e1e2e; border-left: 4px solid #a6e3a1; color: #a6e3a1; }
+.box-red   { background: #1e1e2e; border-left: 4px solid #f38ba8; }
+.box-yellow{ background: #1e1e2e; border-left: 4px solid #f9e2af; }
+
+.fig { margin: 20px auto; text-align: center; }
+.fig figcaption { color: #6c7086; font-size: 0.82em; margin-top: 8px; }
+
+table { width: 100%; border-collapse: collapse;
+  font-family: 'Consolas', monospace; font-size: 0.83em; margin: 14px 0; }
+th { background: #181825; color: #89b4fa; padding: 8px 12px;
+  text-align: left; border-bottom: 2px solid #313244; }
+td { padding: 7px 12px; border-bottom: 1px solid #1e1e2e; }
+tr:hover td { background: #1e1e2e; }
+.hi-row td { background: #1e1e2e; }
+
+hr { border: none; border-top: 1px solid #313244; margin: 30px 0; }
+
+.code {
+  background: #0d0d14; border: 1px solid #313244; border-radius: 8px;
+  padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em;
+  line-height: 2.1; margin: 14px 0;
+}
+.code .cmt { color: #6c7086; }
+.code .kw  { color: #cba6f7; }
+.code .val { color: #fab387; }
+.code .ok  { color: #a6e3a1; }
+.code .em  { color: #f38ba8; }
+.code .hi  { color: #f9e2af; }
+</style>
+</head>
+<body>
+
+<nav style="font-family:'Consolas',monospace;font-size:0.78em;color:#6c7086;padding:14px 0;border-bottom:1px solid #313244;margin-bottom:32px;display:flex;align-items:center;gap:10px;">
+  <a href="../index.html" style="color:#6c7086;text-decoration:none;">軟體光柵化</a>
+  <span style="color:#313244">/</span>
+  <span style="color:#cdd6f4">Ch05 — 推導二：d₁d₂ 距離法</span>
+  <span style="margin-left:auto;display:flex;gap:16px;">
+    <a href="ch04_bresenham_plain.html" style="color:#6c7086;text-decoration:none;">← Ch04</a>
+    <a href="ch06_bresenham_octants.html" style="color:#6c7086;text-decoration:none;">Ch06 →</a>
+  </span>
+</nav>
+
+<h1>Bresenham 直線演算法 — d₁ d₂ 距離比較法</h1>
+<p class="tagline">按照原始論文的推導脈絡：定義決策參數 P，用增量更新取代重複計算</p>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-title"><div class="sec-num">1</div>問題設定（限制條件：0 ≤ m ≤ 1）</div>
+
+  <p>先處理斜率在 0 到 1 之間的情況（dx ≥ dy ≥ 0，往右往上）。</p>
+  <p>直線方程：<strong>y = mx + b</strong>，其中 m = dy/dx。</p>
+  <p>因為 0 ≤ m ≤ 1，所以：</p>
+  <ul style="margin: 8px 0 8px 24px; line-height: 2;">
+    <li>每步 x 必走 +1（x 是主軸）</li>
+    <li>y 要嘛不動，要嘛 +1</li>
+  </ul>
+
+  <div class="box-note box-blue">
+    在 x = x<sub>i+1</sub> 這個位置，理想直線的 y 值 = m(x<sub>i+1</sub>) + b，
+    落在 Y<sub>i</sub> 和 Y<sub>i+1</sub> 之間（因為 m ≤ 1）。<br>
+    問題變成：選 <strong>Y<sub>i</sub></strong> 還是 <strong>Y<sub>i+1</sub> = Y<sub>i</sub>+1</strong>？
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-title"><div class="sec-num">2</div>定義 d₁、d₂：理想線到兩個候選像素的距離</div>
+
+  <div class="fig">
+    <svg width="420" height="230" viewBox="0 0 420 230">
+      <!-- Grid -->
+      <g stroke="#313244" stroke-width="0.5">
+        <line x1="60" y1="40" x2="60" y2="200"/>
+        <line x1="180" y1="40" x2="180" y2="200"/>
+        <line x1="300" y1="40" x2="300" y2="200"/>
+        <line x1="60" y1="40" x2="300" y2="40"/>
+        <line x1="60" y1="120" x2="300" y2="120"/>
+        <line x1="60" y1="200" x2="300" y2="200"/>
+      </g>
+
+      <!-- Current pixel (xi, Yi) - lit -->
+      <rect x="60" y="120" width="120" height="80" fill="#89b4fa" opacity="0.5" rx="2"/>
+      <text x="120" y="165" fill="#89b4fa" font-size="12" text-anchor="middle" font-family="Consolas">(xᵢ, Yᵢ)</text>
+
+      <!-- Upper candidate -->
+      <rect x="180" y="40" width="120" height="80" fill="#313244" opacity="0.7" rx="2"/>
+      <text x="240" y="85" fill="#fab387" font-size="12" text-anchor="middle" font-family="Consolas">(xᵢ₊₁, Yᵢ₊₁)</text>
+
+      <!-- Lower candidate -->
+      <rect x="180" y="120" width="120" height="80" fill="#313244" opacity="0.5" rx="2"/>
+      <text x="240" y="165" fill="#a6e3a1" font-size="12" text-anchor="middle" font-family="Consolas">(xᵢ₊₁, Yᵢ)</text>
+
+      <!-- Ideal line -->
+      <line x1="60" y1="190" x2="380" y2="30" stroke="#f38ba8" stroke-width="1.8" stroke-dasharray="6,4" opacity="0.7"/>
+
+      <!-- Ideal y at xi+1 -->
+      <line x1="240" y1="105" x2="240" y2="160" stroke="#f9e2af" stroke-width="1.5" stroke-dasharray="3,3"/>
+      <circle cx="240" cy="105" r="4" fill="#f38ba8"/>
+
+      <!-- d1 arrow (ideal to lower) -->
+      <line x1="300" y1="105" x2="300" y2="160" stroke="#a6e3a1" stroke-width="1.5" marker-end="url(#a1)"/>
+      <text x="312" y="138" fill="#a6e3a1" font-size="12" font-family="Consolas">d₁</text>
+
+      <!-- d2 arrow (ideal to upper) -->
+      <line x1="350" y1="105" x2="350" y2="80" stroke="#fab387" stroke-width="1.5" marker-end="url(#a2)"/>
+      <text x="360" y="96" fill="#fab387" font-size="12" font-family="Consolas">d₂</text>
+
+      <!-- horizontal guide lines -->
+      <line x1="240" y1="160" x2="360" y2="160" stroke="#313244" stroke-width="0.5" stroke-dasharray="3,3"/>
+      <line x1="240" y1="80" x2="370" y2="80" stroke="#313244" stroke-width="0.5" stroke-dasharray="3,3"/>
+
+      <!-- annotations -->
+      <text x="240" y="96" fill="#f38ba8" font-size="10" font-family="Georgia" text-anchor="middle">y = m·xᵢ₊₁ + b</text>
+
+      <defs>
+        <marker id="a1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#a6e3a1"/>
+        </marker>
+        <marker id="a2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#fab387"/>
+        </marker>
+      </defs>
+    </svg>
+    <figcaption>d₁ = 理想 y 到下方像素 Yᵢ 的距離；d₂ = 理想 y 到上方像素 Yᵢ₊₁ 的距離</figcaption>
+  </div>
+
+  <p>設 x<sub>i+1</sub> 位置的理想 y 值 = m(x<sub>i+1</sub>) + b，寫出 d₁ 和 d₂：</p>
+
+  <div class="math">
+    <span class="row cmt">// d₁：理想 y 到「下方候選像素」的距離</span>
+    <span class="row">d₁ = [m(xᵢ₊₁) + b] − Yᵢ</span>
+    <span class="row cmt"></span>
+    <span class="row cmt">// d₂：「上方候選像素」到理想 y 的距離</span>
+    <span class="row">d₂ = Yᵢ₊₁ − [m(xᵢ₊₁) + b]</span>
+    <span class="row dim">    = (Yᵢ + 1) − [m(xᵢ₊₁) + b]   // 因為 Yᵢ₊₁ = Yᵢ + 1</span>
+  </div>
+
+  <div class="box-note box-blue">
+    <strong>決策規則很直接：</strong><br>
+    d₁ &lt; d₂ → 理想線靠近下方 → 選 Yᵢ（不升 y）<br>
+    d₁ &gt; d₂ → 理想線靠近上方 → 選 Yᵢ₊₁（升 y）<br>
+    等價於判斷 <strong>d₁ − d₂ 的正負</strong>。
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-title"><div class="sec-num">3</div>計算 d₁ − d₂（還有浮點數）</div>
+
+  <div class="math">
+    <span class="row">d₁ − d₂ = [m(xᵢ₊₁) + b − Yᵢ] − [(Yᵢ+1) − m(xᵢ₊₁) − b]</span>
+    <span class="row">        = 2m(xᵢ₊₁) + 2b − 2Yᵢ − 1</span>
+    <span class="row dim">        // 代入 xᵢ₊₁ = xᵢ + 1</span>
+    <span class="row">        = 2m(xᵢ+1) + 2b − 2Yᵢ − 1</span>
+    <span class="row">        = 2mxᵢ + 2m + 2b − 2Yᵢ − 1</span>
+  </div>
+
+  <p>代入 m = dy/dx：</p>
+
+  <div class="math">
+    <span class="row">d₁ − d₂ = 2·(dy/dx)·xᵢ + 2·(dy/dx) + 2b − 2Yᵢ − 1</span>
+    <span class="row dim">         // 兩側 × dx（dx > 0，不改變正負）</span>
+    <span class="row hi">dx(d₁ − d₂) = 2dy·xᵢ − 2dx·Yᵢ + 2dy + dx(2b − 1) ← ④式</span>
+  </div>
+
+  <p>現在右側全是整數（dx, dy, xᵢ, Yᵢ 都是整數；b 還有問題，後面處理）。</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-title"><div class="sec-num">4</div>定義決策參數 Pᵢ</div>
+
+  <p>把 ④式右側拆成「隨 i 變動的部分」和「常數 C」：</p>
+
+  <div class="math">
+    <span class="row">令 C = 2dy + dx(2b − 1)  <span class="cmt">// 常數，整個迴圈不變</span></span>
+    <span class="row cmt"></span>
+    <span class="row hi">Pᵢ = dx(d₁ − d₂) = 2dy·xᵢ − 2dx·Yᵢ + C</span>
+    <span class="row cmt"></span>
+    <span class="row cmt">// 決策規則換成：</span>
+    <span class="row em">Pᵢ &lt; 0  →  d₁ &lt; d₂  →  選 Yᵢ（不升 y）</span>
+    <span class="row ok">Pᵢ &gt; 0  →  d₁ &gt; d₂  →  選 Yᵢ₊₁（升 y）</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-title"><div class="sec-num">5</div>推導增量公式（核心！）</div>
+
+  <p>Pᵢ 的計算需要 xᵢ 和 Yᵢ，每步重算太浪費。
+  用 Pᵢ₊₁ − Pᵢ 推出增量，只做一次加法。</p>
+
+  <div class="math">
+    <span class="row">Pᵢ₊₁ = 2dy·xᵢ₊₁ − 2dx·Yᵢ₊₁ + C</span>
+    <span class="row cmt"></span>
+    <span class="row">Pᵢ₊₁ − Pᵢ = 2dy·[xᵢ₊₁ − xᵢ] − 2dx·[Yᵢ₊₁ − Yᵢ]</span>
+    <span class="row dim">           // xᵢ₊₁ − xᵢ = 1（每步 x 必走）</span>
+    <span class="row hi">Pᵢ₊₁ − Pᵢ = 2dy − 2dx·(Yᵢ₊₁ − Yᵢ)</span>
+  </div>
+
+  <p><strong>Yᵢ₊₁ − Yᵢ</strong> 就是「y 有沒有升格」，只有兩種值：</p>
+
+  <hr>
+
+  <p><strong>Case 1：Pᵢ &lt; 0，選 Yᵢ（y 不動）</strong><br>
+  Yᵢ₊₁ = Yᵢ，所以 Yᵢ₊₁ − Yᵢ = 0</p>
+  <div class="math">
+    <span class="row em">Pᵢ₊₁ = Pᵢ + 2dy − 2dx·0</span>
+    <span class="row em box">Pᵢ₊₁ = Pᵢ + 2dy</span>
+  </div>
+
+  <p><strong>Case 2：Pᵢ &gt; 0，選 Yᵢ₊₁（y 升一格）</strong><br>
+  Yᵢ₊₁ = Yᵢ + 1，所以 Yᵢ₊₁ − Yᵢ = 1</p>
+  <div class="math">
+    <span class="row ok">Pᵢ₊₁ = Pᵢ + 2dy − 2dx·1</span>
+    <span class="row ok box">Pᵢ₊₁ = Pᵢ + 2dy − 2dx</span>
+  </div>
+
+  <div class="box-note box-green">
+    每步只需要一次加法。沒有乘法，沒有浮點數，沒有除法。
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-title"><div class="sec-num">6</div>計算初始值 P₀</div>
+
+  <p>起點 (x₀, y₀) 在直線上，所以 b = y₀ − m·x₀ = y₀ − (dy/dx)·x₀。</p>
+  <p>代入 P₀（i = 0 時的值，在第一步畫完 (x₀, y₀) 後，用來判斷下一步）：</p>
+
+  <div class="math">
+    <span class="row">P₀ = 2dy·x₀ − 2dx·y₀ + C</span>
+    <span class="row dim">   // 展開 C = 2dy + dx(2b − 1)</span>
+    <span class="row">   = 2dy·x₀ − 2dx·y₀ + 2dy + 2dx·b − dx</span>
+    <span class="row dim">   // 代入 b = y₀ − (dy/dx)·x₀，所以 2dx·b = 2dx·y₀ − 2dy·x₀</span>
+    <span class="row">   = 2dy·x₀ − 2dx·y₀ + 2dy + (2dx·y₀ − 2dy·x₀) − dx</span>
+    <span class="row dim">   // 消掉 2dy·x₀ 和 2dx·y₀</span>
+    <span class="row hi">P₀ = 2dy − dx</span>
+  </div>
+
+  <div class="box-note box-yellow">
+    <strong>P₀ = 2dy − dx</strong><br>
+    起點完全消掉了！初始值只取決於 dx 和 dy，跟起點座標無關。
+    這是因為我們從 (x₀, y₀) 這個線上的點出發，b 的部分剛好被消掉。
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-title"><div class="sec-num">7</div>完整演算法（slope 0~1 版）</div>
+
+  <div class="math">
+    <span class="row cmt">// 初始化</span>
+    <span class="row">P = 2dy − dx     <span class="cmt">// P₀</span></span>
+    <span class="row cmt"></span>
+    <span class="row kw">loop（x 從 x₀ 走到 x₁）：</span>
+    <span class="row">  畫 (x, y)</span>
+    <span class="row">  x += 1         <span class="cmt">// x 每步必走</span></span>
+    <span class="row cmt"></span>
+    <span class="row em">  if P &lt; 0:      <span class="cmt">// d₁ &lt; d₂，靠近下方，y 不動</span></span>
+    <span class="row em">    P += 2dy</span>
+    <span class="row ok">  else:          <span class="cmt">// d₁ &gt; d₂，靠近上方，y 升一格</span></span>
+    <span class="row ok">    y += 1</span>
+    <span class="row ok">    P += 2dy − 2dx</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-title"><div class="sec-num">8</div>跑一遍數字驗證：(0,0) → (7,3)</div>
+
+  <p>dx=7, dy=3，P₀ = 2×3 − 7 = <strong>−1</strong></p>
+
+  <table>
+    <tr>
+      <th>步</th><th>畫</th><th>P</th>
+      <th>P &lt; 0？</th><th>動作</th><th>新 P</th>
+    </tr>
+    <tr>
+      <td>0</td><td style="color:#89b4fa">(0,0)</td><td style="color:#f38ba8">−1</td>
+      <td style="color:#f38ba8">是</td><td>y 不動</td>
+      <td>−1 + 6 = <strong>5</strong></td>
+    </tr>
+    <tr class="hi-row">
+      <td>1</td><td style="color:#89b4fa">(1,0)</td><td style="color:#a6e3a1">5</td>
+      <td style="color:#a6e3a1">否</td><td style="color:#a6e3a1">y++ → y=1</td>
+      <td>5 + 6 − 14 = <strong>−3</strong></td>
+    </tr>
+    <tr>
+      <td>2</td><td style="color:#89b4fa">(2,1)</td><td style="color:#f38ba8">−3</td>
+      <td style="color:#f38ba8">是</td><td>y 不動</td>
+      <td>−3 + 6 = <strong>3</strong></td>
+    </tr>
+    <tr class="hi-row">
+      <td>3</td><td style="color:#89b4fa">(3,1)</td><td style="color:#a6e3a1">3</td>
+      <td style="color:#a6e3a1">否</td><td style="color:#a6e3a1">y++ → y=2</td>
+      <td>3 + 6 − 14 = <strong>−5</strong></td>
+    </tr>
+    <tr>
+      <td>4</td><td style="color:#89b4fa">(4,2)</td><td style="color:#f38ba8">−5</td>
+      <td style="color:#f38ba8">是</td><td>y 不動</td>
+      <td>−5 + 6 = <strong>1</strong></td>
+    </tr>
+    <tr class="hi-row">
+      <td>5</td><td style="color:#89b4fa">(5,2)</td><td style="color:#a6e3a1">1</td>
+      <td style="color:#a6e3a1">否</td><td style="color:#a6e3a1">y++ → y=3</td>
+      <td>1 + 6 − 14 = <strong>−7</strong></td>
+    </tr>
+    <tr>
+      <td>6</td><td style="color:#89b4fa">(6,3)</td><td style="color:#f38ba8">−7</td>
+      <td style="color:#f38ba8">是</td><td>y 不動</td>
+      <td>—</td>
+    </tr>
+    <tr>
+      <td>7</td><td style="color:#89b4fa">(7,3)</td><td colspan="4" style="color:#a6e3a1">抵達終點 ✓</td>
+    </tr>
+  </table>
+
+  <p>結果：(0,0)(1,0)(2,1)(3,1)(4,2)(5,2)(6,3)(7,3) — 正確。</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-title"><div class="sec-num">9</div>對應到程式碼的版本</div>
+
+  <p>程式碼用的是通用版（任意斜率、任意方向），把上面的 P 做了一個等價變換：</p>
+
+  <div class="math">
+    <span class="row cmt">// 程式碼的 err 和 P 的關係</span>
+    <span class="row">err = −P / 2 + (dx − dy) / 2   <span class="cmt">// 等比例縮放 + 移位</span></span>
+    <span class="row dim">// 等價，只是換個基準點讓兩軸對稱</span>
+    <span class="row cmt"></span>
+    <span class="row cmt">// 程式碼的初始值</span>
+    <span class="row">err = dx − dy   <span class="cmt">// 對應 P₀ = 2dy − dx（符號相反）</span></span>
+    <span class="row cmt"></span>
+    <span class="row cmt">// 程式碼的判斷</span>
+    <span class="row">e2 = 2 × err</span>
+    <span class="row em">if e2 &gt; −dy → x 走   <span class="cmt">// 對稱地處理 x 軸</span></span>
+    <span class="row ok">if e2 &lt; dx  → y 走   <span class="cmt">// 對應 P &lt; 0 的條件</span></span>
+  </div>
+
+  <div class="box-note box-blue">
+    程式碼把「x 方向」和「y 方向」都做了同樣的 d₁/d₂ 分析，
+    合併成兩個獨立的 if，讓單一迴圈同時處理任意斜率。
+    兩個 if 可以<strong>同時觸發</strong>（斜率接近 1 的步驟，x 和 y 都走）。
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-title"><div class="sec-num">互動</div>d₁ d₂ 幾何演示</div>
+
+  <p>同樣以 (0,0) → (7,3) 為例。每一步，黃點是理想線的位置，<span style="color:#94e2d5">青色線</span> 是 d₁（往下到已選格），<span style="color:#cba6f7">紫色線</span> 是 d₂（往上到另一格）。選 d₁ 較小的那個。</p>
+
+<style>
+.d1d2-layout{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;margin:16px 0}
+.d1d2-panel{flex:1;min-width:220px;font-family:'Consolas',monospace;font-size:0.81em}
+.d1-sec{background:#181825;border:1px solid #313244;border-radius:6px;padding:12px 14px;margin-bottom:10px}
+.d1-sec h4{color:#89b4fa;margin-bottom:10px;font-size:0.88em}
+.d1-vars{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.d1-var{background:#1e1e2e;border-radius:5px;padding:6px 10px}
+.d1-lbl{color:#6c7086;font-size:0.72em;margin-bottom:1px}
+.d1-val{font-size:1em;font-weight:bold;color:#a6e3a1}
+.d1-ctrl{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.d1-ctrl button{padding:6px 11px;border:none;border-radius:5px;cursor:pointer;font-family:inherit;font-size:0.82em}
+.d1-step{text-align:center;color:#6c7086;font-size:0.8em;margin-bottom:6px}
+.d1-decide{margin-top:8px;padding:8px 10px;border-radius:5px;background:#1e1e2e;font-size:0.82em;line-height:1.8}
+</style>
+
+<div class="d1d2-layout">
+  <div>
+    <canvas id="d1d2-canvas" width="380" height="220" style="border:1px solid #313244;background:#181825;display:block"></canvas>
+    <div style="display:flex;gap:14px;margin-top:8px;font-size:0.75em;flex-wrap:wrap">
+      <span style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:12px;height:12px;background:#89b4fa;border-radius:2px"></span>已選像素</span>
+      <span style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:12px;height:12px;background:#313244;border-radius:2px;border:1px solid #585b70"></span>落選候選</span>
+      <span style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:6px;height:6px;background:#f9e2af;border-radius:50%"></span>理想點</span>
+      <span style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:14px;height:3px;background:#94e2d5"></span>d₁</span>
+      <span style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:14px;height:3px;background:#cba6f7"></span>d₂</span>
+    </div>
+  </div>
+
+  <div class="d1d2-panel">
+    <div class="d1-sec">
+      <h4>當前數值</h4>
+      <div class="d1-vars">
+        <div class="d1-var"><div class="d1-lbl">x</div><div class="d1-val" id="d1-x">0</div></div>
+        <div class="d1-var"><div class="d1-lbl">y_ideal (mx+b)</div><div class="d1-val" id="d1-yi">0.000</div></div>
+        <div class="d1-var"><div class="d1-lbl">d₁ = y_ideal − Y</div><div class="d1-val" id="d1-d1" style="color:#94e2d5">0.000</div></div>
+        <div class="d1-var"><div class="d1-lbl">d₂ = Y+1 − y_ideal</div><div class="d1-val" id="d1-d2" style="color:#cba6f7">0.000</div></div>
+      </div>
+      <div class="d1-decide" id="d1-decide">—</div>
+    </div>
+    <div class="d1-sec">
+      <div class="d1-step" id="d1-step">步驟 0 / 8</div>
+      <div class="d1-ctrl">
+        <button id="d1-prev" style="background:#45475a;color:#cdd6f4">◀</button>
+        <button id="d1-next" style="background:#89b4fa;color:#1e1e2e;font-weight:bold">下一步 ▶</button>
+        <button id="d1-play" style="background:#a6e3a1;color:#1e1e2e;font-weight:bold">▶ 播放</button>
+        <button id="d1-reset" style="background:#f38ba8;color:#1e1e2e">重置</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+const COLS=9,ROWS=5,CELL=36,OX=10,OY=10;
+const P1={x:0,y:0},P2={x:7,y:3};
+const DX=P2.x-P1.x,DY=P2.y-P1.y;
+const M=DY/DX;
+
+function computeSteps(){
+  // Use Bresenham to get the actual chosen pixels, then compute d1/d2
+  let x=P1.x,y=P1.y,err=DX-DY;
+  const s=[];
+  while(true){
+    const yi=P1.y+(x-P1.x)*M; // ideal y at this x
+    const d1=yi-y;             // distance DOWN to chosen pixel
+    const d2=1-d1;             // distance UP to next pixel
+    const P=DX*(d1-d2);       // decision parameter
+    s.push({x,y,yi,d1,d2,P,chose:y,other:d1>0&&y+1<=P2.y?y+1:null});
+    if(x===P2.x&&y===P2.y)break;
+    const e2=2*err;
+    const mx=e2>-DY,my=e2<DX;
+    if(mx){err-=DY;x+=1;}
+    if(my){err+=DX;y+=1;}
+  }
+  return s;
+}
+const STEPS=computeSteps();
+let cur=0,timer=null;
+
+const cv=document.getElementById('d1d2-canvas');
+const ctx=cv.getContext('2d');
+
+function cx(c){return OX+c*CELL;}
+function cy(r){return OY+r*CELL;}
+
+function draw(){
+  ctx.clearRect(0,0,cv.width,cv.height);
+  ctx.strokeStyle='#313244';ctx.lineWidth=0.5;
+  for(let c=0;c<=COLS;c++){ctx.beginPath();ctx.moveTo(cx(c),OY);ctx.lineTo(cx(c),OY+ROWS*CELL);ctx.stroke();}
+  for(let r=0;r<=ROWS;r++){ctx.beginPath();ctx.moveTo(OX,cy(r));ctx.lineTo(OX+COLS*CELL,cy(r));ctx.stroke();}
+  // ideal line
+  ctx.save();ctx.strokeStyle='rgba(243,139,168,0.35)';ctx.lineWidth=1.5;ctx.setLineDash([4,4]);
+  ctx.beginPath();ctx.moveTo(cx(P1.x),cy(P1.y));ctx.lineTo(cx(P2.x),cy(P2.y));ctx.stroke();ctx.restore();
+
+  const sc=STEPS[cur];
+  // past pixels
+  for(let i=0;i<cur;i++){
+    const s=STEPS[i];
+    ctx.fillStyle='rgba(137,180,250,0.6)';
+    ctx.fillRect(cx(s.x)+1,cy(s.y)+1,CELL-2,CELL-2);
+    ctx.fillStyle='rgba(30,30,46,0.85)';ctx.font='8px Consolas';ctx.textAlign='center';
+    ctx.fillText(s.x+','+s.y,cx(s.x)+CELL/2,cy(s.y)+CELL/2+3);
+  }
+  // current step: show both candidates
+  if(sc.other!==null&&cur<STEPS.length-1){
+    // loser candidate (dimmed)
+    ctx.fillStyle='rgba(88,91,112,0.3)';
+    ctx.strokeStyle='rgba(88,91,112,0.5)';ctx.lineWidth=1;ctx.setLineDash([]);
+    ctx.fillRect(cx(sc.x)+1,cy(sc.other)+1,CELL-2,CELL-2);
+    ctx.strokeRect(cx(sc.x)+1,cy(sc.other)+1,CELL-2,CELL-2);
+  }
+  // chosen pixel
+  ctx.fillStyle=cur===STEPS.length-1?'rgba(166,227,161,0.85)':'rgba(245,194,231,0.75)';
+  ctx.fillRect(cx(sc.x)+1,cy(sc.chose)+1,CELL-2,CELL-2);
+  ctx.fillStyle='#1e1e2e';ctx.font='bold 8px Consolas';ctx.textAlign='center';
+  ctx.fillText(sc.x+','+sc.chose,cx(sc.x)+CELL/2,cy(sc.chose)+CELL/2+3);
+
+  // ideal point
+  const xScreen=cx(sc.x)+CELL/2;
+  const yIdealScreen=OY+sc.yi*CELL;
+  // d1 line (teal) from ideal point UP to chosen pixel top-ish (it's the floor)
+  const yChoseCenter=cy(sc.chose)+CELL/2;
+  ctx.strokeStyle='#94e2d5';ctx.lineWidth=2.5;ctx.setLineDash([]);
+  ctx.beginPath();ctx.moveTo(xScreen,yIdealScreen);ctx.lineTo(xScreen,cy(sc.chose));ctx.stroke();
+  // d1 arrowhead
+  ctx.fillStyle='#94e2d5';
+  ctx.beginPath();ctx.moveTo(xScreen-4,cy(sc.chose)+6);ctx.lineTo(xScreen+4,cy(sc.chose)+6);ctx.lineTo(xScreen,cy(sc.chose));ctx.fill();
+  // d2 line (purple) from ideal point DOWN to other pixel
+  if(sc.other!==null&&cur<STEPS.length-1){
+    ctx.strokeStyle='#cba6f7';ctx.lineWidth=2.5;
+    ctx.beginPath();ctx.moveTo(xScreen,yIdealScreen);ctx.lineTo(xScreen,cy(sc.other+1));ctx.stroke();
+    ctx.fillStyle='#cba6f7';
+    ctx.beginPath();ctx.moveTo(xScreen-4,cy(sc.other+1)-6);ctx.lineTo(xScreen+4,cy(sc.other+1)-6);ctx.lineTo(xScreen,cy(sc.other+1));ctx.fill();
+    // labels
+    const midD1=(yIdealScreen+cy(sc.chose))/2;
+    const midD2=(yIdealScreen+cy(sc.other+1))/2;
+    ctx.fillStyle='#94e2d5';ctx.font='bold 9px Consolas';ctx.textAlign='left';
+    ctx.fillText('d₁',xScreen+5,midD1+3);
+    ctx.fillStyle='#cba6f7';
+    ctx.fillText('d₂',xScreen+5,midD2+3);
+  }
+  // ideal dot
+  ctx.fillStyle='#f9e2af';
+  ctx.beginPath();ctx.arc(xScreen,yIdealScreen,4,0,Math.PI*2);ctx.fill();
+
+  ctx.fillStyle='#89b4fa';ctx.font='bold 10px Consolas';ctx.textAlign='center';
+  ctx.fillText('S',cx(P1.x)+CELL/2,cy(P1.y)-5);
+  ctx.fillStyle='#a6e3a1';
+  ctx.fillText('E',cx(P2.x)+CELL/2,cy(P2.y)-5);
+}
+
+function updateUI(){
+  const s=STEPS[cur];
+  document.getElementById('d1-x').textContent=s.x;
+  document.getElementById('d1-yi').textContent=s.yi.toFixed(4);
+  document.getElementById('d1-d1').textContent=s.d1.toFixed(4);
+  document.getElementById('d1-d2').textContent=s.d2.toFixed(4);
+  const dec=document.getElementById('d1-decide');
+  if(cur===STEPS.length-1){
+    dec.innerHTML='<span style="color:#a6e3a1">終點</span>';
+  } else {
+    const sign=s.P<0?'< 0':'≥ 0';
+    const choice=s.P<0?'d₁ &lt; d₂，選下方 y='+s.chose:'d₂ ≤ d₁，選上方 y='+(s.chose);
+    const color=s.P<0?'#94e2d5':'#cba6f7';
+    dec.innerHTML='P = '+s.P.toFixed(2)+' '+sign+'<br><span style="color:'+color+'">→ '+choice+'</span>';
+  }
+  document.getElementById('d1-step').textContent='步驟 '+cur+' / '+(STEPS.length-1);
+}
+
+function render(){draw();updateUI();}
+function stopTimer(){if(timer){clearInterval(timer);timer=null;document.getElementById('d1-play').textContent='▶ 播放';}}
+
+document.getElementById('d1-next').onclick=()=>{if(cur<STEPS.length-1){cur++;render();}};
+document.getElementById('d1-prev').onclick=()=>{if(cur>0){cur--;render();}};
+document.getElementById('d1-reset').onclick=()=>{stopTimer();cur=0;render();};
+document.getElementById('d1-play').onclick=function(){
+  if(timer){stopTimer();return;}
+  document.getElementById('d1-play').textContent='⏸ 暫停';
+  timer=setInterval(()=>{if(cur>=STEPS.length-1){stopTimer();return;}cur++;render();},800);
+};
+
+render();
+})();
+</script>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-title"><div class="sec-num">總結</div>推導脈絡回顧</div>
+
+  <table>
+    <tr><th style="width:8%">節</th><th>做了什麼</th><th>結果</th></tr>
+    <tr><td>2</td><td>定義 d₁, d₂ 為理想線到兩候選像素的距離</td><td>決策 = 比較 d₁ vs d₂</td></tr>
+    <tr><td>3</td><td>計算 d₁ − d₂，兩側 × dx</td><td>消掉 m = dy/dx，全整數</td></tr>
+    <tr><td>4</td><td>定義 Pᵢ = dx(d₁−d₂)</td><td>Pᵢ 的正負決定選哪個像素</td></tr>
+    <tr><td>5</td><td>推導 Pᵢ₊₁ − Pᵢ</td><td>P &lt; 0 → +2dy；P &gt; 0 → +2dy−2dx</td></tr>
+    <tr><td>6</td><td>代入起點求 P₀</td><td>P₀ = 2dy − dx（起點消掉）</td></tr>
+    <tr><td>7</td><td>組合成完整演算法</td><td>每步一次加法，全整數</td></tr>
+  </table>
+</div>
+
+</body>
+</html>

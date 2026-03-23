@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Ch01 — 什麼是光柵化？</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:     #1e1e2e; --bg1: #181825; --bg2: #11111b;
+  --border: #313244; --muted: #6c7086; --text: #cdd6f4;
+  --blue: #89b4fa; --green: #a6e3a1; --yellow: #f9e2af;
+  --orange: #fab387; --red: #f38ba8; --purple: #cba6f7;
+}
+body {
+  background: var(--bg); color: var(--text);
+  font-family: 'Georgia', serif; font-size: 15px;
+  line-height: 1.9; max-width: 860px; margin: 0 auto;
+  padding: 0 20px 60px;
+}
+
+/* ── Nav ─────────────────────────────────────────────────────── */
+.nav {
+  display: flex; align-items: center; gap: 12px;
+  padding: 18px 0; border-bottom: 1px solid var(--border);
+  margin-bottom: 40px; font-family: 'Consolas', monospace; font-size: 0.8em;
+}
+.nav a { color: var(--muted); text-decoration: none; }
+.nav a:hover { color: var(--blue); }
+.nav-sep { color: var(--border); }
+.nav-cur { color: var(--text); }
+.nav-right { margin-left: auto; display: flex; gap: 16px; }
+
+/* ── Chapter header ──────────────────────────────────────────── */
+.ch-header { margin-bottom: 36px; }
+.ch-label {
+  font-family: 'Consolas', monospace; font-size: 0.78em;
+  color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px;
+}
+.ch-title { color: var(--blue); font-size: 1.8em; font-weight: normal; margin-bottom: 12px; }
+.ch-sub   { color: var(--muted); font-size: 0.9em; }
+.ch-tags  { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.ch-tag {
+  font-family: 'Consolas', monospace; font-size: 0.72em;
+  padding: 2px 9px; border-radius: 4px;
+  background: var(--bg1); border: 1px solid var(--border); color: var(--muted);
+}
+
+/* ── Sections ────────────────────────────────────────────────── */
+h2 {
+  color: var(--purple); font-family: 'Consolas', monospace;
+  font-size: 0.95em; letter-spacing: 0.05em;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+  margin: 40px 0 18px;
+  display: flex; align-items: center; gap: 12px;
+}
+h2 .n {
+  background: var(--purple); color: var(--bg2); border-radius: 50%;
+  width: 26px; height: 26px; display: flex; align-items: center;
+  justify-content: center; font-size: 0.85em; flex-shrink: 0;
+}
+h3 { color: var(--yellow); font-size: 0.95em; margin: 20px 0 8px; }
+p  { margin-bottom: 12px; }
+strong { color: var(--yellow); }
+em { color: var(--orange); font-style: normal; }
+
+/* ── Callout ─────────────────────────────────────────────────── */
+.box {
+  border-radius: 6px; padding: 13px 18px; margin: 16px 0;
+  font-size: 0.9em; line-height: 1.8;
+}
+.box-blue   { background: var(--bg1); border-left: 4px solid var(--blue); }
+.box-green  { background: var(--bg1); border-left: 4px solid var(--green); color: var(--green); }
+.box-yellow { background: var(--bg1); border-left: 4px solid var(--yellow); }
+.box-red    { background: var(--bg1); border-left: 4px solid var(--red); }
+
+/* ── Math / Code ─────────────────────────────────────────────── */
+.math {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 6px;
+  padding: 16px 22px; margin: 14px 0;
+  font-family: 'Consolas', monospace; font-size: 0.87em; line-height: 2.2;
+}
+.math .r   { display: block; }
+.math .cmt { color: var(--muted); }
+.math .hi  { color: var(--yellow); font-weight: bold; }
+.math .ok  { color: var(--green); }
+.math .em  { color: var(--red); }
+.math .kw  { color: var(--purple); }
+.math .dim { color: #45475a; }
+
+.code {
+  background: #0d0d14; border: 1px solid var(--border); border-radius: 8px;
+  padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em;
+  line-height: 2.1; margin: 14px 0;
+}
+.code .cmt { color: var(--muted); }
+.code .kw  { color: var(--purple); }
+.code .fn  { color: var(--blue); }
+.code .num { color: var(--orange); }
+.code .ok  { color: var(--green); }
+
+/* ── Tables ──────────────────────────────────────────────────── */
+table { width: 100%; border-collapse: collapse; font-family: 'Consolas', monospace; font-size: 0.83em; margin: 14px 0; }
+th { background: var(--bg1); color: var(--blue); padding: 9px 14px; text-align: left; border-bottom: 2px solid var(--border); }
+td { padding: 8px 14px; border-bottom: 1px solid var(--bg1); }
+tr:hover td { background: var(--bg1); }
+
+/* ── Figures ─────────────────────────────────────────────────── */
+.fig { margin: 22px auto; text-align: center; }
+.fig figcaption { color: var(--muted); font-size: 0.82em; margin-top: 8px; font-style: italic; }
+
+/* ── Two col ─────────────────────────────────────────────────── */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+.two-col > div { background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; }
+.col-title { font-family: 'Consolas', monospace; font-size: 0.85em; margin-bottom: 10px; }
+
+/* ── Next prev ───────────────────────────────────────────────── */
+.chapter-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border);
+  font-family: 'Consolas', monospace; font-size: 0.82em;
+}
+.chapter-nav a {
+  color: var(--muted); text-decoration: none; padding: 8px 14px;
+  border: 1px solid var(--border); border-radius: 6px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.chapter-nav a:hover { color: var(--blue); border-color: var(--blue); }
+.chapter-nav .next { color: var(--text); border-color: var(--blue); }
+.chapter-nav .next:hover { color: var(--blue); }
+
+hr { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
+ul, ol { margin: 8px 0 12px 24px; line-height: 2.2; }
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="nav">
+  <a href="../index.html">軟體光柵化</a>
+  <span class="nav-sep">/</span>
+  <span class="nav-cur">Ch01 — 什麼是光柵化？</span>
+  <div class="nav-right">
+    <a href="ch02_dda.html">下一章 →</a>
+  </div>
+</nav>
+
+<!-- Header -->
+<div class="ch-header">
+  <div class="ch-label">PART 1 · CHAPTER 01</div>
+  <div class="ch-title">什麼是光柵化？</div>
+  <div class="ch-sub">Framebuffer、像素座標系、SetPixel 作為原子操作</div>
+  <div class="ch-tags">
+    <span class="ch-tag">framebuffer</span>
+    <span class="ch-tag">SetPixel</span>
+    <span class="ch-tag">座標系</span>
+    <span class="ch-tag">像素格</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">1</div>連續 vs 離散</h2>
+
+<p>數學裡的幾何對象是連續的：一條直線有無限多個點，一個三角形裡有無限多個面積元素。</p>
+<p>螢幕不是連續的。它是一個<strong>有限的格子</strong>，每個格子叫做<strong>像素（pixel）</strong>，每個像素只能是一個顏色。</p>
+
+<div class="fig">
+  <svg width="480" height="160" viewBox="0 0 480 160">
+    <!-- Continuous side -->
+    <text x="100" y="16" fill="#6c7086" font-size="11" text-anchor="middle" font-family="Consolas">連續（數學）</text>
+    <!-- Triangle outline -->
+    <polygon points="20,140 180,140 100,30" fill="none" stroke="#89b4fa" stroke-width="1.5"/>
+    <!-- Fill with gradient suggestion -->
+    <polygon points="20,140 180,140 100,30" fill="#89b4fa" opacity="0.08"/>
+    <!-- Smooth curve -->
+    <path d="M20,100 Q100,40 180,100" fill="none" stroke="#a6e3a1" stroke-width="1.5" opacity="0.7"/>
+    <text x="100" y="155" fill="#6c7086" font-size="10" font-family="Georgia" text-anchor="middle">任意精度，無限細節</text>
+
+    <!-- Arrow -->
+    <text x="240" y="85" fill="#6c7086" font-size="22" text-anchor="middle">→</text>
+    <text x="240" y="105" fill="#6c7086" font-size="10" font-family="Consolas" text-anchor="middle">光柵化</text>
+
+    <!-- Discrete side -->
+    <text x="380" y="16" fill="#6c7086" font-size="11" text-anchor="middle" font-family="Consolas">離散（螢幕）</text>
+    <g>
+      <!-- Pixel grid -->
+      <g stroke="#313244" stroke-width="0.5">
+        <line x1="290" y1="30" x2="470" y2="30"/><line x1="290" y1="50" x2="470" y2="50"/>
+        <line x1="290" y1="70" x2="470" y2="70"/><line x1="290" y1="90" x2="470" y2="90"/>
+        <line x1="290" y1="110" x2="470" y2="110"/><line x1="290" y1="130" x2="470" y2="130"/>
+        <line x1="290" y1="150" x2="470" y2="150"/>
+        <line x1="290" y1="30" x2="290" y2="150"/><line x1="310" y1="30" x2="310" y2="150"/>
+        <line x1="330" y1="30" x2="330" y2="150"/><line x1="350" y1="30" x2="350" y2="150"/>
+        <line x1="370" y1="30" x2="370" y2="150"/><line x1="390" y1="30" x2="390" y2="150"/>
+        <line x1="410" y1="30" x2="410" y2="150"/><line x1="430" y1="30" x2="430" y2="150"/>
+        <line x1="450" y1="30" x2="450" y2="150"/><line x1="470" y1="30" x2="470" y2="150"/>
+      </g>
+      <!-- Lit pixels (triangle approximation) -->
+      <rect x="350" y="30" width="20" height="20" fill="#89b4fa" opacity="0.7" rx="1"/>
+      <rect x="330" y="50" width="20" height="20" fill="#89b4fa" opacity="0.7" rx="1"/>
+      <rect x="350" y="50" width="20" height="20" fill="#89b4fa" opacity="0.7" rx="1"/>
+      <rect x="370" y="50" width="20" height="20" fill="#89b4fa" opacity="0.7" rx="1"/>
+      <rect x="310" y="70" width="20" height="20" fill="#89b4fa" opacity="0.7" rx="1"/>
+      <rect x="330" y="70" width="20" height="20" fill="#89b4fa" opacity="0.7" rx="1"/>
+      <rect x="350" y="70" width="20" height="20" fill="#89b4fa" opacity="0.7" rx="1"/>
+      <rect x="370" y="70" width="20" height="20" fill="#89b4fa" opacity="0.7" rx="1"/>
+      <rect x="390" y="70" width="20" height="20" fill="#89b4fa" opacity="0.7" rx="1"/>
+      <rect x="290" y="90" width="20" height="20" fill="#89b4fa" opacity="0.7" rx="1"/>
+      <rect x="310" y="90" width="20" height="20" fill="#89b4fa" opacity="0.7" rx="1"/>
+      <rect x="330" y="90" width="20" height="20" fill="#89b4fa" opacity="0.7" rx="1"/>
+      <rect x="350" y="90" width="20" height="20" fill="#89b4fa" opacity="0.7" rx="1"/>
+      <rect x="370" y="90" width="20" height="20" fill="#89b4fa" opacity="0.7" rx="1"/>
+      <rect x="390" y="90" width="20" height="20" fill="#89b4fa" opacity="0.7" rx="1"/>
+      <rect x="410" y="90" width="20" height="20" fill="#89b4fa" opacity="0.7" rx="1"/>
+      <rect x="290" y="110" width="180" height="20" fill="#89b4fa" opacity="0.7" rx="1"/>
+    </g>
+    <text x="380" y="155" fill="#6c7086" font-size="10" font-family="Georgia" text-anchor="middle">有限格子，整數座標</text>
+  </svg>
+  <figcaption>光柵化（Rasterization）= 把連續的幾何形狀轉換成離散的像素集合</figcaption>
+</div>
+
+<p><strong>光柵化（Rasterization）</strong>就是這個轉換的過程：
+決定哪些像素要被點亮，以及各自的顏色。</p>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">2</div>Framebuffer：螢幕的記憶體表示</h2>
+
+<p>螢幕的每個像素在記憶體裡有一個對應位置，整塊記憶體叫做 <strong>Framebuffer（幀緩衝）</strong>。</p>
+
+<div class="fig">
+  <svg width="500" height="200" viewBox="0 0 500 200">
+    <!-- Screen -->
+    <rect x="20" y="20" width="200" height="150" fill="#11111b" stroke="#313244" stroke-width="1.5" rx="4"/>
+    <text x="120" y="14" fill="#6c7086" font-size="11" font-family="Consolas" text-anchor="middle">螢幕 (4×3 示意)</text>
+    <!-- Pixels on screen -->
+    <rect x="25"  y="25"  width="45" height="45" fill="#89b4fa" opacity="0.8" rx="2"/>
+    <rect x="75"  y="25"  width="45" height="45" fill="#f38ba8" opacity="0.6" rx="2"/>
+    <rect x="125" y="25"  width="45" height="45" fill="#313244" opacity="0.8" rx="2"/>
+    <rect x="175" y="25"  width="40" height="45" fill="#a6e3a1" opacity="0.6" rx="2"/>
+    <rect x="25"  y="75"  width="45" height="45" fill="#313244" opacity="0.8" rx="2"/>
+    <rect x="75"  y="75"  width="45" height="45" fill="#89b4fa" opacity="0.5" rx="2"/>
+    <rect x="125" y="75"  width="45" height="45" fill="#f9e2af" opacity="0.7" rx="2"/>
+    <rect x="175" y="75"  width="40" height="45" fill="#313244" opacity="0.8" rx="2"/>
+    <rect x="25"  y="125" width="45" height="40" fill="#a6e3a1" opacity="0.4" rx="2"/>
+    <rect x="75"  y="125" width="45" height="40" fill="#313244" opacity="0.8" rx="2"/>
+    <rect x="125" y="125" width="45" height="40" fill="#89b4fa" opacity="0.7" rx="2"/>
+    <rect x="175" y="125" width="40" height="40" fill="#f38ba8" opacity="0.5" rx="2"/>
+    <!-- Pixel labels -->
+    <text x="47"  y="53" fill="#1e1e2e" font-size="9" text-anchor="middle" font-family="Consolas">(0,0)</text>
+    <text x="97"  y="53" fill="#1e1e2e" font-size="9" text-anchor="middle" font-family="Consolas">(1,0)</text>
+
+    <!-- Arrow -->
+    <text x="255" y="100" fill="#6c7086" font-size="24" text-anchor="middle">↔</text>
+
+    <!-- Memory -->
+    <text x="390" y="14" fill="#6c7086" font-size="11" font-family="Consolas" text-anchor="middle">記憶體（uint32_t 陣列）</text>
+    <g font-family="Consolas" font-size="9" text-anchor="middle">
+      <rect x="290" y="25" width="50" height="30" fill="#89b4fa" opacity="0.8" rx="1"/>
+      <text x="315" y="45" fill="#1e1e2e">0xFF89B4FA</text>
+      <rect x="345" y="25" width="50" height="30" fill="#f38ba8" opacity="0.6" rx="1"/>
+      <text x="370" y="45" fill="#1e1e2e">0xFFF38BA8</text>
+      <rect x="400" y="25" width="50" height="30" fill="#313244" opacity="0.9" rx="1"/>
+      <text x="425" y="45" fill="#cdd6f4">0xFF313244</text>
+      <rect x="455" y="25" width="40" height="30" fill="#a6e3a1" opacity="0.6" rx="1"/>
+      <text x="475" y="45" fill="#1e1e2e">...</text>
+      <rect x="290" y="60" width="50" height="30" fill="#313244" opacity="0.9" rx="1"/>
+      <text x="315" y="80" fill="#cdd6f4">...</text>
+      <rect x="345" y="60" width="50" height="30" fill="#89b4fa" opacity="0.5" rx="1"/>
+      <text x="370" y="80" fill="#1e1e2e">...</text>
+      <rect x="400" y="60" width="50" height="30" fill="#f9e2af" opacity="0.7" rx="1"/>
+      <text x="425" y="80" fill="#1e1e2e">...</text>
+      <rect x="455" y="60" width="40" height="30" fill="#313244" opacity="0.9" rx="1"/>
+    </g>
+    <!-- Pitch annotation -->
+    <line x1="290" y1="170" x2="500" y2="170" stroke="#6c7086" stroke-width="0.8" stroke-dasharray="3,3"/>
+    <line x1="290" y1="165" x2="290" y2="175" stroke="#6c7086" stroke-width="0.8"/>
+    <line x1="499" y1="165" x2="499" y2="175" stroke="#6c7086" stroke-width="0.8"/>
+    <text x="395" y="185" fill="#6c7086" font-size="10" font-family="Consolas" text-anchor="middle">← pitch（一行的 byte 數）→</text>
+  </svg>
+  <figcaption>Framebuffer 就是一塊連續記憶體，每 4 bytes 對應一個像素（ARGB 各 1 byte）</figcaption>
+</div>
+
+<p>在程式碼裡，Framebuffer 是一個 <code>unsigned char*</code>，
+第 (x, y) 個像素的位置是：</p>
+
+<div class="math">
+  <span class="r cmt">// 第 (x, y) 個像素的記憶體位址</span>
+  <span class="r hi">address = frame_buffer + y * pitch + x * 4</span>
+  <span class="r cmt"></span>
+  <span class="r cmt">// pitch = 每一行的 byte 數（可能 > width * 4，因為對齊）</span>
+  <span class="r">pitch ≥ width * 4</span>
+</div>
+
+<div class="box box-yellow">
+  <strong>為什麼不用 width * 4 而是 pitch？</strong><br>
+  記憶體對齊（Memory Alignment）：作業系統和顯示硬體有時要求每一行的起始位址對齊到 4、8 或 16 bytes 的倍數。
+  Pitch 把這個 padding 納入，讓計算保持正確。
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">3</div>座標系的約定</h2>
+
+<p>像素座標系和數學座標系有一個重要差異：<strong>y 軸方向</strong>。</p>
+
+<div class="two-col">
+  <div>
+    <div class="col-title" style="color:var(--blue)">▌ 數學座標系</div>
+    <div class="fig">
+      <svg width="160" height="160" viewBox="0 0 160 160">
+        <line x1="20" y1="140" x2="150" y2="140" stroke="#45475a" stroke-width="1.5" marker-end="url(#a1)"/>
+        <line x1="20" y1="140" x2="20" y2="10" stroke="#45475a" stroke-width="1.5" marker-end="url(#a2)"/>
+        <defs>
+          <marker id="a1" markerWidth="7" markerHeight="7" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L7,3 z" fill="#45475a"/>
+          </marker>
+          <marker id="a2" markerWidth="7" markerHeight="7" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L7,3 z" fill="#45475a"/>
+          </marker>
+        </defs>
+        <text x="155" y="144" fill="#6c7086" font-size="11" font-family="Consolas">x</text>
+        <text x="23" y="10" fill="#6c7086" font-size="11" font-family="Consolas">y</text>
+        <text x="22" y="155" fill="#6c7086" font-size="10" font-family="Consolas">(0,0)</text>
+        <circle cx="110" cy="60" r="4" fill="#89b4fa"/>
+        <text x="115" y="58" fill="#89b4fa" font-size="10" font-family="Consolas">(p,q)</text>
+        <line x1="20" y1="60" x2="110" y2="60" stroke="#89b4fa" stroke-width="0.8" stroke-dasharray="3,3"/>
+        <line x1="110" y1="140" x2="110" y2="60" stroke="#89b4fa" stroke-width="0.8" stroke-dasharray="3,3"/>
+        <text x="100" y="155" fill="#6c7086" font-size="10" font-family="Consolas">p</text>
+        <text x="0" y="64" fill="#6c7086" font-size="10" font-family="Consolas">q</text>
+        <text x="60" y="175" fill="#a6e3a1" font-size="10" font-family="Georgia" text-anchor="middle">y 向上為正</text>
+      </svg>
+    </div>
+  </div>
+  <div>
+    <div class="col-title" style="color:var(--orange)">▌ 螢幕座標系</div>
+    <div class="fig">
+      <svg width="160" height="160" viewBox="0 0 160 160">
+        <defs>
+          <marker id="b1" markerWidth="7" markerHeight="7" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L7,3 z" fill="#45475a"/>
+          </marker>
+          <marker id="b2" markerWidth="7" markerHeight="7" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L7,3 z" fill="#45475a"/>
+          </marker>
+        </defs>
+        <line x1="20" y1="20" x2="150" y2="20" stroke="#45475a" stroke-width="1.5" marker-end="url(#b1)"/>
+        <line x1="20" y1="20" x2="20" y2="150" stroke="#45475a" stroke-width="1.5" marker-end="url(#b2)"/>
+        <text x="155" y="24" fill="#6c7086" font-size="11" font-family="Consolas">x</text>
+        <text x="23" y="155" fill="#6c7086" font-size="11" font-family="Consolas">y</text>
+        <text x="22" y="18" fill="#6c7086" font-size="10" font-family="Consolas">(0,0)</text>
+        <circle cx="110" cy="100" r="4" fill="#fab387"/>
+        <text x="115" y="98" fill="#fab387" font-size="10" font-family="Consolas">(p,q)</text>
+        <line x1="20" y1="100" x2="110" y2="100" stroke="#fab387" stroke-width="0.8" stroke-dasharray="3,3"/>
+        <line x1="110" y1="20" x2="110" y2="100" stroke="#fab387" stroke-width="0.8" stroke-dasharray="3,3"/>
+        <text x="100" y="17" fill="#6c7086" font-size="10" font-family="Consolas">p</text>
+        <text x="0" y="104" fill="#6c7086" font-size="10" font-family="Consolas">q</text>
+        <text x="60" y="175" fill="#f38ba8" font-size="10" font-family="Georgia" text-anchor="middle">y 向下為正</text>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<p>螢幕的原點 (0,0) 在<strong>左上角</strong>，y 向下增加。
+這是因為 CRT 顯示器的電子束從左上角開始掃描，沿用至今。</p>
+
+<div class="box box-blue">
+  3D 場景通常用「y 向上」的座標系，但渲染到螢幕前需要一次 y 軸翻轉（通常在投影矩陣裡處理）。
+  本系列的光柵化部分統一用<strong>螢幕座標系（y 向下）</strong>。
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">4</div>SetPixel：原子操作</h2>
+
+<p>所有更複雜的繪製都建立在一個最基本的操作上：
+<strong>在指定座標畫一個像素</strong>。</p>
+
+<div class="code">
+<span class="kw">void</span> <span class="fn">RenderDevice::SetPixel</span>(<span class="kw">int</span> x, <span class="kw">int</span> y, <span class="kw">uint32_t</span> color) {<br>
+&nbsp;&nbsp;<span class="kw">if</span> (x &gt;= <span class="num">0</span> &amp;&amp; x &lt; width &amp;&amp; y &gt;= <span class="num">0</span> &amp;&amp; y &lt; height) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="cmt">// 找到這個像素在記憶體裡的位址，寫入顏色</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;*(<span class="kw">uint32_t</span>*)(frame_buffer + y * pitch + x * <span class="num">4</span>) = color;<br>
+&nbsp;&nbsp;}<br>
+}
+</div>
+
+<p>它做了三件事：</p>
+<ol>
+  <li><strong>邊界檢查</strong>：(x, y) 在螢幕範圍內才寫入，防止越界</li>
+  <li><strong>地址計算</strong>：<code>y * pitch + x * 4</code> 找到對應的記憶體位置</li>
+  <li><strong>寫入顏色</strong>：把 <code>uint32_t</code>（4 bytes = ARGB）寫進去</li>
+</ol>
+
+<h3>顏色格式：ARGB</h3>
+<div class="math">
+  <span class="r cmt">// uint32_t color = 0xAARRGGBB</span>
+  <span class="r">A = Alpha（透明度）  bits 31-24</span>
+  <span class="r">R = Red             bits 23-16</span>
+  <span class="r">G = Green           bits 15-8</span>
+  <span class="r">B = Blue            bits  7-0</span>
+  <span class="r cmt"></span>
+  <span class="r cmt">// 常用顏色</span>
+  <span class="r ok">0xFFFFFFFF  // 白色</span>
+  <span class="r ok">0xFF000000  // 黑色</span>
+  <span class="r ok">0xFFFF0000  // 紅色</span>
+  <span class="r ok">0xFF0000FF  // 藍色</span>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">5</div>為什麼不能「直接計算」</h2>
+
+<p>既然有了 SetPixel，畫一條從 (0,0) 到 (7,3) 的線，最直覺的方法是：</p>
+
+<div class="math">
+  <span class="r cmt">// 笨方法：逐 x 計算對應的 y</span>
+  <span class="r"><span class="kw">for</span> (x = 0; x &lt;= 7; x++) {</span>
+  <span class="r">    y = round(x * 3.0 / 7.0);</span>
+  <span class="r">    SetPixel(x, y, color);</span>
+  <span class="r">}</span>
+</div>
+
+<p>這個方法有什麼問題？</p>
+
+<table>
+  <tr><th>問題</th><th>說明</th></tr>
+  <tr>
+    <td>浮點乘法</td>
+    <td>每步做一次 <code>x * 3.0 / 7.0</code>，比加法慢很多（在 1960 年代差距更大）</td>
+  </tr>
+  <tr>
+    <td>斜率 > 1 時跳格</td>
+    <td>若換成 (0,0) → (3,7)，每步 x 走 1，y 要跳 >1 格，產生斷線</td>
+  </tr>
+  <tr>
+    <td>round 不一致</td>
+    <td>0.5 要捨去到哪？不同語言實作不同，結果不可預期</td>
+  </tr>
+</table>
+
+<div class="fig">
+  <svg width="440" height="120" viewBox="0 0 440 120">
+    <!-- gentle slope OK -->
+    <text x="90" y="14" fill="#6c7086" font-size="10" text-anchor="middle" font-family="Consolas">緩坡 (0,0)→(7,3)：逐 x 計算沒問題</text>
+    <g stroke="#313244" stroke-width="0.5">
+      <line x1="10" y1="30" x2="10" y2="110"/><line x1="30" y1="30" x2="30" y2="110"/>
+      <line x1="50" y1="30" x2="50" y2="110"/><line x1="70" y1="30" x2="70" y2="110"/>
+      <line x1="90" y1="30" x2="90" y2="110"/><line x1="110" y1="30" x2="110" y2="110"/>
+      <line x1="130" y1="30" x2="130" y2="110"/><line x1="150" y1="30" x2="150" y2="110"/>
+      <line x1="170" y1="30" x2="170" y2="110"/>
+      <line x1="10" y1="30" x2="170" y2="30"/><line x1="10" y1="57" x2="170" y2="57"/>
+      <line x1="10" y1="83" x2="170" y2="83"/><line x1="10" y1="110" x2="170" y2="110"/>
+    </g>
+    <rect x="10" y="83" width="20" height="27" fill="#a6e3a1" opacity="0.7" rx="1"/>
+    <rect x="30" y="83" width="20" height="27" fill="#a6e3a1" opacity="0.7" rx="1"/>
+    <rect x="50" y="57" width="20" height="26" fill="#a6e3a1" opacity="0.7" rx="1"/>
+    <rect x="70" y="57" width="20" height="26" fill="#a6e3a1" opacity="0.7" rx="1"/>
+    <rect x="90" y="30" width="20" height="27" fill="#a6e3a1" opacity="0.7" rx="1"/>
+    <rect x="110" y="30" width="20" height="27" fill="#a6e3a1" opacity="0.7" rx="1"/>
+    <rect x="130" y="30" width="20" height="27" fill="#a6e3a1" opacity="0.7" rx="1"/>
+    <rect x="150" y="30" width="20" height="27" fill="#a6e3a1" opacity="0.7" rx="1"/>
+
+    <!-- steep slope BAD -->
+    <text x="330" y="14" fill="#6c7086" font-size="10" text-anchor="middle" font-family="Consolas">陡坡 (0,0)→(3,7)：逐 x 計算產生斷線！</text>
+    <g stroke="#313244" stroke-width="0.5">
+      <line x1="250" y1="15" x2="250" y2="110"/><line x1="290" y1="15" x2="290" y2="110"/>
+      <line x1="330" y1="15" x2="330" y2="110"/><line x1="370" y1="15" x2="370" y2="110"/>
+      <line x1="250" y1="15" x2="370" y2="15"/><line x1="250" y1="28" x2="370" y2="28"/>
+      <line x1="250" y1="41" x2="370" y2="41"/><line x1="250" y1="54" x2="370" y2="54"/>
+      <line x1="250" y1="67" x2="370" y2="67"/><line x1="250" y1="80" x2="370" y2="80"/>
+      <line x1="250" y1="93" x2="370" y2="93"/><line x1="250" y1="110" x2="370" y2="110"/>
+    </g>
+    <!-- only 4 pixels for 8 rows = gap -->
+    <rect x="250" y="93" width="40" height="17" fill="#f38ba8" opacity="0.7" rx="1"/>
+    <rect x="290" y="54" width="40" height="13" fill="#f38ba8" opacity="0.7" rx="1"/>
+    <rect x="330" y="15" width="40" height="13" fill="#f38ba8" opacity="0.7" rx="1"/>
+    <!-- gap indicators -->
+    <text x="410" y="38" fill="#f38ba8" font-size="18">←</text>
+    <text x="418" y="50" fill="#f38ba8" font-size="9" font-family="Consolas">缺口！</text>
+    <text x="410" y="78" fill="#f38ba8" font-size="18">←</text>
+    <text x="418" y="90" fill="#f38ba8" font-size="9" font-family="Consolas">缺口！</text>
+  </svg>
+  <figcaption>逐 x 計算在斜率 &gt; 1 時產生斷線——這就是需要 DDA 和 Bresenham 的原因</figcaption>
+</div>
+
+<div class="box box-red">
+  <strong>根本問題：</strong>當斜率 &gt; 1 時，x 每走一格，y 需要走超過一格。
+  如果只遍歷 x，中間的 y 位置就沒有像素。<br>
+  解法：要麼遍歷「較長的那個軸」（DDA），要麼用誤差追蹤兩個軸（Bresenham）。
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">6</div>這個系列要解決的問題</h2>
+
+<p>從 SetPixel 出發，我們需要回答三個越來越複雜的問題：</p>
+
+<table>
+  <tr><th>問題</th><th>難點</th><th>解法</th><th>章節</th></tr>
+  <tr>
+    <td>如何畫一條直線？</td>
+    <td>斜率可能 &gt;1，不能只遍歷 x</td>
+    <td>DDA / Bresenham</td>
+    <td>Ch02–07</td>
+  </tr>
+  <tr>
+    <td>如何填充一個三角形？</td>
+    <td>需要知道哪些像素在三角形內</td>
+    <td>重心座標 + 包圍盒</td>
+    <td>Ch08–10</td>
+  </tr>
+  <tr>
+    <td>多個三角形重疊時誰在前？</td>
+    <td>3D 場景需要深度排序</td>
+    <td>Z-buffer</td>
+    <td>Ch11</td>
+  </tr>
+</table>
+
+<div class="box box-green">
+  軟體光柵化的核心就是這三個問題。GPU 做的事情在本質上相同，只是並行化了幾千倍。
+</div>
+
+<!-- ── Chapter nav ────────────────────────────────────────────── -->
+<div class="chapter-nav">
+  <a href="../index.html">← 系列首頁</a>
+  <a class="next" href="ch02_dda.html">Ch02 — DDA 直線演算法 →</a>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Impl-03 — DrawTriangle</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #1e1e2e; color: #cdd6f4;
+  font-family: 'Georgia', serif; font-size: 15px;
+  padding: 0 20px 60px; max-width: 900px; margin: 0 auto;
+  line-height: 1.9;
+}
+nav {
+  font-family: 'Consolas', monospace; font-size: 0.78em; color: #6c7086;
+  padding: 14px 0; border-bottom: 1px solid #313244;
+  margin-bottom: 36px; display: flex; align-items: center; gap: 10px;
+}
+nav a { color: #6c7086; text-decoration: none; }
+nav a:hover { color: #fab387; }
+.ch-header { margin-bottom: 36px; }
+.ch-label {
+  font-family: 'Consolas', monospace; font-size: 0.78em;
+  color: #6c7086; letter-spacing: 0.1em; margin-bottom: 8px;
+}
+.ch-title { color: #fab387; font-size: 1.8em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub   { color: #6c7086; font-size: 0.88em; }
+h2 {
+  color: #cba6f7; font-family: 'Consolas', monospace; font-size: 1em;
+  letter-spacing: 0.05em; padding: 10px 0; border-bottom: 1px solid #313244;
+  margin: 40px 0 20px; display: flex; align-items: center; gap: 12px;
+}
+h2 .n {
+  background: #fab387; color: #1e1e2e; font-weight: bold;
+  border-radius: 50%; width: 26px; height: 26px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 0.85em;
+}
+h3 { color: #f9e2af; font-size: 0.95em; margin: 22px 0 10px; }
+p  { margin-bottom: 12px; }
+strong { color: #f9e2af; }
+em { color: #fab387; font-style: normal; }
+.theory-link {
+  background: #181825; border: 1px solid #313244; border-left: 3px solid #fab387;
+  border-radius: 6px; padding: 10px 16px; margin: 20px 0;
+  font-size: 0.88em; color: #6c7086;
+}
+.theory-link a { color: #89b4fa; text-decoration: none; }
+.code-block {
+  background: #11111b; border: 1px solid #313244; border-radius: 8px;
+  padding: 0; margin: 20px 0; overflow: hidden;
+}
+.code-header {
+  background: #181825; border-bottom: 1px solid #313244;
+  padding: 8px 16px; font-family: 'Consolas', monospace; font-size: 0.78em;
+  color: #6c7086; display: flex; align-items: center; gap: 10px;
+}
+.code-header .file { color: #89b4fa; }
+.code-body { padding: 16px 0; overflow-x: auto; }
+.code-body table { border-collapse: collapse; width: 100%; }
+.code-body td {
+  padding: 1px 0; font-family: 'Consolas', monospace; font-size: 0.84em;
+  line-height: 1.7; vertical-align: top;
+}
+.ln {
+  color: #45475a; text-align: right; padding: 0 16px 0 16px;
+  user-select: none; min-width: 48px;
+}
+.code { padding: 0 20px 0 12px; white-space: pre; color: #cdd6f4; }
+.code .kw  { color: #cba6f7; }
+.code .ty  { color: #89b4fa; }
+.code .cm  { color: #6c7086; }
+.code .fn  { color: #89b4fa; }
+.code .nm  { color: #fab387; }
+tr.hl td { background: #2a1e0a; }
+tr.hl .code { border-left: 2px solid #fab387; padding-left: 10px; }
+.annotation {
+  background: #181825; border-left: 3px solid #f9e2af;
+  border-radius: 0 6px 6px 0; padding: 10px 16px;
+  margin: -4px 0 16px; font-size: 0.88em; line-height: 1.7;
+}
+.box {
+  border-radius: 6px; padding: 14px 18px; margin: 16px 0;
+  font-size: 0.9em; line-height: 1.85;
+}
+.box-blue   { background: #1e1e2e; border-left: 4px solid #89b4fa; }
+.box-orange { background: #1e1e2e; border-left: 4px solid #fab387; }
+.box-green  { background: #1e1e2e; border-left: 4px solid #a6e3a1; }
+.box-yellow { background: #1e1e2e; border-left: 4px solid #f9e2af; }
+.math {
+  background: #181825; border: 1px solid #313244; border-radius: 6px;
+  padding: 12px 18px; margin: 12px 0;
+  font-family: 'Consolas', monospace; font-size: 0.87em; line-height: 2.2;
+}
+.chapter-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 56px; padding-top: 24px; border-top: 1px solid #313244;
+  font-family: 'Consolas', monospace; font-size: 0.85em;
+}
+.chapter-nav a { color: #6c7086; text-decoration: none; }
+.chapter-nav a:hover { color: #fab387; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">軟體光柵化</a>
+  <span style="color:#313244">/</span>
+  <span style="color:#fab387">實作</span>
+  <span style="color:#313244">/</span>
+  <span style="color:#cdd6f4">I-03 — DrawTriangle</span>
+  <span style="margin-left:auto;display:flex;gap:16px;">
+    <a href="ch02_drawline.html">← I-02</a>
+  </span>
+</nav>
+
+<div class="ch-header">
+  <div class="ch-label">IMPL-03 · 三角形光柵化實作</div>
+  <div class="ch-title">DrawTriangle — 包圍盒 + 重心座標</div>
+  <div class="ch-sub">逐行解析 DrawTriangle()：如何判斷哪些像素在三角形內</div>
+</div>
+
+<div class="theory-link">
+  對應理論章節（尚未撰寫）：Ch08 — 重心座標、Ch09 — 包圍盒掃描法<br>
+  本章已涵蓋核心概念，理論章節完成後可搭配閱讀。
+</div>
+
+<!-- 1 -->
+<h2><span class="n">1</span> 完整程式碼一覽</h2>
+
+<div class="code-block">
+  <div class="code-header">
+    <span class="file">render_device.cpp</span>
+    <span>— RenderDevice::DrawTriangle()</span>
+  </div>
+  <div class="code-body">
+    <table>
+      <tr><td class="ln">51</td><td class="code"><span class="kw">void</span> <span class="ty">RenderDevice</span>::<span class="fn">DrawTriangle</span>(<span class="kw">const</span> <span class="ty">Vertex</span>&amp; v1, <span class="kw">const</span> <span class="ty">Vertex</span>&amp; v2,</td></tr>
+      <tr><td class="ln">52</td><td class="code">                                <span class="kw">const</span> <span class="ty">Vertex</span>&amp; v3, <span class="ty">uint32_t</span> color) {</td></tr>
+      <tr><td class="ln">53</td><td class="code">    <span class="cm">// 1. 計算包圍盒</span></td></tr>
+      <tr class="hl"><td class="ln">55</td><td class="code">    <span class="kw">int</span> min_y = (<span class="kw">int</span>)(std::<span class="fn">min</span>)({(<span class="kw">int</span>)v1.y, (<span class="kw">int</span>)v2.y, (<span class="kw">int</span>)v3.y});</td></tr>
+      <tr class="hl"><td class="ln">56</td><td class="code">    <span class="kw">int</span> max_y = (<span class="kw">int</span>)(std::<span class="fn">max</span>)({(<span class="kw">int</span>)v1.y, (<span class="kw">int</span>)v2.y, (<span class="kw">int</span>)v3.y});</td></tr>
+      <tr class="hl"><td class="ln">57</td><td class="code">    <span class="kw">int</span> min_x = (<span class="kw">int</span>)(std::<span class="fn">min</span>)({(<span class="kw">int</span>)v1.x, (<span class="kw">int</span>)v2.x, (<span class="kw">int</span>)v3.x});</td></tr>
+      <tr class="hl"><td class="ln">58</td><td class="code">    <span class="kw">int</span> max_x = (<span class="kw">int</span>)(std::<span class="fn">max</span>)({(<span class="kw">int</span>)v1.x, (<span class="kw">int</span>)v2.x, (<span class="kw">int</span>)v3.x});</td></tr>
+      <tr><td class="ln">59</td><td class="code"></td></tr>
+      <tr><td class="ln">60</td><td class="code">    <span class="cm">// 2. 裁切到畫面範圍</span></td></tr>
+      <tr class="hl"><td class="ln">61</td><td class="code">    min_x = std::<span class="fn">max</span>(min_x, <span class="nm">0</span>);  min_y = std::<span class="fn">max</span>(min_y, <span class="nm">0</span>);</td></tr>
+      <tr class="hl"><td class="ln">63</td><td class="code">    max_x = std::<span class="fn">min</span>(max_x, width - <span class="nm">1</span>);  max_y = std::<span class="fn">min</span>(max_y, height - <span class="nm">1</span>);</td></tr>
+      <tr><td class="ln">64</td><td class="code"></td></tr>
+      <tr><td class="ln">66</td><td class="code">    <span class="cm">// 3. 逐像素掃描 + 重心座標測試</span></td></tr>
+      <tr><td class="ln">67</td><td class="code">    <span class="kw">for</span> (<span class="kw">int</span> y = min_y; y &lt;= max_y; y++) {</td></tr>
+      <tr><td class="ln">68</td><td class="code">        <span class="kw">for</span> (<span class="kw">int</span> x = min_x; x &lt;= max_x; x++) {</td></tr>
+      <tr class="hl"><td class="ln">71</td><td class="code">            <span class="kw">float</span> w1 = ((v2.y-v3.y)*(x-v3.x) + (v3.x-v2.x)*(y-v3.y)) /</td></tr>
+      <tr class="hl"><td class="ln">73</td><td class="code">                       ((v2.y-v3.y)*(v1.x-v3.x) + (v3.x-v2.x)*(v1.y-v3.y));</td></tr>
+      <tr class="hl"><td class="ln">74</td><td class="code">            <span class="kw">float</span> w2 = ((v3.y-v1.y)*(x-v3.x) + (v1.x-v3.x)*(y-v3.y)) /</td></tr>
+      <tr class="hl"><td class="ln">76</td><td class="code">                       ((v2.y-v3.y)*(v1.x-v3.x) + (v3.x-v2.x)*(v1.y-v3.y));</td></tr>
+      <tr class="hl"><td class="ln">77</td><td class="code">            <span class="kw">float</span> w3 = <span class="nm">1.0f</span> - w1 - w2;</td></tr>
+      <tr class="hl"><td class="ln">78</td><td class="code">            <span class="kw">if</span> (w1 &gt;= <span class="nm">0</span> &amp;&amp; w2 &gt;= <span class="nm">0</span> &amp;&amp; w3 &gt;= <span class="nm">0</span>) {</td></tr>
+      <tr><td class="ln">79</td><td class="code">                <span class="fn">SetPixel</span>(x, y, color);</td></tr>
+      <tr><td class="ln">80</td><td class="code">            }</td></tr>
+      <tr><td class="ln">81</td><td class="code">        }</td></tr>
+      <tr><td class="ln">82</td><td class="code">    }</td></tr>
+      <tr><td class="ln">83</td><td class="code">}</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- 2 -->
+<h2><span class="n">2</span> 第 55–58 行：包圍盒（Bounding Box）</h2>
+
+<div class="math">
+min_x = min(v1.x, v2.x, v3.x)    max_x = max(v1.x, v2.x, v3.x)<br>
+min_y = min(v1.y, v2.y, v3.y)    max_y = max(v1.y, v2.y, v3.y)
+</div>
+
+<p>
+  畫三角形最直觀的方式：找到一個能「框住」三角形的軸對齊矩形，
+  然後對矩形內的每個像素做點在三角形內的測試。
+  在矩形外的像素不可能在三角形內，所以不需要測試。
+</p>
+
+<div class="annotation">
+  <strong>為什麼先取整（int）再取 min/max？</strong><br>
+  頂點座標是 float（未來支援次像素精度），但像素座標必須是整數。
+  截斷取整（而非四捨五入）確保包圍盒不會比三角形小——
+  例如 v1.x = 3.9，截斷後 min_x = 3，包含了 x=3 這一列，不會漏掉像素。
+</div>
+
+<!-- 3 -->
+<h2><span class="n">3</span> 第 61–63 行：裁切到畫面邊界</h2>
+
+<div class="math">
+min_x = max(min_x, 0)             max_x = min(max_x, width - 1)<br>
+min_y = max(min_y, 0)             max_y = min(max_y, height - 1)
+</div>
+
+<p>
+  三角形可能部分超出畫面範圍（頂點在螢幕外）。
+  把包圍盒和畫面矩形取交集，避免後面呼叫 <code>SetPixel</code> 時越界
+  （雖然 SetPixel 內部有邊界檢查，但提前裁切可以省掉不必要的像素測試）。
+</p>
+
+<!-- 4 -->
+<h2><span class="n">4</span> 第 71–77 行：重心座標（Barycentric Coordinates）</h2>
+
+<p>
+  對包圍盒內的每個像素 (x, y)，計算它相對於三角形的重心座標 (w1, w2, w3)：
+</p>
+
+<div class="math">
+<span style="color:#cba6f7">// 共用分母（等於三角形面積的 2 倍，有向）</span>
+D = (v2.y - v3.y)·(v1.x - v3.x) + (v3.x - v2.x)·(v1.y - v3.y)
+
+w1 = [(v2.y - v3.y)·(x - v3.x) + (v3.x - v2.x)·(y - v3.y)] / D
+w2 = [(v3.y - v1.y)·(x - v3.x) + (v1.x - v3.x)·(y - v3.y)] / D
+w3 = 1 - w1 - w2
+</div>
+
+<div class="annotation">
+  <strong>這個公式從哪裡來？</strong><br>
+  重心座標 w1 是「點 P 和邊 v2-v3 組成的子三角形面積」除以「整個三角形面積」。
+  用叉積計算面積（2D 叉積 = 行列式），整理後就是上面的公式。
+  分母 D 是整個三角形的帶符號面積 × 2，是常數，只需計算一次。
+  （目前程式碼重複計算了分母，是效能最佳化空間。）
+</div>
+
+<h3>為什麼三個係數都 ≥ 0 就表示點在三角形內？</h3>
+
+<p>
+  重心座標的幾何意義：w1、w2、w3 是點 P 到三條邊的「相對位置」。
+  當所有係數都在 [0, 1] 區間（且 w1+w2+w3=1），
+  點 P 可以表示為三個頂點的凸組合，意思是它在三角形內部。
+  任何一個係數為負表示 P 在對應邊的外側。
+</p>
+
+<div class="box box-blue">
+  <strong>重心座標的用途不只是「點在內？」</strong><br>
+  w1、w2、w3 同時也是插值係數。任何頂點屬性（顏色、UV、法向量、深度）
+  都可以用 <code>w1·a1 + w2·a2 + w3·a3</code> 插值到像素位置——
+  這就是後面加入顏色插值（Ch10）和紋理貼圖的基礎。
+</div>
+
+<!-- 5 -->
+<h2><span class="n">5</span> 目前的限制與下一步</h2>
+
+<div class="box box-yellow">
+  <strong>目前版本的限制：</strong><br>
+  · 無 Z-buffer：多個三角形重疊時，後畫的覆蓋先畫的（畫家算法）<br>
+  · 純色填充：所有像素用同一個 color，無法做顏色插值或貼圖<br>
+  · 無透視修正：未來加入 3D 投影後，直接線性插值 UV 會有扭曲<br>
+  · 效能：分母 D 在內層迴圈重複計算（應提到外層）
+</div>
+
+<p>
+  這些限制分別對應後面的實作章節：
+</p>
+
+<div class="box box-green">
+  ✓ Clear() + SetPixel() + DrawLine() + DrawTriangle()（基礎版）<br>
+  ⬜ Z-buffer（對應理論 Ch11）<br>
+  ⬜ 顏色插值（對應理論 Ch10）<br>
+  ⬜ DrawTriangle(IShader&amp;)：透視正確插值（對應理論 Ch24）
+</div>
+
+<div class="chapter-nav">
+  <a href="ch02_drawline.html">← I-02 — DrawLine</a>
+  <a href="../index.html" style="color:#6c7086">首頁</a>
+</div>
+
+</body>
+</html>

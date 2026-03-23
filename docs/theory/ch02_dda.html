@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>DDA 直線演算法</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #1e1e2e; color: #cdd6f4;
+  font-family: 'Georgia', serif; font-size: 15px;
+  padding: 32px 20px; line-height: 1.9;
+  max-width: 900px; margin: 0 auto;
+}
+h1 { color: #89b4fa; font-size: 1.5em; margin-bottom: 6px; }
+.tagline { color: #6c7086; margin-bottom: 40px; font-size: 0.88em; }
+h2 {
+  color: #cba6f7; font-size: 1em;
+  font-family: 'Consolas', monospace; letter-spacing: 0.05em;
+  padding: 10px 0; border-bottom: 1px solid #313244;
+  margin: 40px 0 20px;
+  display: flex; align-items: center; gap: 12px;
+}
+h2 .n {
+  background: #cba6f7; color: #1e1e2e; font-weight: bold;
+  border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 0.85em;
+}
+h3 { color: #f9e2af; font-size: 0.95em; margin: 22px 0 10px; }
+p  { margin-bottom: 12px; }
+strong { color: #f9e2af; }
+em { color: #fab387; font-style: normal; }
+ul, ol { margin: 8px 0 14px 24px; line-height: 2.2; }
+
+.box {
+  border-radius: 6px; padding: 14px 18px; margin: 16px 0;
+  font-size: 0.9em; line-height: 1.85;
+}
+.box-blue   { background: #1e1e2e; border-left: 4px solid #89b4fa; }
+.box-green  { background: #1e1e2e; border-left: 4px solid #a6e3a1; color: #a6e3a1; }
+.box-yellow { background: #1e1e2e; border-left: 4px solid #f9e2af; }
+.box-red    { background: #1e1e2e; border-left: 4px solid #f38ba8; }
+.box-purple { background: #1e1e2e; border-left: 4px solid #cba6f7; }
+.box-gray   { background: #181825; border: 1px solid #313244; border-radius: 6px;
+              padding: 14px 18px; margin: 16px 0; font-size: 0.9em; }
+
+.math {
+  background: #181825; border: 1px solid #313244; border-radius: 6px;
+  padding: 16px 22px; margin: 14px 0;
+  font-family: 'Consolas', monospace; font-size: 0.87em; line-height: 2.3;
+}
+.math .r   { display: block; }
+.math .cmt { color: #6c7086; }
+.math .hi  { color: #f9e2af; font-weight: bold; }
+.math .ok  { color: #a6e3a1; }
+.math .em  { color: #f38ba8; }
+.math .kw  { color: #cba6f7; }
+.math .dim { color: #45475a; }
+
+table {
+  width: 100%; border-collapse: collapse;
+  font-family: 'Consolas', monospace; font-size: 0.83em; margin: 14px 0;
+}
+th { background: #181825; color: #89b4fa; padding: 9px 14px;
+  text-align: left; border-bottom: 2px solid #313244; }
+td { padding: 8px 14px; border-bottom: 1px solid #181825; vertical-align: top; }
+tr:hover td { background: #1e1e2e; }
+.hi-row td { background: #1e1e2e; }
+.warn-row td { background: #2a1a1a; }
+
+.code {
+  background: #0d0d14; border: 1px solid #313244; border-radius: 8px;
+  padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em;
+  line-height: 2.1; margin: 14px 0;
+}
+.code .cmt { color: #6c7086; }
+.code .kw  { color: #cba6f7; }
+.code .val { color: #fab387; }
+.code .ok  { color: #a6e3a1; }
+.code .em  { color: #f38ba8; }
+.code .hi  { color: #f9e2af; }
+.code .fn  { color: #89b4fa; }
+
+.two-col {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0;
+}
+.two-col > div {
+  background: #181825; border: 1px solid #313244; border-radius: 8px;
+  padding: 16px 18px;
+}
+.col-title { font-family: 'Consolas', monospace; font-size: 0.85em; margin-bottom: 10px; }
+
+.fig { margin: 20px auto; text-align: center; }
+.fig figcaption { color: #6c7086; font-size: 0.82em; margin-top: 8px; font-style: italic; }
+
+hr { border: none; border-top: 1px solid #313244; margin: 28px 0; }
+
+.badge {
+  display: inline-block; border-radius: 4px; padding: 1px 8px;
+  font-family: 'Consolas', monospace; font-size: 0.78em;
+}
+.badge-red  { background: #3d1a1a; color: #f38ba8; border: 1px solid #f38ba8; }
+.badge-blue { background: #1a2a3d; color: #89b4fa; border: 1px solid #89b4fa; }
+
+/* Error accumulation visual */
+.err-vis {
+  display: flex; gap: 0; margin: 14px 0;
+  font-family: 'Consolas', monospace; font-size: 0.8em;
+}
+.err-cell {
+  flex: 1; text-align: center; padding: 6px 2px;
+  border: 1px solid #313244;
+}
+.err-cell.wrong { background: #2a1a1a; color: #f38ba8; }
+.err-cell.ok { background: #1a2a1a; color: #a6e3a1; }
+.err-cell.neutral { background: #181825; color: #6c7086; }
+</style>
+</head>
+<body>
+
+<nav style="font-family:'Consolas',monospace;font-size:0.78em;color:#6c7086;padding:14px 0;border-bottom:1px solid #313244;margin-bottom:32px;display:flex;align-items:center;gap:10px;">
+  <a href="../index.html" style="color:#6c7086;text-decoration:none;">軟體光柵化</a>
+  <span style="color:#313244">/</span>
+  <span style="color:#cdd6f4">Ch02 — DDA 直線演算法</span>
+  <span style="margin-left:auto;display:flex;gap:16px;">
+    <a href="ch01_intro.html" style="color:#6c7086;text-decoration:none;">← Ch01</a>
+    <a href="ch04_bresenham_plain.html" style="color:#6c7086;text-decoration:none;">Ch04 →</a>
+  </span>
+</nav>
+
+<h1>DDA 直線演算法</h1>
+<p class="tagline">Bresenham 的前身 — 從微分方程到像素，以及它為什麼被取代</p>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">1</div>DDA 是什麼</h2>
+
+<p><strong>DDA（Digital Differential Analyzer，數位差分分析器）</strong>
+最初是 1940 年代的硬體機器，用數位電路模擬類比微分方程的求解器。
+當時用來計算彈道、飛行軌跡等工程問題。</p>
+
+<p>套用到畫直線，DDA 的思路非常直接：</p>
+
+<div class="box box-blue">
+  直線就是微分方程 <strong>dy/dx = m（常數斜率）</strong> 的解。<br>
+  每走一步 x，用 Euler 方法求下一步的 y：<br>
+  <code>y_next = y + m · Δx</code><br>
+  令 Δx = 1，就是 <code>y_next = y + m</code>。<br>
+  把每步的 y 四捨五入到最近的整數像素，就是直線。
+</div>
+
+<p>這個想法幾乎不需要任何推導，直接從「直線是什麼」出發就能想到。</p>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">2</div>跟 Euler 方法的關係</h2>
+
+<p>數值分析的 <strong>Euler 方法</strong>：解常微分方程 y' = f(x, y)，
+從初始值出發，用斜率估計下一步：</p>
+
+<div class="math">
+  <span class="r cmt">// Euler Method（一階 ODE 數值積分）</span>
+  <span class="r">y(x + h) ≈ y(x) + h · f(x, y(x))</span>
+  <span class="r cmt"></span>
+  <span class="r cmt">// 直線：dy/dx = m（f 是常數）</span>
+  <span class="r">y(x + 1) = y(x) + 1 · m</span>
+  <span class="r hi">y_next   = y + m</span>
+</div>
+
+<p>DDA 就是 Euler 方法的特例：步長 h = 1，斜率 f = m（常數）。
+因為斜率是常數，Euler 方法在這裡<strong>沒有截斷誤差</strong>（對於直線，Euler 是精確的）。</p>
+
+<div class="box box-yellow">
+  直線特殊在斜率不變。如果是曲線（圓、拋物線），斜率每步都不同，
+  Euler 方法就會累積截斷誤差——這是 DDA 推廣到曲線的困難所在。
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">3</div>基本演算法</h2>
+
+<p>從 (x₁, y₁) 到 (x₂, y₂)：</p>
+
+<div class="math">
+  <span class="r">dx = x₂ − x₁</span>
+  <span class="r">dy = y₂ − y₁</span>
+  <span class="r cmt"></span>
+  <span class="r cmt">// steps：要走幾步？取較長的那個軸</span>
+  <span class="r hi">steps = max(|dx|, |dy|)</span>
+  <span class="r cmt"></span>
+  <span class="r cmt">// 每步的增量（讓主軸每次恰好走 1 格）</span>
+  <span class="r">x_inc = dx / steps    <span class="cmt">// 浮點數</span></span>
+  <span class="r">y_inc = dy / steps    <span class="cmt">// 浮點數</span></span>
+  <span class="r cmt"></span>
+  <span class="r kw">loop steps+1 次：</span>
+  <span class="r">  畫 (round(x), round(y))</span>
+  <span class="r">  x += x_inc</span>
+  <span class="r">  y += y_inc</span>
+</div>
+
+<p><strong>steps = max(|dx|, |dy|)</strong> 的原因：</p>
+<ul>
+  <li>讓「主軸」每步精確走一格，保證不跳格、不重複</li>
+  <li>緩坡（|dx| > |dy|）→ x 每步走 1，y 走 &lt;1</li>
+  <li>陡坡（|dy| > |dx|）→ y 每步走 1，x 走 &lt;1</li>
+  <li>斜率 = 1 → 兩軸都走 1（對角線）</li>
+</ul>
+
+<h3>具體例子：(0,0) → (7,3)</h3>
+<p>dx=7, dy=3，steps=7，x_inc=1.0，y_inc=3/7≈0.4286</p>
+
+<table>
+  <tr><th>步</th><th>x（浮點）</th><th>y（浮點）</th><th>round(x)</th><th>round(y)</th><th>畫</th></tr>
+  <tr><td>0</td><td>0.0000</td><td>0.0000</td><td>0</td><td>0</td><td style="color:#89b4fa">(0,0)</td></tr>
+  <tr><td>1</td><td>1.0000</td><td>0.4286</td><td>1</td><td>0</td><td style="color:#89b4fa">(1,0)</td></tr>
+  <tr class="hi-row"><td>2</td><td>2.0000</td><td>0.8571</td><td>2</td><td><strong>1</strong></td><td style="color:#89b4fa">(2,1)</td></tr>
+  <tr><td>3</td><td>3.0000</td><td>1.2857</td><td>3</td><td>1</td><td style="color:#89b4fa">(3,1)</td></tr>
+  <tr class="hi-row"><td>4</td><td>4.0000</td><td>1.7143</td><td>4</td><td><strong>2</strong></td><td style="color:#89b4fa">(4,2)</td></tr>
+  <tr><td>5</td><td>5.0000</td><td>2.1429</td><td>5</td><td>2</td><td style="color:#89b4fa">(5,2)</td></tr>
+  <tr class="hi-row"><td>6</td><td>6.0000</td><td>2.5714</td><td>6</td><td><strong>3</strong></td><td style="color:#89b4fa">(6,3)</td></tr>
+  <tr><td>7</td><td>7.0000</td><td>3.0000</td><td>7</td><td>3</td><td style="color:#89b4fa">(7,3)</td></tr>
+</table>
+
+<p>結果：(0,0)(1,0)(2,1)(3,1)(4,2)(5,2)(6,3)(7,3) — 和 Bresenham 完全一樣。</p>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">4</div>四個 Case</h2>
+
+<p>steps = max(|dx|, |dy|) 讓 DDA 自動處理所有方向，不需要分 case。</p>
+
+<div class="fig">
+  <svg width="500" height="300" viewBox="0 0 500 300">
+    <!-- 4 quadrant examples -->
+
+    <!-- Case 1: gentle slope right-up (dx > dy > 0) -->
+    <g>
+      <text x="60" y="14" fill="#6c7086" font-size="10" text-anchor="middle" font-family="Consolas">① 緩坡右上 x_inc=1, y_inc=0.5</text>
+      <g stroke="#313244" stroke-width="0.5">
+        <line x1="10" y1="30" x2="10" y2="110"/><line x1="30" y1="30" x2="30" y2="110"/>
+        <line x1="50" y1="30" x2="50" y2="110"/><line x1="70" y1="30" x2="70" y2="110"/>
+        <line x1="90" y1="30" x2="90" y2="110"/><line x1="110" y1="30" x2="110" y2="110"/>
+        <line x1="10" y1="30" x2="110" y2="30"/><line x1="10" y1="70" x2="110" y2="70"/>
+        <line x1="10" y1="110" x2="110" y2="110"/>
+      </g>
+      <line x1="10" y1="110" x2="110" y2="50" stroke="#89b4fa" stroke-width="1.5"/>
+      <rect x="10" y="70" width="20" height="40" fill="#89b4fa" opacity="0.6" rx="1"/>
+      <rect x="30" y="70" width="20" height="40" fill="#89b4fa" opacity="0.6" rx="1"/>
+      <rect x="50" y="30" width="20" height="40" fill="#89b4fa" opacity="0.6" rx="1"/>
+      <rect x="70" y="30" width="20" height="40" fill="#89b4fa" opacity="0.6" rx="1"/>
+      <rect x="90" y="30" width="20" height="40" fill="#89b4fa" opacity="0.6" rx="1"/>
+      <text x="60" y="125" fill="#6c7086" font-size="9" text-anchor="middle" font-family="Georgia">steps=dx，x 每步走 1</text>
+    </g>
+
+    <!-- Case 2: steep slope right-up (dy > dx > 0) -->
+    <g transform="translate(130,0)">
+      <text x="60" y="14" fill="#6c7086" font-size="10" text-anchor="middle" font-family="Consolas">② 陡坡右上 x_inc=0.4, y_inc=1</text>
+      <g stroke="#313244" stroke-width="0.5">
+        <line x1="30" y1="30" x2="30" y2="130"/><line x1="60" y1="30" x2="60" y2="130"/>
+        <line x1="90" y1="30" x2="90" y2="130"/>
+        <line x1="30" y1="30" x2="90" y2="30"/><line x1="30" y1="55" x2="90" y2="55"/>
+        <line x1="30" y1="80" x2="90" y2="80"/><line x1="30" y1="105" x2="90" y2="105"/>
+        <line x1="30" y1="130" x2="90" y2="130"/>
+      </g>
+      <line x1="30" y1="130" x2="78" y2="30" stroke="#a6e3a1" stroke-width="1.5"/>
+      <rect x="30" y="105" width="30" height="25" fill="#a6e3a1" opacity="0.6" rx="1"/>
+      <rect x="30" y="80" width="30" height="25" fill="#a6e3a1" opacity="0.6" rx="1"/>
+      <rect x="60" y="55" width="30" height="25" fill="#a6e3a1" opacity="0.6" rx="1"/>
+      <rect x="60" y="30" width="30" height="25" fill="#a6e3a1" opacity="0.6" rx="1"/>
+      <text x="60" y="145" fill="#6c7086" font-size="9" text-anchor="middle" font-family="Georgia">steps=dy，y 每步走 1</text>
+    </g>
+
+    <!-- Case 3: gentle slope right-down -->
+    <g transform="translate(0,155)">
+      <text x="60" y="14" fill="#6c7086" font-size="10" text-anchor="middle" font-family="Consolas">③ 緩坡右下 x_inc=1, y_inc=−0.5</text>
+      <g stroke="#313244" stroke-width="0.5">
+        <line x1="10" y1="30" x2="10" y2="110"/><line x1="30" y1="30" x2="30" y2="110"/>
+        <line x1="50" y1="30" x2="50" y2="110"/><line x1="70" y1="30" x2="70" y2="110"/>
+        <line x1="90" y1="30" x2="90" y2="110"/><line x1="110" y1="30" x2="110" y2="110"/>
+        <line x1="10" y1="30" x2="110" y2="30"/><line x1="10" y1="70" x2="110" y2="70"/>
+        <line x1="10" y1="110" x2="110" y2="110"/>
+      </g>
+      <line x1="10" y1="50" x2="110" y2="110" stroke="#fab387" stroke-width="1.5"/>
+      <rect x="10" y="30" width="20" height="40" fill="#fab387" opacity="0.6" rx="1"/>
+      <rect x="30" y="30" width="20" height="40" fill="#fab387" opacity="0.6" rx="1"/>
+      <rect x="50" y="70" width="20" height="40" fill="#fab387" opacity="0.6" rx="1"/>
+      <rect x="70" y="70" width="20" height="40" fill="#fab387" opacity="0.6" rx="1"/>
+      <rect x="90" y="70" width="20" height="40" fill="#fab387" opacity="0.6" rx="1"/>
+      <text x="60" y="125" fill="#6c7086" font-size="9" text-anchor="middle" font-family="Georgia">y_inc 為負，y 遞減</text>
+    </g>
+
+    <!-- Case 4: steep slope left-up -->
+    <g transform="translate(250,0)">
+      <text x="120" y="14" fill="#6c7086" font-size="10" text-anchor="middle" font-family="Consolas">④ 水平線 y_inc=0, x_inc=1</text>
+      <g stroke="#313244" stroke-width="0.5">
+        <line x1="10" y1="60" x2="10" y2="100"/><line x1="50" y1="60" x2="50" y2="100"/>
+        <line x1="90" y1="60" x2="90" y2="100"/><line x1="130" y1="60" x2="130" y2="100"/>
+        <line x1="170" y1="60" x2="170" y2="100"/><line x1="210" y1="60" x2="210" y2="100"/>
+        <line x1="10" y1="60" x2="210" y2="60"/><line x1="10" y1="100" x2="210" y2="100"/>
+      </g>
+      <line x1="10" y1="80" x2="210" y2="80" stroke="#cba6f7" stroke-width="1.5"/>
+      <rect x="10" y="60" width="40" height="40" fill="#cba6f7" opacity="0.6" rx="1"/>
+      <rect x="50" y="60" width="40" height="40" fill="#cba6f7" opacity="0.6" rx="1"/>
+      <rect x="90" y="60" width="40" height="40" fill="#cba6f7" opacity="0.6" rx="1"/>
+      <rect x="130" y="60" width="40" height="40" fill="#cba6f7" opacity="0.6" rx="1"/>
+      <rect x="170" y="60" width="40" height="40" fill="#cba6f7" opacity="0.6" rx="1"/>
+      <text x="110" y="120" fill="#6c7086" font-size="9" text-anchor="middle" font-family="Georgia">y_inc=0，純水平</text>
+
+      <text x="120" y="160" fill="#6c7086" font-size="10" text-anchor="middle" font-family="Consolas">⑤ 垂直線 x_inc=0, y_inc=1</text>
+      <g stroke="#313244" stroke-width="0.5">
+        <line x1="90" y1="170" x2="90" y2="290"/><line x1="130" y1="170" x2="130" y2="290"/>
+        <line x1="90" y1="170" x2="130" y2="170"/><line x1="90" y1="200" x2="130" y2="200"/>
+        <line x1="90" y1="230" x2="130" y2="230"/><line x1="90" y1="260" x2="130" y2="260"/>
+        <line x1="90" y1="290" x2="130" y2="290"/>
+      </g>
+      <line x1="110" y1="170" x2="110" y2="290" stroke="#f38ba8" stroke-width="1.5"/>
+      <rect x="90" y="170" width="40" height="30" fill="#f38ba8" opacity="0.6" rx="1"/>
+      <rect x="90" y="200" width="40" height="30" fill="#f38ba8" opacity="0.6" rx="1"/>
+      <rect x="90" y="230" width="40" height="30" fill="#f38ba8" opacity="0.6" rx="1"/>
+      <rect x="90" y="260" width="40" height="30" fill="#f38ba8" opacity="0.6" rx="1"/>
+      <text x="120" y="300" fill="#6c7086" font-size="9" text-anchor="middle" font-family="Georgia">x_inc=0，純垂直</text>
+    </g>
+  </svg>
+  <figcaption>DDA 用 steps=max(|dx|,|dy|) 自動處理所有方向，x_inc 和 y_inc 可以是任意浮點數</figcaption>
+</div>
+
+<div class="box box-blue">
+  DDA 的優雅之處：不需要分 case，不需要知道斜率大於還是小於 1。<br>
+  steps = max(|dx|, |dy|) 讓主軸每步恰好走 1 格，保證不跳格。<br>
+  x_inc 和 y_inc 自然地表達了「每步要走多少」。
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">5</div>DDA 的問題：浮點累積誤差</div></h2>
+
+<p>DDA 的問題不是「結果錯」，而是「表示方式帶來的代價」。</p>
+
+<h3>問題一：浮點運算昂貴（歷史問題）</h3>
+<p>1960 年代沒有浮點運算單元（FPU），加法和乘法的代價比現在高出幾個數量級。
+每步做浮點加法 <code>y += dy/dx</code> 在當時是很重的操作。</p>
+<p>現代 CPU 有硬體 FPU，這個問題幾乎消失了。</p>
+
+<h3>問題二：浮點精度的累積</h3>
+<p>浮點數不是精確的有理數。每次加法都有微小誤差，長距離的線會累積：</p>
+
+<div class="math">
+  <span class="r cmt">// 理想：每步加 3/7 = 0.42857142857...</span>
+  <span class="r dim">// 實際浮點（float32）：</span>
+  <span class="r">3.0f / 7.0f = 0.42857142 857...（精確到約第 7 位）</span>
+  <span class="r cmt"></span>
+  <span class="r cmt">// 100 步後的累積誤差：</span>
+  <span class="r">理想 y = 42.857142857...</span>
+  <span class="r em">浮點 y ≈ 42.857140...   （誤差 ≈ 2.8e-6）</span>
+  <span class="r cmt"></span>
+  <span class="r cmt">// 1000 步後誤差可能大到影響 round() 的結果</span>
+</div>
+
+<p>對大多數螢幕解析度（1080p、4K），這個誤差不會造成視覺問題，
+但在某些特殊情況下（非常長的線、精確像素輸出）會有問題。</p>
+
+<h3>問題三：round() 的捨入不一致</h3>
+<p>DDA 用 <code>round(y)</code> 決定要畫哪個像素，
+但 round 的捨入方向在不同系統不一定一致（ties：0.5 要捨入到哪？）：</p>
+
+<div class="math">
+  <span class="r">round(0.5) = ?</span>
+  <span class="r dim">C 標準：0.5 → 1（四捨五入）</span>
+  <span class="r dim">IEEE 754：0.5 → 0（取最近偶數，Banker's Rounding）</span>
+  <span class="r dim">Python：0.5 → 0，1.5 → 2（也是 Banker's Rounding）</span>
+</div>
+
+<p>同一條線，在不同環境跑 DDA，可能有個別像素不同。
+Bresenham 沒有 round，判斷完全由整數比較決定，跨平台結果一致。</p>
+
+<h3>比較：長線的誤差放大（數值模擬）</h3>
+
+<table>
+  <tr><th>步數</th><th>理想 y</th><th>DDA (float32)</th><th>差異</th><th>影響 round？</th></tr>
+  <tr><td>10</td><td>4.2857...</td><td>4.285714</td><td>~1e-7</td><td style="color:#a6e3a1">否</td></tr>
+  <tr><td>100</td><td>42.857...</td><td>42.857140</td><td>~2e-6</td><td style="color:#a6e3a1">否</td></tr>
+  <tr><td>1000</td><td>428.57...</td><td>428.57138</td><td>~1e-4</td><td style="color:#f9e2af">極少數情況</td></tr>
+  <tr class="warn-row"><td>10000</td><td>4285.7...</td><td>4285.713...</td><td>~1e-3</td><td style="color:#f38ba8">可能</td></tr>
+</table>
+
+<div class="box box-yellow">
+  現代顯示器解析度通常不超過 8000px，所以浮點誤差在實務上幾乎不會造成問題。<br>
+  但在精確輸出（印刷、向量轉點陣、字型渲染）或嵌入式系統（無 FPU）的場景，
+  Bresenham 的整數精確性仍然有優勢。
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">6</div>程式碼對比</h2>
+
+<div class="two-col">
+  <div>
+    <div class="col-title" style="color:#89b4fa">▌ DDA</div>
+    <div class="code" style="font-size:0.8em; padding:12px 16px; margin:0;">
+<span class="kw">void</span> <span class="fn">DrawLineDDA</span>(x1,y1,x2,y2,color) {<br>
+&nbsp;&nbsp;<span class="kw">int</span> dx = x2-x1, dy = y2-y1;<br>
+&nbsp;&nbsp;<span class="hi">int steps = max(abs(dx),abs(dy));</span><br>
+&nbsp;&nbsp;<span class="kw">float</span> xi = (<span class="kw">float</span>)dx/steps;<br>
+&nbsp;&nbsp;<span class="kw">float</span> yi = (<span class="kw">float</span>)dy/steps;<br>
+&nbsp;&nbsp;<span class="kw">float</span> x=x1, y=y1;<br>
+&nbsp;&nbsp;<span class="kw">for</span>(<span class="kw">int</span> i=0; i&lt;=steps; i++){<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="fn">SetPixel</span>(round(x), round(y));<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="ok">x += xi;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="ok">y += yi;</span><br>
+&nbsp;&nbsp;}<br>
+}<br>
+<br>
+<span class="cmt">// 優點：邏輯簡單，5分鐘能寫完</span><br>
+<span class="cmt">// 缺點：浮點、round()、跨平台不一致</span>
+    </div>
+  </div>
+  <div>
+    <div class="col-title" style="color:#a6e3a1">▌ Bresenham</div>
+    <div class="code" style="font-size:0.8em; padding:12px 16px; margin:0;">
+<span class="kw">void</span> <span class="fn">DrawLine</span>(x1,y1,x2,y2,color) {<br>
+&nbsp;&nbsp;<span class="kw">int</span> dx=abs(x2-x1), dy=abs(y2-y1);<br>
+&nbsp;&nbsp;<span class="kw">int</span> sx=(x1&lt;x2)?1:-1;<br>
+&nbsp;&nbsp;<span class="kw">int</span> sy=(y1&lt;y2)?1:-1;<br>
+&nbsp;&nbsp;<span class="hi">int err=dx-dy;</span><br>
+&nbsp;&nbsp;<span class="kw">while</span>(true){<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="fn">SetPixel</span>(x1,y1);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span>(x1==x2 &amp;&amp; y1==y2) <span class="kw">break</span>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">int</span> e2=2*err;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span>(e2&gt;-dy){err-=dy; x1+=sx;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span>(e2&lt;dx) {err+=dx; y1+=sy;}<br>
+&nbsp;&nbsp;}<br>
+}<br>
+<br>
+<span class="cmt">// 優點：全整數、精確、無 round</span><br>
+<span class="cmt">// 缺點：需要理解推導才能修改</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">7</div>DDA 的現代用途</h2>
+
+<p>DDA 看似被 Bresenham 完全取代，但它的思路在現代圖形學仍然存在：</p>
+
+<h3>用途一：軟體光柵化的掃描線插值</h3>
+<p>三角形光柵化時，沿著邊緣從頂點走到底部，每步插值顏色、UV、深度。
+這就是 DDA：每步 <code>u += u_inc</code>，<code>v += v_inc</code>。
+這裡用浮點完全合理，因為插值結果本身就是浮點（寫入 framebuffer 前才量化）。</p>
+
+<div class="math">
+  <span class="r cmt">// 三角形邊緣的 DDA 插值（光柵化的基礎）</span>
+  <span class="r">每列 y 掃描：</span>
+  <span class="r">  x_left  += x_inc_left</span>
+  <span class="r">  x_right += x_inc_right</span>
+  <span class="r">  u       += u_inc</span>
+  <span class="r">  depth   += depth_inc</span>
+  <span class="r cmt">// 正是 DDA 的思路：每步加常數增量</span>
+</div>
+
+<h3>用途二：光線步進（Ray Marching / DDA Traversal）</h3>
+<p>光線在體素網格（Voxel Grid）或 SDF（Signed Distance Field）中前進，
+用 DDA 決定光線下一步進入哪個格子——這比 Bresenham 更自然，
+因為需要知道精確的進入點，不只是哪個格子。</p>
+
+<div class="math">
+  <span class="r cmt">// Voxel DDA（光線追蹤體素場景的標準算法）</span>
+  <span class="r">t_delta_x = 1.0 / |ray.x|   <span class="cmt">// 穿越一格 x 需要的 t</span></span>
+  <span class="r">t_delta_y = 1.0 / |ray.y|   <span class="cmt">// 穿越一格 y 需要的 t</span></span>
+  <span class="r kw">loop：</span>
+  <span class="r">  下一個碰到的格子邊界 = min(t_max_x, t_max_y)</span>
+  <span class="r ok">  t_max_x += t_delta_x   <span class="cmt">（DDA 增量）</span></span>
+</div>
+
+<h3>用途三：抗鋸齒線（Anti-Aliased Line）</h3>
+<p>Wu's Line Algorithm（吳小林演算法，1991）是 DDA 的延伸：
+不 round 到最近像素，而是把 y 的小數部分當作透明度，
+在兩個相鄰像素上分配顏色，實現抗鋸齒：</p>
+
+<div class="math">
+  <span class="r">y_float = 0.8</span>
+  <span class="r ok">畫 (x, 0) 亮度 = 1 − 0.8 = 0.2    <span class="cmt">（離 y 的整數部分遠）</span></span>
+  <span class="r ok">畫 (x, 1) 亮度 = 0.8               <span class="cmt">（離 y 的小數部分近）</span></span>
+</div>
+
+<p>Bresenham 只畫一個像素，Wu 用 DDA 的浮點 y 值算透明度，畫兩個。
+這是 DDA 比 Bresenham 更自然的場景。</p>
+
+<div class="fig">
+  <svg width="440" height="100" viewBox="0 0 440 100">
+    <!-- Bresenham -->
+    <text x="100" y="14" fill="#6c7086" font-size="11" text-anchor="middle" font-family="Consolas">Bresenham（每步 1 個像素）</text>
+    <g>
+      <rect x="10" y="60" width="20" height="20" fill="#89b4fa" opacity="1.0" rx="1"/>
+      <rect x="30" y="60" width="20" height="20" fill="#89b4fa" opacity="1.0" rx="1"/>
+      <rect x="50" y="40" width="20" height="20" fill="#89b4fa" opacity="1.0" rx="1"/>
+      <rect x="70" y="40" width="20" height="20" fill="#89b4fa" opacity="1.0" rx="1"/>
+      <rect x="90" y="20" width="20" height="20" fill="#89b4fa" opacity="1.0" rx="1"/>
+      <rect x="110" y="20" width="20" height="20" fill="#89b4fa" opacity="1.0" rx="1"/>
+      <rect x="130" y="20" width="20" height="20" fill="#89b4fa" opacity="1.0" rx="1"/>
+      <!-- grid -->
+      <g stroke="#313244" stroke-width="0.3" opacity="0.5">
+        <line x1="10" y1="20" x2="150" y2="20"/><line x1="10" y1="40" x2="150" y2="40"/>
+        <line x1="10" y1="60" x2="150" y2="60"/><line x1="10" y1="80" x2="150" y2="80"/>
+        <line x1="10" y1="20" x2="10" y2="80"/><line x1="30" y1="20" x2="30" y2="80"/>
+        <line x1="50" y1="20" x2="50" y2="80"/><line x1="70" y1="20" x2="70" y2="80"/>
+        <line x1="90" y1="20" x2="90" y2="80"/><line x1="110" y1="20" x2="110" y2="80"/>
+        <line x1="130" y1="20" x2="130" y2="80"/><line x1="150" y1="20" x2="150" y2="80"/>
+      </g>
+    </g>
+    <!-- Wu -->
+    <text x="340" y="14" fill="#6c7086" font-size="11" text-anchor="middle" font-family="Consolas">Wu（每步 2 個像素，帶透明度）</text>
+    <g transform="translate(240,0)">
+      <rect x="10" y="60" width="20" height="20" fill="#89b4fa" opacity="0.9" rx="1"/>
+      <rect x="10" y="40" width="20" height="20" fill="#89b4fa" opacity="0.1" rx="1"/>
+      <rect x="30" y="60" width="20" height="20" fill="#89b4fa" opacity="0.7" rx="1"/>
+      <rect x="30" y="40" width="20" height="20" fill="#89b4fa" opacity="0.3" rx="1"/>
+      <rect x="50" y="40" width="20" height="20" fill="#89b4fa" opacity="0.8" rx="1"/>
+      <rect x="50" y="60" width="20" height="20" fill="#89b4fa" opacity="0.2" rx="1"/>
+      <rect x="70" y="40" width="20" height="20" fill="#89b4fa" opacity="0.5" rx="1"/>
+      <rect x="70" y="20" width="20" height="20" fill="#89b4fa" opacity="0.5" rx="1"/>
+      <rect x="90" y="20" width="20" height="20" fill="#89b4fa" opacity="0.85" rx="1"/>
+      <rect x="90" y="40" width="20" height="20" fill="#89b4fa" opacity="0.15" rx="1"/>
+      <rect x="110" y="20" width="20" height="20" fill="#89b4fa" opacity="0.6" rx="1"/>
+      <rect x="110" y="40" width="20" height="20" fill="#89b4fa" opacity="0.4" rx="1"/>
+      <rect x="130" y="20" width="20" height="20" fill="#89b4fa" opacity="0.9" rx="1"/>
+      <rect x="130" y="40" width="20" height="20" fill="#89b4fa" opacity="0.1" rx="1"/>
+      <g stroke="#313244" stroke-width="0.3" opacity="0.5">
+        <line x1="10" y1="20" x2="150" y2="20"/><line x1="10" y1="40" x2="150" y2="40"/>
+        <line x1="10" y1="60" x2="150" y2="60"/><line x1="10" y1="80" x2="150" y2="80"/>
+        <line x1="10" y1="20" x2="10" y2="80"/><line x1="30" y1="20" x2="30" y2="80"/>
+        <line x1="50" y1="20" x2="50" y2="80"/><line x1="70" y1="20" x2="70" y2="80"/>
+        <line x1="90" y1="20" x2="90" y2="80"/><line x1="110" y1="20" x2="110" y2="80"/>
+        <line x1="130" y1="20" x2="130" y2="80"/><line x1="150" y1="20" x2="150" y2="80"/>
+      </g>
+    </g>
+  </svg>
+  <figcaption>Bresenham 非 0 即 1；Wu 用 DDA 的浮點 y 值分配透明度，視覺上更平滑</figcaption>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">8</div>DDA → Bresenham → 現代的演進脈絡</h2>
+
+<table>
+  <tr><th>方法</th><th>年代</th><th>核心思路</th><th>問題</th><th>解決了誰的問題</th></tr>
+  <tr>
+    <td style="color:#6c7086">類比 DDA 硬體</td>
+    <td>1940s</td>
+    <td>類比電路積分 dy/dx=m</td>
+    <td>電路誤差、類比噪聲</td>
+    <td>手算太慢</td>
+  </tr>
+  <tr>
+    <td style="color:#89b4fa">軟體 DDA</td>
+    <td>1950s</td>
+    <td>數位實現，y += m（浮點）</td>
+    <td>FPU 昂貴、精度問題</td>
+    <td>電路誤差</td>
+  </tr>
+  <tr>
+    <td style="color:#a6e3a1">Bresenham</td>
+    <td>1965</td>
+    <td>整數誤差追蹤，不用浮點</td>
+    <td>難以推廣到曲線</td>
+    <td>浮點昂貴</td>
+  </tr>
+  <tr>
+    <td style="color:#cba6f7">Midpoint（d₁d₂）</td>
+    <td>1967+</td>
+    <td>中點測試，統一直線和曲線</td>
+    <td>—</td>
+    <td>推廣性問題</td>
+  </tr>
+  <tr>
+    <td style="color:#fab387">Wu's Line</td>
+    <td>1991</td>
+    <td>DDA + 浮點小數部分當透明度</td>
+    <td>兩倍像素操作</td>
+    <td>鋸齒問題</td>
+  </tr>
+  <tr>
+    <td style="color:#f9e2af">GPU 光柵化</td>
+    <td>2000s+</td>
+    <td>並行處理，硬體 FPU，subpixel 精度</td>
+    <td>—</td>
+    <td>軟體速度瓶頸</td>
+  </tr>
+</table>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">互動</div>步進演示</h2>
+
+<p>以 (0,0) → (7,3) 為例（m = 3/7 ≈ 0.4286）。觀察 <em>y_exact</em> 如何每步累積小數，<em>y_pixel</em> 則是四捨五入後的整數格。</p>
+
+<style>
+.dda-layout{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;margin:16px 0}
+.dda-panel{flex:1;min-width:220px;font-family:'Consolas',monospace;font-size:0.82em}
+.dv-section{background:#181825;border:1px solid #313244;border-radius:6px;padding:12px 14px;margin-bottom:10px}
+.dv-section h4{color:#89b4fa;margin-bottom:10px;font-size:0.9em;letter-spacing:0.04em}
+.dv-vars{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.dv-var{background:#1e1e2e;border-radius:5px;padding:6px 10px}
+.dv-label{color:#6c7086;font-size:0.72em;margin-bottom:1px}
+.dv-val{color:#a6e3a1;font-size:1.1em;font-weight:bold}
+.dv-val.neg{color:#f38ba8}
+.dv-bar-label{display:flex;justify-content:space-between;font-size:0.7em;color:#6c7086;margin-bottom:3px}
+.dv-bar-bg{height:16px;background:#1e1e2e;border-radius:4px;overflow:hidden;position:relative}
+.dv-bar-center{position:absolute;left:50%;top:0;bottom:0;width:2px;background:#45475a}
+.dv-bar-fill{position:absolute;top:0;height:100%;border-radius:4px;transition:all 0.3s}
+.dv-controls{display:flex;gap:6px;flex-wrap:wrap}
+.dv-controls button{padding:6px 12px;border:none;border-radius:5px;cursor:pointer;font-family:inherit;font-size:0.82em}
+.dv-step{text-align:center;color:#6c7086;font-size:0.8em;margin-bottom:6px}
+#dda-canvas{border:1px solid #313244;background:#181825;display:block}
+.dv-note{font-size:0.8em;color:#6c7086;margin-top:4px;line-height:1.5}
+</style>
+
+<div class="dda-layout">
+  <div>
+    <canvas id="dda-canvas" width="380" height="220"></canvas>
+    <div style="display:flex;gap:14px;margin-top:8px;font-size:0.75em;flex-wrap:wrap">
+      <span style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:12px;height:12px;background:#89b4fa;border-radius:2px"></span>已畫像素</span>
+      <span style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:12px;height:12px;background:#cba6f7;border-radius:2px;opacity:.7"></span>目前像素</span>
+      <span style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:12px;height:2px;background:#f38ba8;"></span>理想線</span>
+      <span style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:6px;height:6px;background:#f9e2af;border-radius:50%"></span>y_exact 位置</span>
+    </div>
+  </div>
+
+  <div class="dda-panel">
+    <div class="dv-section">
+      <h4>當前變數</h4>
+      <div class="dv-vars">
+        <div class="dv-var"><div class="dv-label">x</div><div class="dv-val" id="dv-x">0</div></div>
+        <div class="dv-var"><div class="dv-label">y_exact</div><div class="dv-val" id="dv-ye">0.000</div></div>
+        <div class="dv-var"><div class="dv-label">y_pixel = round()</div><div class="dv-val" id="dv-yp">0</div></div>
+        <div class="dv-var"><div class="dv-label">小數誤差</div><div class="dv-val" id="dv-frac">0.000</div></div>
+      </div>
+      <div style="margin-top:10px">
+        <div class="dv-bar-label"><span>−0.5</span><span>y_exact 在格子裡的位置</span><span>+0.5</span></div>
+        <div class="dv-bar-bg">
+          <div class="dv-bar-center"></div>
+          <div class="dv-bar-fill" id="dv-bar" style="background:#f9e2af"></div>
+        </div>
+        <div class="dv-note">誤差超過 ±0.5 就四捨五入到下一格</div>
+      </div>
+    </div>
+    <div class="dv-section">
+      <div class="dv-step" id="dv-step">步驟 0 / 7</div>
+      <div class="dv-controls">
+        <button id="dv-prev" style="background:#45475a;color:#cdd6f4">◀</button>
+        <button id="dv-next" style="background:#89b4fa;color:#1e1e2e;font-weight:bold">下一步 ▶</button>
+        <button id="dv-play" style="background:#a6e3a1;color:#1e1e2e;font-weight:bold">▶ 播放</button>
+        <button id="dv-reset" style="background:#f38ba8;color:#1e1e2e">重置</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+const COLS=9,ROWS=5,CELL=36,OX=10,OY=10;
+const P1={x:0,y:0},P2={x:7,y:3};
+const M=(P2.y-P1.y)/(P2.x-P1.x);
+
+function computeSteps(){
+  const s=[];
+  for(let x=P1.x;x<=P2.x;x++){
+    const ye=P1.y+(x-P1.x)*M;
+    const yp=Math.round(ye);
+    s.push({x,ye,yp,frac:ye-yp});
+  }
+  return s;
+}
+const STEPS=computeSteps();
+let cur=0,timer=null;
+
+const cv=document.getElementById('dda-canvas');
+const ctx=cv.getContext('2d');
+
+function cellX(c){return OX+c*CELL;}
+function cellY(r){return OY+r*CELL;}
+
+function draw(){
+  ctx.clearRect(0,0,cv.width,cv.height);
+  // grid
+  ctx.strokeStyle='#313244';ctx.lineWidth=0.5;
+  for(let c=0;c<=COLS;c++){ctx.beginPath();ctx.moveTo(cellX(c),OY);ctx.lineTo(cellX(c),OY+ROWS*CELL);ctx.stroke();}
+  for(let r=0;r<=ROWS;r++){ctx.beginPath();ctx.moveTo(OX,cellY(r));ctx.lineTo(OX+COLS*CELL,cellY(r));ctx.stroke();}
+  // ideal line
+  ctx.save();ctx.strokeStyle='rgba(243,139,168,0.5)';ctx.lineWidth=1.5;ctx.setLineDash([4,4]);
+  ctx.beginPath();
+  ctx.moveTo(cellX(P1.x),cellY(P1.y));
+  ctx.lineTo(cellX(P2.x),cellY(P2.y));
+  ctx.stroke();ctx.restore();
+  // past pixels
+  for(let i=0;i<cur;i++){
+    const s=STEPS[i];
+    ctx.fillStyle='rgba(137,180,250,0.7)';
+    ctx.fillRect(cellX(s.x)+1,cellY(s.yp)+1,CELL-2,CELL-2);
+    ctx.fillStyle='rgba(30,30,46,0.85)';ctx.font='9px Consolas';ctx.textAlign='center';
+    ctx.fillText(s.x+','+s.yp,cellX(s.x)+CELL/2,cellY(s.yp)+CELL/2+3);
+  }
+  // current pixel
+  const sc=STEPS[cur];
+  ctx.fillStyle=cur===STEPS.length-1?'rgba(166,227,161,0.85)':'rgba(203,166,247,0.75)';
+  ctx.fillRect(cellX(sc.x)+1,cellY(sc.yp)+1,CELL-2,CELL-2);
+  ctx.fillStyle='#1e1e2e';ctx.font='bold 9px Consolas';ctx.textAlign='center';
+  ctx.fillText(sc.x+','+sc.yp,cellX(sc.x)+CELL/2,cellY(sc.yp)+CELL/2+3);
+  // y_exact dot
+  const yScreen=cellY(sc.ye);
+  const xScreen=cellX(sc.x)+CELL/2;
+  // vertical line within column
+  ctx.strokeStyle='rgba(249,226,175,0.4)';ctx.lineWidth=1;ctx.setLineDash([2,2]);
+  ctx.beginPath();ctx.moveTo(xScreen,cellY(Math.floor(sc.ye)));ctx.lineTo(xScreen,cellY(Math.floor(sc.ye)+1));ctx.stroke();ctx.setLineDash([]);
+  // dot
+  ctx.fillStyle='#f9e2af';
+  ctx.beginPath();ctx.arc(xScreen,yScreen,4,0,Math.PI*2);ctx.fill();
+  // labels
+  ctx.fillStyle='#89b4fa';ctx.font='bold 10px Consolas';ctx.textAlign='center';
+  ctx.fillText('S',cellX(P1.x)+CELL/2,cellY(P1.y)-4);
+  ctx.fillStyle='#a6e3a1';
+  ctx.fillText('E',cellX(P2.x)+CELL/2,cellY(P2.y)-4);
+}
+
+function updateUI(){
+  const s=STEPS[cur];
+  document.getElementById('dv-x').textContent=s.x;
+  document.getElementById('dv-ye').textContent=s.ye.toFixed(4);
+  document.getElementById('dv-yp').textContent=s.yp;
+  const f=s.frac;
+  const el=document.getElementById('dv-frac');
+  el.textContent=(f>=0?'+':'')+f.toFixed(4);
+  el.className='dv-val'+(Math.abs(f)>0.3?' neg':'');
+  // bar: frac is in [-0.5, 0.5], map to [0,100]%
+  const pct=50+f*100;
+  const bar=document.getElementById('dv-bar');
+  if(f>=0){bar.style.left='50%';bar.style.width=(f*100)+'%';bar.style.background='#f9e2af';}
+  else{bar.style.left=(50+f*100)+'%';bar.style.width=(-f*100)+'%';bar.style.background='#fab387';}
+  document.getElementById('dv-step').textContent='步驟 '+cur+' / '+(STEPS.length-1);
+}
+
+function render(){draw();updateUI();}
+
+function stopTimer(){if(timer){clearInterval(timer);timer=null;document.getElementById('dv-play').textContent='▶ 播放';}}
+
+document.getElementById('dv-next').onclick=()=>{if(cur<STEPS.length-1){cur++;render();}};
+document.getElementById('dv-prev').onclick=()=>{if(cur>0){cur--;render();}};
+document.getElementById('dv-reset').onclick=()=>{stopTimer();cur=0;render();};
+document.getElementById('dv-play').onclick=function(){
+  if(timer){stopTimer();return;}
+  document.getElementById('dv-play').textContent='⏸ 暫停';
+  timer=setInterval(()=>{if(cur>=STEPS.length-1){stopTimer();return;}cur++;render();},700);
+};
+
+render();
+})();
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">總結</div></h2>
+
+<div class="box box-blue">
+  <strong>DDA 的地位：</strong><br><br>
+  DDA 是「把連續數學直接翻譯成計算步驟」的最自然結果。<br>
+  不需要任何特殊技巧，從微分方程出發，Euler 方法，加法步進。<br><br>
+  它的問題不是「思路錯」，而是「浮點運算在當時太貴，精度也有隱患」。<br>
+  Bresenham 解決的正是這個問題：<strong>把浮點決策替換成整數決策</strong>，不改變結果。<br><br>
+  而 DDA 的思路本身（每步加常數增量）在現代光柵化、光線步進、抗鋸齒中繼續存在，
+  只是換了名字和應用場景。
+</div>
+
+</body>
+</html>

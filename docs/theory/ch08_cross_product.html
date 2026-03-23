@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Ch08 — 叉積與有向面積</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:     #1e1e2e;
+  --bg1:    #181825;
+  --bg2:    #11111b;
+  --border: #313244;
+  --muted:  #6c7086;
+  --text:   #cdd6f4;
+  --blue:   #89b4fa;
+  --green:  #a6e3a1;
+  --yellow: #f9e2af;
+  --orange: #fab387;
+  --red:    #f38ba8;
+  --purple: #cba6f7;
+  --teal:   #94e2d5;
+}
+body {
+  background: var(--bg); color: var(--text);
+  font-family: 'Georgia', serif; font-size: 15px;
+  padding: 0 20px 80px; max-width: 900px; margin: 0 auto;
+  line-height: 1.9;
+}
+
+/* ── Nav ─────────────────────────────────────────────── */
+nav {
+  font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted);
+  padding: 14px 0; border-bottom: 1px solid var(--border);
+  margin-bottom: 36px; display: flex; align-items: center; gap: 10px;
+}
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--blue); }
+.nav-sep { color: var(--border); }
+.nav-cur { color: var(--text); }
+.nav-right { margin-left: auto; display: flex; gap: 16px; }
+
+/* ── Header ──────────────────────────────────────────── */
+.ch-header { margin-bottom: 40px; }
+.ch-label {
+  font-family: 'Consolas', monospace; font-size: 0.78em;
+  color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px;
+}
+.ch-title { color: var(--blue); font-size: 1.7em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub   { color: var(--muted); font-size: 0.88em; margin-bottom: 14px; }
+.ch-tags  { display: flex; gap: 6px; flex-wrap: wrap; }
+.ch-tag {
+  font-family: 'Consolas', monospace; font-size: 0.72em;
+  padding: 1px 7px; border-radius: 4px;
+  background: var(--bg2); color: var(--muted); border: 1px solid var(--border);
+}
+
+/* ── Typography ──────────────────────────────────────── */
+h2 {
+  color: var(--purple); font-size: 1em;
+  font-family: 'Consolas', monospace; letter-spacing: 0.05em;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+  margin: 44px 0 20px;
+  display: flex; align-items: center; gap: 12px;
+}
+h2 .n {
+  background: var(--purple); color: var(--bg2); font-weight: bold;
+  border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 0.85em;
+}
+h3 { color: var(--yellow); font-size: 0.95em; margin: 24px 0 10px; }
+p  { margin-bottom: 12px; }
+strong { color: var(--yellow); }
+em { color: var(--orange); font-style: normal; }
+ul, ol { margin: 8px 0 14px 26px; line-height: 2.2; }
+
+/* ── Boxes ────────────────────────────────────────────── */
+.box {
+  border-radius: 6px; padding: 14px 18px; margin: 16px 0;
+  font-size: 0.9em; line-height: 1.85;
+}
+.box-blue   { background: var(--bg); border-left: 4px solid var(--blue); }
+.box-green  { background: var(--bg); border-left: 4px solid var(--green); }
+.box-yellow { background: var(--bg); border-left: 4px solid var(--yellow); }
+.box-red    { background: var(--bg); border-left: 4px solid var(--red); }
+.box-purple { background: var(--bg); border-left: 4px solid var(--purple); }
+
+/* ── Math ─────────────────────────────────────────────── */
+.math {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 6px;
+  padding: 16px 22px; margin: 14px 0;
+  font-family: 'Consolas', monospace; font-size: 0.87em; line-height: 2.4;
+}
+.math .r   { display: block; }
+.math .cmt { color: var(--muted); }
+.math .hi  { color: var(--yellow); font-weight: bold; }
+.math .ok  { color: var(--green); }
+.math .em  { color: var(--red); }
+.math .kw  { color: var(--purple); }
+.math .or  { color: var(--orange); }
+
+/* ── Code ─────────────────────────────────────────────── */
+.code {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em;
+  line-height: 2.1; margin: 14px 0;
+}
+.code .cmt { color: var(--muted); }
+.code .kw  { color: var(--purple); }
+.code .val { color: var(--orange); }
+.code .ok  { color: var(--green); }
+.code .tp  { color: var(--blue); }
+.code .fn  { color: var(--teal); }
+
+/* ── Figures ──────────────────────────────────────────── */
+.fig { margin: 24px auto; text-align: center; }
+.fig figcaption { color: var(--muted); font-size: 0.82em; margin-top: 8px; font-style: italic; }
+
+/* ── Two-column ───────────────────────────────────────── */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+.two-col > div {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 8px;
+  padding: 16px 18px;
+}
+.col-title { font-family: 'Consolas', monospace; font-size: 0.85em; margin-bottom: 10px; color: var(--muted); }
+
+/* ── Chapter nav ──────────────────────────────────────── */
+.chapter-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border);
+  font-family: 'Consolas', monospace; font-size: 0.82em;
+}
+.chapter-nav a {
+  color: var(--muted); text-decoration: none; padding: 8px 14px;
+  border: 1px solid var(--border); border-radius: 6px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.chapter-nav a:hover { color: var(--blue); border-color: var(--blue); }
+.chapter-nav .next { color: var(--text); border-color: var(--blue); }
+
+hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <a href="../index.html">軟體光柵化</a>
+  <span class="nav-sep">/</span>
+  <span class="nav-cur">Ch08 — 叉積與有向面積</span>
+  <div class="nav-right">
+    <a href="ch07_bresenham_theory.html">← Ch07</a>
+    <a href="ch09_edge_function.html">Ch09 →</a>
+  </div>
+</nav>
+
+<!-- Header -->
+<div class="ch-header">
+  <div class="ch-label">PART 3 · CHAPTER 08</div>
+  <div class="ch-title">叉積與有向面積</div>
+  <div class="ch-sub">三角形填色的數學基礎 — 判斷「點在線段的哪一側」</div>
+  <div class="ch-tags">
+    <span class="ch-tag">cross product</span>
+    <span class="ch-tag">signed area</span>
+    <span class="ch-tag">determinant</span>
+    <span class="ch-tag">向量</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<p>
+  你已經知道怎麼畫一條線了。接下來的目標是<strong>填滿一個三角形</strong>。
+</p>
+<p>
+  問題聽起來很直接——三角形有三個頂點，把裡面的像素全部點亮。
+  但關鍵問題在於：<em>給定一個像素座標 (x, y)，怎麼判斷它在三角形裡面還是外面？</em>
+</p>
+
+<div class="box box-blue">
+  這一章建立核心工具：<strong>2D 叉積（cross product）</strong>。<br>
+  它能回答一個更基礎的問題：<em>點 P 在線段 AB 的左邊還是右邊？</em><br>
+  先搞懂這一件事，三角形內外測試就會自然推導出來。
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">1</div>先退一步：只考慮一條邊</h2>
+
+<p>
+  想像你站在 A 點，面向 B 點走去。點 P 在你的左手邊，還是右手邊？
+</p>
+
+<div class="fig">
+  <svg width="520" height="200" viewBox="0 0 520 200">
+    <defs>
+      <marker id="arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="#89b4fa"/>
+      </marker>
+      <marker id="arr-g" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="#a6e3a1"/>
+      </marker>
+      <marker id="arr-o" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="#fab387"/>
+      </marker>
+    </defs>
+
+    <!-- Left: P on left side -->
+    <g transform="translate(20,10)">
+      <text x="110" y="16" fill="#6c7086" font-size="11" font-family="Consolas" text-anchor="middle">P 在左側</text>
+      <!-- AB vector -->
+      <line x1="40" y1="150" x2="175" y2="60" stroke="#89b4fa" stroke-width="2" marker-end="url(#arr)"/>
+      <circle cx="40" cy="150" r="4" fill="#89b4fa"/>
+      <circle cx="180" cy="57" r="4" fill="#89b4fa"/>
+      <text x="28" y="168" fill="#89b4fa" font-size="12" font-family="Consolas">A</text>
+      <text x="184" y="56" fill="#89b4fa" font-size="12" font-family="Consolas">B</text>
+      <!-- P left -->
+      <circle cx="60" cy="60" r="5" fill="#a6e3a1"/>
+      <text x="45" y="56" fill="#a6e3a1" font-size="12" font-family="Consolas">P</text>
+      <!-- AP vector -->
+      <line x1="42" y1="148" x2="58" y2="64" stroke="#a6e3a1" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr-g)"/>
+      <!-- Label -->
+      <text x="110" y="185" fill="#a6e3a1" font-size="11" font-family="Consolas" text-anchor="middle">cross(AB, AP) &gt; 0</text>
+    </g>
+
+    <!-- Right: P on right side -->
+    <g transform="translate(270,10)">
+      <text x="110" y="16" fill="#6c7086" font-size="11" font-family="Consolas" text-anchor="middle">P 在右側</text>
+      <!-- AB vector -->
+      <line x1="40" y1="150" x2="175" y2="60" stroke="#89b4fa" stroke-width="2" marker-end="url(#arr)"/>
+      <circle cx="40" cy="150" r="4" fill="#89b4fa"/>
+      <circle cx="180" cy="57" r="4" fill="#89b4fa"/>
+      <text x="28" y="168" fill="#89b4fa" font-size="12" font-family="Consolas">A</text>
+      <text x="184" y="56" fill="#89b4fa" font-size="12" font-family="Consolas">B</text>
+      <!-- P right -->
+      <circle cx="185" cy="145" r="5" fill="#fab387"/>
+      <text x="191" y="150" fill="#fab387" font-size="12" font-family="Consolas">P</text>
+      <!-- AP vector -->
+      <line x1="42" y1="150" x2="181" y2="145" stroke="#fab387" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr-o)"/>
+      <!-- Label -->
+      <text x="110" y="185" fill="#fab387" font-size="11" font-family="Consolas" text-anchor="middle">cross(AB, AP) &lt; 0</text>
+    </g>
+  </svg>
+  <figcaption>同一條邊 AB，P 在不同側，叉積的正負號不同</figcaption>
+</div>
+
+<p>
+  這個「左右判斷」就是三角形填色的核心。
+  一個三角形有三條邊，如果點 P 對所有三條邊都在「正確那一側」，
+  它就在三角形內。
+</p>
+<p>
+  現在的問題是：<em>怎麼計算「哪一側」？</em>
+</p>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">2</div>2D 叉積的定義</h2>
+
+<p>
+  先回顧一下 3D 叉積。兩個 3D 向量 <strong>u</strong> 和 <strong>v</strong> 的叉積是：
+</p>
+
+<div class="math">
+  <span class="r"><span class="hi">u × v</span> = (u<sub>y</sub>v<sub>z</sub> − u<sub>z</sub>v<sub>y</sub>,  u<sub>z</sub>v<sub>x</sub> − u<sub>x</sub>v<sub>z</sub>,  u<sub>x</sub>v<sub>y</sub> − u<sub>y</sub>v<sub>x</sub>)</span>
+</div>
+
+<p>
+  現在把場景壓平到 2D，令 z = 0：
+</p>
+
+<div class="math">
+  <span class="r"><span class="kw">u</span> = (u<sub>x</sub>, u<sub>y</sub>, 0)</span>
+  <span class="r"><span class="kw">v</span> = (v<sub>x</sub>, v<sub>y</sub>, 0)</span>
+  <span class="r"></span>
+  <span class="r"><span class="kw">u</span> × <span class="kw">v</span> = (0, 0, <span class="hi">u<sub>x</sub>v<sub>y</sub> − u<sub>y</sub>v<sub>x</sub></span>)</span>
+  <span class="r cmt">          ↑ 只剩 z 分量不為零</span>
+</div>
+
+<p>
+  在 2D 中，叉積退化成一個<strong>純量</strong>（scalar）——只有 z 分量：
+</p>
+
+<div class="math">
+  <span class="r"><span class="hi">cross(u, v)</span> = u<sub>x</sub> · v<sub>y</sub> − u<sub>y</sub> · v<sub>x</sub></span>
+</div>
+
+<p>
+  這個數值就是 2D 叉積。兩行，一個減法，就夠了。
+</p>
+
+<h3>套入「點在線段哪一側」</h3>
+
+<p>
+  給定線段 AB 和點 P，令：
+</p>
+
+<div class="math">
+  <span class="r"><span class="kw">AB</span> = B − A = (B<sub>x</sub>−A<sub>x</sub>,  B<sub>y</sub>−A<sub>y</sub>)</span>
+  <span class="r"><span class="kw">AP</span> = P − A = (P<sub>x</sub>−A<sub>x</sub>,  P<sub>y</sub>−A<sub>y</sub>)</span>
+</div>
+
+<p>
+  則：
+</p>
+
+<div class="math">
+  <span class="r"><span class="hi">cross(AB, AP)</span> = AB<sub>x</sub> · AP<sub>y</sub> − AB<sub>y</sub> · AP<sub>x</sub></span>
+  <span class="r"></span>
+  <span class="r cmt">展開：</span>
+  <span class="r">= (B<sub>x</sub>−A<sub>x</sub>)(P<sub>y</sub>−A<sub>y</sub>) − (B<sub>y</sub>−A<sub>y</sub>)(P<sub>x</sub>−A<sub>x</sub>)</span>
+</div>
+
+<p>
+  結果是一個數字，正的或負的（或零，代表 P 剛好在直線上）。
+  但這個數字的<em>意義是什麼</em>？
+</p>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">3</div>幾何意義：有向面積</h2>
+
+<p>
+  叉積的幾何意義是：<strong>兩個向量張開的平行四邊形的「有向面積」</strong>。
+</p>
+
+<div class="fig">
+  <svg width="380" height="240" viewBox="0 0 380 240">
+    <defs>
+      <marker id="a2" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="#89b4fa"/>
+      </marker>
+      <marker id="a3" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="#a6e3a1"/>
+      </marker>
+    </defs>
+
+    <!-- Parallelogram -->
+    <polygon
+      points="80,190  230,190  300,80  150,80"
+      fill="#89b4fa" fill-opacity="0.08"
+      stroke="#313244" stroke-width="1" stroke-dasharray="4,3"/>
+
+    <!-- Origin A -->
+    <circle cx="80" cy="190" r="4" fill="#cdd6f4"/>
+    <text x="64" y="208" fill="#cdd6f4" font-size="12" font-family="Consolas">A (origin)</text>
+
+    <!-- Vector AB -->
+    <line x1="82" y1="190" x2="225" y2="190" stroke="#89b4fa" stroke-width="2.5" marker-end="url(#a2)"/>
+    <text x="148" y="210" fill="#89b4fa" font-size="12" font-family="Consolas" text-anchor="middle">u = AB</text>
+
+    <!-- Vector AP -->
+    <line x1="82" y1="188" x2="148" y2="84" stroke="#a6e3a1" stroke-width="2.5" marker-end="url(#a3)"/>
+    <text x="88" y="132" fill="#a6e3a1" font-size="12" font-family="Consolas">v = AP</text>
+
+    <!-- Area label -->
+    <text x="192" y="148" fill="#f9e2af" font-size="11" font-family="Consolas" text-anchor="middle">面積 =</text>
+    <text x="192" y="164" fill="#f9e2af" font-size="11" font-family="Consolas" text-anchor="middle">|cross(u, v)|</text>
+
+    <!-- Height indicator -->
+    <line x1="150" y1="80" x2="150" y2="190" stroke="#f9e2af" stroke-width="1" stroke-dasharray="3,3" opacity="0.5"/>
+    <text x="156" y="138" fill="#6c7086" font-size="10" font-family="Consolas">h</text>
+  </svg>
+  <figcaption>cross(AB, AP) 的絕對值 = 兩向量張開的平行四邊形面積</figcaption>
+</div>
+
+<p>
+  更精確地說：
+</p>
+
+<div class="math">
+  <span class="r"><span class="hi">cross(u, v)</span> = |u| · |v| · sin(θ)</span>
+  <span class="r cmt">                  θ = 從 u 到 v 的有向角</span>
+  <span class="r"></span>
+  <span class="r cmt">|cross(u, v)| = 底 × 高 = 平行四邊形面積</span>
+</div>
+
+<p>
+  <strong>「有向」的意思</strong>是：面積帶有正負號，取決於 v 是在 u 的逆時針方向還是順時針方向：
+</p>
+
+<div class="two-col">
+  <div>
+    <div class="col-title" style="color:var(--green)">▌ cross &gt; 0</div>
+    <p>v 在 u 的<strong>逆時針方向</strong>（左側）<br>
+    P 在 AB 的<em>左邊</em></p>
+    <p style="color:var(--muted);font-size:0.85em">在數學座標系（y 朝上）成立。<br>
+    若 y 朝下（螢幕座標），符號相反——<br>
+    但<em>一致性</em>才是重點，只要全程用同一套即可。</p>
+  </div>
+  <div>
+    <div class="col-title" style="color:var(--orange)">▌ cross &lt; 0</div>
+    <p>v 在 u 的<strong>順時針方向</strong>（右側）<br>
+    P 在 AB 的<em>右邊</em></p>
+  </div>
+</div>
+
+<div class="box box-yellow">
+  <strong>重點：</strong>你不需要背「左邊是正還是負」。<br>
+  只需要記得：<em>三條邊用同樣的順序（都順時針或都逆時針）計算，
+  三個結果同號 → 點在三角形內。</em>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">4</div>行列式形式</h2>
+
+<p>
+  叉積有一個很常見的等價寫法——<strong>2×2 行列式</strong>：
+</p>
+
+<div class="math">
+  <span class="r"><span class="hi">cross(u, v)</span> = det ⎡ u<sub>x</sub>  v<sub>x</sub> ⎤</span>
+  <span class="r">               ⎣ u<sub>y</sub>  v<sub>y</sub> ⎦</span>
+  <span class="r"></span>
+  <span class="r">             = u<sub>x</sub> · v<sub>y</sub> − u<sub>y</sub> · v<sub>x</sub></span>
+</div>
+
+<p>
+  展開後和前面的定義完全相同。行列式形式讓你更容易記住——
+  對角相乘再相減：左上×右下 − 左下×右上。
+</p>
+
+<h3>用三個頂點直接寫出來</h3>
+
+<p>
+  如果你有三角形頂點 A、B、C（不是向量，是點座標），
+  可以直接把它們代入：
+</p>
+
+<div class="math">
+  <span class="r"><span class="kw">AB</span> = (B<sub>x</sub>−A<sub>x</sub>, B<sub>y</sub>−A<sub>y</sub>)</span>
+  <span class="r"><span class="kw">AP</span> = (P<sub>x</sub>−A<sub>x</sub>, P<sub>y</sub>−A<sub>y</sub>)</span>
+  <span class="r"></span>
+  <span class="r"><span class="hi">cross(AB, AP)</span> = (B<sub>x</sub>−A<sub>x</sub>)(P<sub>y</sub>−A<sub>y</sub>) − (B<sub>y</sub>−A<sub>y</sub>)(P<sub>x</sub>−A<sub>x</sub>)</span>
+</div>
+
+<p>
+  這六個數字（A<sub>x</sub>、A<sub>y</sub>、B<sub>x</sub>、B<sub>y</sub>、P<sub>x</sub>、P<sub>y</sub>）全部是整數座標，
+  結果也是整數——<em>不需要浮點數</em>。這在光柵化實作中很有用。
+</p>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">5</div>三角形的有向面積</h2>
+
+<p>
+  叉積還帶給你另一個禮物：<strong>三角形面積公式</strong>。
+</p>
+
+<p>
+  平行四邊形面積 = |cross(AB, AC)|<br>
+  三角形面積 = 一半：
+</p>
+
+<div class="math">
+  <span class="r"><span class="hi">Area(△ABC)</span> = <span class="ok">½</span> · |cross(AB, AC)|</span>
+  <span class="r"></span>
+  <span class="r cmt">展開：</span>
+  <span class="r">= <span class="ok">½</span> · |(B<sub>x</sub>−A<sub>x</sub>)(C<sub>y</sub>−A<sub>y</sub>) − (B<sub>y</sub>−A<sub>y</sub>)(C<sub>x</sub>−A<sub>x</sub>)|</span>
+</div>
+
+<p>
+  去掉絕對值（允許負值），就得到<strong>有向面積</strong>。
+  它的正負號告訴你：三個頂點是逆時針排列（正）還是順時針排列（負）：
+</p>
+
+<div class="math">
+  <span class="r"><span class="hi">SignedArea(△ABC)</span> = ½ · cross(AB, AC)</span>
+  <span class="r"></span>
+  <span class="r ok">> 0 : A→B→C 逆時針（數學座標系）</span>
+  <span class="r em">&lt; 0 : A→B→C 順時針</span>
+  <span class="r cmt">= 0 : 三點共線（退化三角形）</span>
+</div>
+
+<div class="box box-purple">
+  <strong>為什麼有向面積很重要？</strong><br>
+  下一章的邊緣函數（Edge Function）計算的值，
+  可以除以整個三角形的有向面積，得到<em>重心座標</em>（第 Ch10 章的主題）。<br>
+  這就是為什麼三角形內外測試和屬性插值（顏色、UV、法線…）
+  可以用同一套計算框架完成。
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">6</div>用程式碼表達</h2>
+
+<p>
+  把上面的數學翻譯成 C++：
+</p>
+
+<div class="code">
+<span class="cmt">// 2D 叉積（純量）</span><br>
+<span class="cmt">// 給定兩個 2D 向量 u、v，回傳 u.x*v.y - u.y*v.x</span><br>
+<span class="kw">float</span> <span class="fn">cross2d</span>(<span class="tp">Vec2</span> u, <span class="tp">Vec2</span> v) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> u.x * v.y - u.y * v.x;<br>
+}<br>
+<br>
+<span class="cmt">// 點 P 在線段 AB 的哪一側？</span><br>
+<span class="cmt">// 結果 > 0 → 左側；< 0 → 右側；= 0 → 在直線上</span><br>
+<span class="kw">float</span> <span class="fn">edgeTest</span>(<span class="tp">Vec2</span> A, <span class="tp">Vec2</span> B, <span class="tp">Vec2</span> P) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="tp">Vec2</span> AB = { B.x - A.x, B.y - A.y };<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="tp">Vec2</span> AP = { P.x - A.x, P.y - A.y };<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> <span class="fn">cross2d</span>(AB, AP);<br>
+}<br>
+<br>
+<span class="cmt">// 三角形有向面積（面積 = 回傳值的一半）</span><br>
+<span class="kw">float</span> <span class="fn">signedArea</span>(<span class="tp">Vec2</span> A, <span class="tp">Vec2</span> B, <span class="tp">Vec2</span> C) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> <span class="fn">edgeTest</span>(A, B, C);  <span class="cmt">// cross(AB, AC)</span><br>
+}
+</div>
+
+<p>
+  就這樣。<code>edgeTest()</code> 是後面所有東西的核心——
+  只有一個乘法、一個減法、結果帶正負號。
+</p>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">7</div>本章小結</h2>
+
+<div class="box box-green">
+  <strong>本章學到的三件事：</strong><br><br>
+  1. <em>2D 叉積 = u.x·v.y − u.y·v.x</em>，是一個純量，不是向量。<br>
+  2. 它的<em>絕對值</em>是兩向量張開的平行四邊形面積（三角形面積的兩倍）。<br>
+  3. 它的<em>正負號</em>告訴你 v 在 u 的哪一側——這就是判斷「點在線段左/右」的依據。
+</div>
+
+<p>
+  下一章：我們用三次 <code>edgeTest()</code>（對三條邊各做一次），
+  建立完整的<strong>邊緣函數（Edge Function）</strong>，
+  把「點在三角形內嗎？」這個問題完整解決。
+</p>
+
+<!-- ── Chapter nav ─────────────────────────────────────────────── -->
+<div class="chapter-nav">
+  <a href="ch07_bresenham_theory.html">← Ch07 Bresenham 理論比較</a>
+  <a class="next" href="ch09_edge_function.html">Ch09 邊緣函數 →</a>
+</div>
+
+</body>
+</html>

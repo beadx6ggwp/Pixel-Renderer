@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>軟體光柵化 — 系列教學</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:     #1e1e2e;
+  --bg1:    #181825;
+  --bg2:    #11111b;
+  --border: #313244;
+  --muted:  #6c7086;
+  --text:   #cdd6f4;
+  --blue:   #89b4fa;
+  --green:  #a6e3a1;
+  --yellow: #f9e2af;
+  --orange: #fab387;
+  --red:    #f38ba8;
+  --purple: #cba6f7;
+  --teal:   #94e2d5;
+}
+body {
+  background: var(--bg2); color: var(--text);
+  font-family: 'Georgia', serif; font-size: 15px;
+  min-height: 100vh;
+}
+
+/* ── Hero ───────────────────────────────────────────────────── */
+.hero {
+  background: var(--bg1);
+  border-bottom: 1px solid var(--border);
+  padding: 56px 40px 48px;
+  text-align: center;
+}
+.hero-label {
+  font-family: 'Consolas', monospace; font-size: 0.78em;
+  color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase;
+  margin-bottom: 14px;
+}
+.hero h1 {
+  font-size: 2.2em; color: var(--blue); margin-bottom: 14px;
+  font-weight: normal;
+}
+.hero-sub {
+  color: var(--muted); max-width: 580px; margin: 0 auto 28px;
+  font-size: 0.92em; line-height: 1.8;
+}
+.hero-tags { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.tag {
+  font-family: 'Consolas', monospace; font-size: 0.75em;
+  padding: 3px 10px; border-radius: 99px; border: 1px solid;
+}
+.tag-blue   { color: var(--blue);   border-color: var(--blue);   background: #1a2a3d; }
+.tag-green  { color: var(--green);  border-color: var(--green);  background: #1a2d1a; }
+.tag-purple { color: var(--purple); border-color: var(--purple); background: #2a1a3d; }
+
+/* ── Layout ─────────────────────────────────────────────────── */
+.container { max-width: 1040px; margin: 0 auto; padding: 48px 32px; }
+
+/* ── Overview strip ─────────────────────────────────────────── */
+.overview {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 16px; margin-bottom: 48px;
+}
+.ov-card {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 8px;
+  padding: 18px 16px; text-align: center;
+}
+.ov-num  { font-family: 'Consolas', monospace; font-size: 2em; font-weight: bold; margin-bottom: 4px; }
+.ov-label { color: var(--muted); font-size: 0.82em; }
+
+/* ── Part headers ────────────────────────────────────────────── */
+.part {
+  margin-bottom: 40px;
+}
+.part-header {
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 16px; padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.part-num {
+  font-family: 'Consolas', monospace; font-size: 0.75em;
+  color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase;
+}
+.part-title { font-size: 1.05em; color: var(--text); }
+.part-desc  { color: var(--muted); font-size: 0.85em; margin-left: auto; }
+
+/* ── Chapter cards ───────────────────────────────────────────── */
+.chapters { display: flex; flex-direction: column; gap: 10px; }
+.ch {
+  display: flex; align-items: flex-start; gap: 16px;
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 8px;
+  padding: 16px 20px; text-decoration: none; color: inherit;
+  transition: border-color 0.15s, background 0.15s;
+  position: relative; overflow: hidden;
+}
+.ch::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px; background: var(--border); border-radius: 3px 0 0 3px;
+  transition: background 0.15s;
+}
+.ch:hover::before { background: var(--blue); }
+.ch:hover { border-color: #414259; background: #1e1e2e; }
+.ch.done::before  { background: var(--green); }
+.ch.inter::before { background: var(--purple); }
+.ch.impl::before  { background: var(--orange); }
+.ch.bonus::before { background: var(--teal); }
+.ch.soon { opacity: 0.5; cursor: default; pointer-events: none; }
+.ch.soon::before  { background: var(--border); }
+
+.ch-num {
+  font-family: 'Consolas', monospace; font-size: 0.78em;
+  color: var(--muted); width: 32px; flex-shrink: 0; padding-top: 3px;
+}
+.ch-body { flex: 1; min-width: 0; }
+.ch-title {
+  font-size: 0.95em; color: var(--text); margin-bottom: 4px;
+  display: flex; align-items: center; gap: 8px;
+}
+.ch-desc  { color: var(--muted); font-size: 0.82em; line-height: 1.6; }
+.ch-tags  { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.ch-tag {
+  font-family: 'Consolas', monospace; font-size: 0.72em;
+  padding: 1px 7px; border-radius: 4px; background: var(--bg2);
+  color: var(--muted); border: 1px solid var(--border);
+}
+
+.badge {
+  font-family: 'Consolas', monospace; font-size: 0.68em;
+  padding: 1px 7px; border-radius: 4px; flex-shrink: 0;
+}
+.badge-done  { background: #1a2d1a; color: var(--green);  border: 1px solid var(--green); }
+.badge-inter { background: #2a1a3d; color: var(--purple); border: 1px solid var(--purple); }
+.badge-soon  { background: var(--bg2); color: var(--muted); border: 1px solid var(--border); }
+
+.ch-arrow {
+  color: var(--muted); font-size: 0.9em; padding-top: 3px; flex-shrink: 0;
+  transition: transform 0.15s, color 0.15s;
+}
+.ch:hover .ch-arrow { transform: translateX(3px); color: var(--blue); }
+
+/* ── Prereq map ─────────────────────────────────────────────── */
+.prereq {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 8px;
+  padding: 24px 28px; margin-bottom: 48px;
+}
+.prereq h3 { color: var(--yellow); font-size: 0.9em; margin-bottom: 16px; font-family: 'Consolas', monospace; }
+.prereq-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+.prereq-item { font-size: 0.85em; }
+.prereq-name { color: var(--text); margin-bottom: 2px; }
+.prereq-desc { color: var(--muted); font-size: 0.88em; line-height: 1.5; }
+
+/* ── Pivot Part ─────────────────────────────────────────────── */
+.part.pivot { border-left: 2px solid var(--yellow); padding-left: 18px; margin-left: -20px; }
+.part.pivot .part-title { color: var(--yellow); }
+
+/* ── Footer ─────────────────────────────────────────────────── */
+.footer {
+  border-top: 1px solid var(--border);
+  padding: 24px 40px; text-align: center;
+  color: var(--muted); font-size: 0.82em;
+  font-family: 'Consolas', monospace;
+}
+
+@media (max-width: 700px) {
+  .overview { grid-template-columns: 1fr 1fr; }
+  .prereq-grid { grid-template-columns: 1fr; }
+  .hero { padding: 36px 20px; }
+  .container { padding: 32px 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-label">系列教學</div>
+  <h1>軟體光柵化</h1>
+  <p class="hero-sub">
+    從一個 <code>SetPixel()</code> 出發，一路推導到可程式化 Shader 系統。
+    每個演算法、每條公式都自己推導，不只學「怎麼做」，也學「為什麼這樣做」——
+    最終目標：徹底理解 OpenGL / GPU 管線的每個細節。
+  </p>
+  <div class="hero-tags">
+    <span class="tag tag-blue">C++</span>
+    <span class="tag tag-green">從零推導</span>
+    <span class="tag tag-purple">Shader 系統</span>
+    <span class="tag tag-blue">無外部依賴</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Overview -->
+  <div class="overview">
+    <div class="ov-card">
+      <div class="ov-num" style="color:var(--blue)">11</div>
+      <div class="ov-label">章節已完成</div>
+    </div>
+    <div class="ov-card">
+      <div class="ov-num" style="color:var(--purple)">4</div>
+      <div class="ov-label">內嵌互動演示</div>
+    </div>
+    <div class="ov-card">
+      <div class="ov-num" style="color:var(--yellow)">32</div>
+      <div class="ov-label">章節總計</div>
+    </div>
+    <div class="ov-card">
+      <div class="ov-num" style="color:var(--green)">0</div>
+      <div class="ov-label">外部依賴</div>
+    </div>
+  </div>
+
+  <!-- Prereq -->
+  <div class="prereq">
+    <h3>▌ 前置知識（分階段）</h3>
+    <div class="prereq-grid">
+      <div class="prereq-item">
+        <div class="prereq-name">Part 1–3 ｜高中數學 + C++ 基礎</div>
+        <div class="prereq-desc">直線方程、座標系、絕對值。指標、二維陣列、基本 OOP。</div>
+      </div>
+      <div class="prereq-item">
+        <div class="prereq-name">Part 4–6 ｜線性代數入門</div>
+        <div class="prereq-desc">向量、矩陣乘法、行列式。推薦先看 3Blue1Brown「線性代數的本質」。</div>
+      </div>
+      <div class="prereq-item">
+        <div class="prereq-name">Part 7+ ｜C++ 多型</div>
+        <div class="prereq-desc">虛函式、抽象類別（interface）。Shader 系統用 virtual 實現可插拔設計。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PART 1 ─────────────────────────────────────────────── -->
+  <div class="part">
+    <div class="part-header">
+      <span class="part-num">Part 1</span>
+      <span class="part-title">像素世界的基礎</span>
+      <span class="part-desc">Framebuffer · 座標系 · 原子操作</span>
+    </div>
+    <div class="chapters">
+
+      <a class="ch done" href="theory/ch01_intro.html">
+        <div class="ch-num">01</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            什麼是光柵化？
+            <span class="badge badge-done">已完成</span>
+          </div>
+          <div class="ch-desc">
+            Framebuffer 的本質、像素座標系、SetPixel 作為原子操作。
+            為什麼需要演算法來畫直線而不是直接計算？
+          </div>
+          <div class="ch-tags">
+            <span class="ch-tag">framebuffer</span>
+            <span class="ch-tag">SetPixel</span>
+            <span class="ch-tag">座標系</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch done" href="theory/ch02_dda.html">
+        <div class="ch-num">02</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            DDA 直線演算法
+            <span class="badge badge-done">已完成</span>
+          </div>
+          <div class="ch-desc">
+            從微分方程 dy/dx = m 出發，Euler 方法的直接應用。
+            最直覺的直線演算法，以及它的問題：浮點誤差與效能。
+            現代用途：三角形插值、體素光線追蹤、Wu 抗鋸齒。
+          </div>
+          <div class="ch-tags">
+            <span class="ch-tag">DDA</span>
+            <span class="ch-tag">Euler 方法</span>
+            <span class="ch-tag">浮點誤差</span>
+            <span class="ch-tag">Wu's Line</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- ── PART 2 ─────────────────────────────────────────────── -->
+  <div class="part">
+    <div class="part-header">
+      <span class="part-num">Part 2</span>
+      <span class="part-title">Bresenham 直線演算法</span>
+      <span class="part-desc">整數化 · 推導 · 八個方向</span>
+    </div>
+    <div class="chapters">
+
+      <a class="ch done" href="theory/ch04_bresenham_plain.html">
+        <div class="ch-num">04</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            推導一：誤差累積法（白話版）
+            <span class="badge badge-done">已完成</span>
+          </div>
+          <div class="ch-desc">
+            「每步欠多少 y，欠夠了就升格」——從程式設計師的視角推導。
+            兩次整數化，消掉浮點。Case by case 詳細追蹤每一步 err 的變化。
+          </div>
+          <div class="ch-tags">
+            <span class="ch-tag">誤差累積</span>
+            <span class="ch-tag">整數化</span>
+            <span class="ch-tag">case 分析</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch done" href="theory/ch05_bresenham_d1d2.html">
+        <div class="ch-num">05</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            推導二：d₁d₂ 距離法（幾何版）
+            <span class="badge badge-done">已完成</span>
+          </div>
+          <div class="ch-desc">
+            「選離理想線更近的那個格點」——從幾何距離出發的嚴謹推導。
+            定義決策參數 P，推導增量公式，計算初始值 P₀ = 2dy − dx。
+          </div>
+          <div class="ch-tags">
+            <span class="ch-tag">d₁ d₂ 距離</span>
+            <span class="ch-tag">決策參數 P</span>
+            <span class="ch-tag">增量公式</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch done" href="theory/ch06_bresenham_octants.html">
+        <div class="ch-num">06</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            八個方向的統一處理
+            <span class="badge badge-done">已完成</span>
+          </div>
+          <div class="ch-desc">
+            從「左下到右上」推廣到所有 8 個方向。
+            方向對稱（sx, sy）和軸對稱（緩坡/陡坡）兩個維度的分析，
+            以及程式碼如何用單一迴圈統一 8 個 case。
+          </div>
+          <div class="ch-tags">
+            <span class="ch-tag">8個方向</span>
+            <span class="ch-tag">sx sy</span>
+            <span class="ch-tag">陡坡緩坡</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch done" href="theory/ch07_bresenham_theory.html">
+        <div class="ch-num">07</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            理論比較：兩種推導視角
+            <span class="badge badge-done">已完成</span>
+          </div>
+          <div class="ch-desc">
+            兩種方法數學上等價（差一個常數移位），但適用場景不同。
+            中點測試（Midpoint Test）的來源，與數值分析（Euler 方法、差分法、二分法）的關係。
+            歷史脈絡：DDA → Bresenham → Midpoint → Wu。
+          </div>
+          <div class="ch-tags">
+            <span class="ch-tag">中點測試</span>
+            <span class="ch-tag">數值分析</span>
+            <span class="ch-tag">隱式曲線</span>
+            <span class="ch-tag">歷史脈絡</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- ── PART 3 ─────────────────────────────────────────────── -->
+  <div class="part">
+    <div class="part-header">
+      <span class="part-num">Part 3</span>
+      <span class="part-title">三角形光柵化</span>
+      <span class="part-desc">叉積 · Edge Function · 重心座標 · 包圍盒掃描 · Z-buffer</span>
+    </div>
+    <div class="chapters">
+
+      <a class="ch done" href="theory/ch08_cross_product.html">
+        <div class="ch-num">08</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            叉積與有向面積
+            <span class="badge badge-done">已完成</span>
+          </div>
+          <div class="ch-desc">
+            三角形填色的數學基礎：2D 叉積的定義、幾何意義（平行四邊形有向面積），
+            以及最關鍵的用途——判斷「點在線段的哪一側」。
+            Edge Function 與重心座標的共同根基。
+          </div>
+          <div class="ch-tags">
+            <span class="ch-tag">cross product</span>
+            <span class="ch-tag">signed area</span>
+            <span class="ch-tag">determinant</span>
+            <span class="ch-tag">左右判斷</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch done" href="theory/ch09_edge_function.html">
+        <div class="ch-num">09</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            邊緣函數（Edge Function）
+            <span class="badge badge-done">已完成</span>
+          </div>
+          <div class="ch-desc">
+            三條邊各做一次叉積測試，三值同號 → 點在三角形內。
+            Edge Function 的線性性質與增量更新（每步只需一次加法）。
+            Top-Left Rule 解決共用邊歸屬問題，以及 GPU 2×2 Quad 的設計背景。
+          </div>
+          <div class="ch-tags">
+            <span class="ch-tag">edge function</span>
+            <span class="ch-tag">三角形內外</span>
+            <span class="ch-tag">增量更新</span>
+            <span class="ch-tag">top-left rule</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch done" href="theory/ch10_barycentric.html">
+        <div class="ch-num">10</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            重心座標（Barycentric Coordinates）
+            <span class="badge badge-done">已完成</span>
+          </div>
+          <div class="ch-desc">
+            Edge Function 值 ÷ 總面積 = w₀ w₁ w₂。幾何意義：子三角形面積比，三係數和為 1。
+            插值公式 f(P) = w₀·f(V0) + w₁·f(V1) + w₂·f(V2) 適用於顏色、UV、法線任何屬性——
+            這就是 GLSL varyings 的底層原理。
+          </div>
+          <div class="ch-tags">
+            <span class="ch-tag">重心座標</span>
+            <span class="ch-tag">面積比</span>
+            <span class="ch-tag">屬性插值</span>
+            <span class="ch-tag">varyings</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch done" href="theory/ch11_bounding_box.html">
+        <div class="ch-num">11</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            包圍盒掃描法（完整演算法）
+            <span class="badge badge-done">已完成</span>
+          </div>
+          <div class="ch-desc">
+            整合 Ch08–10：min/max 找包圍盒 → 增量 Edge Function 掃描 → 重心座標插值 → SetPixel。
+            掃描線法 vs 包圍盒法比較：為什麼包圍盒更適合現代 GPU（平行化、SIMD、程式碼簡單）。
+          </div>
+          <div class="ch-tags">
+            <span class="ch-tag">bounding box</span>
+            <span class="ch-tag">演算法整合</span>
+            <span class="ch-tag">DrawTriangle</span>
+            <span class="ch-tag">scanline vs bbox</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch done" href="theory/ch12_zbuffer.html">
+        <div class="ch-num">12</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            Z-buffer 與背面剔除
+            <span class="badge badge-done">已完成</span>
+          </div>
+          <div class="ch-desc">
+            畫家算法的缺陷與 Z-buffer 解法：每像素儲存最近深度，逐片段比較更新。
+            深度插值：重心座標的第一個實際應用。
+            背面剔除（Backface Culling）：繞向（winding order）決定正反面，
+            用叉積符號在光柵化前直接丟棄背面三角形。Reverse-Z 等現代優化簡介。
+          </div>
+          <div class="ch-tags">
+            <span class="ch-tag">Z-buffer</span>
+            <span class="ch-tag">深度測試</span>
+            <span class="ch-tag">winding order</span>
+            <span class="ch-tag">背面剔除</span>
+            <span class="ch-tag">Reverse-Z</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- ── PART 4 ─────────────────────────────────────────────── -->
+  <div class="part">
+    <div class="part-header">
+      <span class="part-num">Part 4</span>
+      <span class="part-title">3D 空間數學</span>
+      <span class="part-desc">向量 · 矩陣 · 齊次座標 · MVP 管線概覽</span>
+    </div>
+    <div class="chapters">
+
+      <a class="ch soon" href="#">
+        <div class="ch-num">13</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            向量幾何：點積與叉積
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">
+            點積：投影長度、夾角餘弦、光照計算 N·L 的來源。
+            叉積：法向量、面積計算、繞向判斷——所有 3D 幾何的基礎工具。
+          </div>
+          <div class="ch-tags">
+            <span class="ch-tag">點積</span>
+            <span class="ch-tag">叉積</span>
+            <span class="ch-tag">法向量</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch soon" href="#">
+        <div class="ch-num">14</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            矩陣與線性變換
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">
+            縮放、旋轉、平移矩陣的推導。複合變換為什麼用矩陣乘法？
+            行主序 vs 列主序、左乘 vs 右乘，這些細節如何影響程式碼。
+          </div>
+          <div class="ch-tags">
+            <span class="ch-tag">變換矩陣</span>
+            <span class="ch-tag">旋轉</span>
+            <span class="ch-tag">複合變換</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch soon" href="#">
+        <div class="ch-num">15</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            齊次座標
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">
+            為什麼平移需要 4×4 矩陣？w=1 表示位置，w=0 表示方向——
+            這個設計讓所有仿射變換都能用矩陣乘法統一處理。
+          </div>
+          <div class="ch-tags">
+            <span class="ch-tag">齊次座標</span>
+            <span class="ch-tag">仿射變換</span>
+            <span class="ch-tag">w 分量</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch soon" href="#">
+        <div class="ch-num">16</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            MVP 管線全貌
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">
+            五個座標空間：物件空間 → 世界空間 → 視圖空間 → 裁切空間 → NDC → 螢幕。
+            每次矩陣乘法在做什麼事，對應 GLSL vertex shader 的完整流程。
+          </div>
+          <div class="ch-tags">
+            <span class="ch-tag">MVP</span>
+            <span class="ch-tag">座標空間</span>
+            <span class="ch-tag">vertex shader</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- ── PART 5 ─────────────────────────────────────────────── -->
+  <div class="part">
+    <div class="part-header">
+      <span class="part-num">Part 5</span>
+      <span class="part-title">投影與相機</span>
+      <span class="part-desc">透視投影 · Look At · 視口變換</span>
+    </div>
+    <div class="chapters">
+
+      <a class="ch soon" href="#">
+        <div class="ch-num">17</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            透視投影推導
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">
+            從小孔相機模型出發，推導 frustum 的幾何關係。
+            把 frustum 壓扁成正射投影盒（Perspective → Orthographic），
+            最終推導出 4×4 投影矩陣的每個元素。
+          </div>
+          <div class="ch-tags">
+            <span class="ch-tag">透視投影</span>
+            <span class="ch-tag">frustum</span>
+            <span class="ch-tag">投影矩陣</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch soon" href="#">
+        <div class="ch-num">18</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            視圖矩陣（Look At）
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">
+            相機有三個軸（right, up, forward）。
+            用 Gram-Schmidt 正交化從 eye/center/up 三個向量建構相機座標系，
+            再推導把世界轉到相機視角的 View 矩陣。
+          </div>
+          <div class="ch-tags">
+            <span class="ch-tag">Look At</span>
+            <span class="ch-tag">Gram-Schmidt</span>
+            <span class="ch-tag">相機座標系</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch soon" href="#">
+        <div class="ch-num">19</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            視口變換
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">
+            NDC 的 [-1,1]³ 如何映射到螢幕像素座標？
+            y 軸翻轉的原因（NDC y 朝上，螢幕 y 朝下）。
+            viewport_matrix() 的推導與實作。
+          </div>
+          <div class="ch-tags">
+            <span class="ch-tag">NDC</span>
+            <span class="ch-tag">視口映射</span>
+            <span class="ch-tag">y 軸翻轉</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- ── PART 6 ─────────────────────────────────────────────── -->
+  <div class="part">
+    <div class="part-header">
+      <span class="part-num">Part 6</span>
+      <span class="part-title">資源載入</span>
+      <span class="part-desc">TGA 格式 · OBJ 格式 · 完全自製 I/O</span>
+    </div>
+    <div class="chapters">
+
+      <a class="ch soon" href="#">
+        <div class="ch-num">20</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            TGA 格式解析與實作
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">
+            深入 TGA 二進位格式：Header 的每個欄位、未壓縮與 RLE 壓縮解碼。
+            自己寫 tga_image.h/cpp，不依賴任何第三方庫。
+          </div>
+          <div class="ch-tags">
+            <span class="ch-tag">TGA</span>
+            <span class="ch-tag">二進位格式</span>
+            <span class="ch-tag">RLE 解碼</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch soon" href="#">
+        <div class="ch-num">21</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            OBJ 格式解析與實作
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">
+            OBJ 的語法：v（頂點）、vt（UV）、vn（法向量）、f（面索引）。
+            索引重組與 Mesh 資料結構設計，
+            自己寫 obj_model.h/cpp 載入 Blender 匯出的模型。
+          </div>
+          <div class="ch-tags">
+            <span class="ch-tag">OBJ</span>
+            <span class="ch-tag">Mesh 結構</span>
+            <span class="ch-tag">索引重組</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- ── PART 7 ─────────────────────────────────────────────── -->
+  <div class="part pivot">
+    <div class="part-header">
+      <span class="part-num">Part 7</span>
+      <span class="part-title">可程式化管線</span>
+      <span class="part-desc" style="color:var(--yellow)">⭐ 系列轉折點 — 從固定管線到 Shader 架構</span>
+    </div>
+    <div class="chapters">
+
+      <a class="ch soon" href="#">
+        <div class="ch-num">22</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            OpenGL 管線剖析
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">
+            把 Part 1-6 建立的固定管線，對應到 OpenGL 的每個階段：
+            Vertex Processing → Primitive Assembly → Rasterization →
+            Fragment Processing → Depth Test → Framebuffer。
+            理解為什麼 GPU 要這樣設計。
+          </div>
+          <div class="ch-tags">
+            <span class="ch-tag">OpenGL 管線</span>
+            <span class="ch-tag">GPU 架構</span>
+            <span class="ch-tag">固定 vs 可程式化</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch soon" href="#">
+        <div class="ch-num">23</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            IShader 介面設計
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">
+            設計 IShader 抽象類別：vertex() 對應 GLSL vertex shader，
+            fragment() 對應 GLSL fragment shader。
+            Uniforms（全域參數）與 Varyings（插值屬性）的職責分離。
+          </div>
+          <div class="ch-tags">
+            <span class="ch-tag">IShader</span>
+            <span class="ch-tag">uniforms</span>
+            <span class="ch-tag">varyings</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch soon" href="#">
+        <div class="ch-num">24</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            DrawTriangle 重構 + 透視正確插值
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">
+            把 DrawTriangle 改成接受 IShader&amp;，呼叫 vertex() 做頂點變換，
+            光柵化後呼叫 fragment() 填色。
+            推導透視正確插值（1/w trick）：為什麼螢幕空間線性插值 UV 是錯的？
+          </div>
+          <div class="ch-tags">
+            <span class="ch-tag">DrawTriangle 重構</span>
+            <span class="ch-tag">1/w 插值</span>
+            <span class="ch-tag">透視修正</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- ── PART 8 ─────────────────────────────────────────────── -->
+  <div class="part">
+    <div class="part-header">
+      <span class="part-num">Part 8</span>
+      <span class="part-title">Shader 實作集</span>
+      <span class="part-desc">每個 Shader = 一個 GLSL vertex/fragment shader pair</span>
+    </div>
+    <div class="chapters">
+
+      <a class="ch soon" href="#">
+        <div class="ch-num">25</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            Flat Shader
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">
+            最簡單的 Shader：每個三角形純色填充。
+            用來驗證整個可程式化管線的正確性，
+            確認 MVP 變換、光柵化、Z-buffer 全部串接正確。
+          </div>
+          <div class="ch-tags">
+            <span class="ch-tag">FlatShader</span>
+            <span class="ch-tag">管線驗證</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch soon" href="#">
+        <div class="ch-num">26</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            Gouraud Shader
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">
+            逐頂點計算 Lambert 漫反射（N·L），把光照結果作為 varying 插值到像素。
+            對應 OpenGL 固定管線時代的 Gouraud shading 模式。
+          </div>
+          <div class="ch-tags">
+            <span class="ch-tag">GouraudShader</span>
+            <span class="ch-tag">Lambert</span>
+            <span class="ch-tag">N·L</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch soon" href="#">
+        <div class="ch-num">27</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            Texture Shader
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">
+            在 fragment() 裡採樣 diffuse 貼圖，實作最近鄰與雙線性過濾。
+            配合 Ch20 的 TGA loader 和 Ch21 的 OBJ loader，渲染帶紋理的 3D 模型。
+          </div>
+          <div class="ch-tags">
+            <span class="ch-tag">TextureShader</span>
+            <span class="ch-tag">雙線性過濾</span>
+            <span class="ch-tag">UV 採樣</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch soon" href="#">
+        <div class="ch-num">28</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            Phong Shader
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">
+            逐像素光照：環境光（Ambient）+ 漫反射（Diffuse）+ 鏡面反射（Specular）。
+            完整推導 Phong 反射模型，對應現代 GLSL fragment shader 的標準寫法。
+          </div>
+          <div class="ch-tags">
+            <span class="ch-tag">PhongShader</span>
+            <span class="ch-tag">逐像素光照</span>
+            <span class="ch-tag">鏡面反射</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch soon" href="#">
+        <div class="ch-num">29</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            Normal Map Shader
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">
+            從法線貼圖採樣法向量，用 TBN 矩陣從切線空間轉換到世界空間，
+            再送進 Phong 模型計算光照。
+            這是現代遊戲 PBR 管線的基礎技術。
+          </div>
+          <div class="ch-tags">
+            <span class="ch-tag">NormalMapShader</span>
+            <span class="ch-tag">切線空間</span>
+            <span class="ch-tag">TBN 矩陣</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- ── PART 9 ─────────────────────────────────────────────── -->
+  <div class="part">
+    <div class="part-header">
+      <span class="part-num">Part 9</span>
+      <span class="part-title">進階技術</span>
+      <span class="part-desc">裁剪 · 陰影 · 抗鋸齒</span>
+    </div>
+    <div class="chapters">
+
+      <a class="ch soon" href="#">
+        <div class="ch-num">30</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            裁剪（Clipping）
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">
+            Cohen-Sutherland 直線裁剪：用區域 outcodes 快速判斷裁切。
+            Sutherland-Hodgman 多邊形裁剪：逐邊裁切，保留合法片段。
+            Near plane 裁剪：為什麼必須在透視除法之前裁？
+          </div>
+          <div class="ch-tags">
+            <span class="ch-tag">Cohen-Sutherland</span>
+            <span class="ch-tag">Sutherland-Hodgman</span>
+            <span class="ch-tag">near plane</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch soon" href="#">
+        <div class="ch-num">31</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            陰影貼圖（Shadow Mapping）
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">
+            Two-pass 算法：第一次從光源視角渲染深度圖，第二次在正常渲染時比較深度。
+            自遮擋（shadow acne）與 bias 修正。PCF 軟陰影的概念。
+          </div>
+          <div class="ch-tags">
+            <span class="ch-tag">shadow map</span>
+            <span class="ch-tag">two-pass</span>
+            <span class="ch-tag">PCF</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch soon" href="#">
+        <div class="ch-num">32</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            抗鋸齒（Anti-Aliasing）
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">
+            鋸齒的來源：取樣頻率不足（Nyquist 定理）。
+            Wu's Line 半透明法、SSAA 超取樣、MSAA 多重採樣的原理比較。
+          </div>
+          <div class="ch-tags">
+            <span class="ch-tag">Wu's Line</span>
+            <span class="ch-tag">MSAA</span>
+            <span class="ch-tag">取樣理論</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<!-- ── IMPL TRACK ─────────────────────────────────────────────── -->
+<div style="background:var(--bg1);border-top:2px solid var(--border);">
+  <div class="container">
+
+    <div style="text-align:center;margin-bottom:40px;padding-top:8px;">
+      <div style="font-family:'Consolas',monospace;font-size:0.78em;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:12px;">實作軌道</div>
+      <div style="font-size:1.5em;color:var(--orange);margin-bottom:10px;font-weight:normal;">Pixel-Renderer 程式碼解析</div>
+      <div style="color:var(--muted);font-size:0.88em;max-width:520px;margin:0 auto;line-height:1.8;">
+        對應上方理論章節，逐行解析 <code style="font-family:'Consolas',monospace;color:var(--blue)">render_device.cpp</code> 的實作。<br>
+        理論讀懂之後，來這裡看如何翻譯成 C++ 程式碼。
+      </div>
+    </div>
+
+    <div class="part">
+      <div class="part-header">
+        <span class="part-num" style="color:var(--orange)">Impl-1</span>
+        <span class="part-title">像素與直線</span>
+        <span class="part-desc">對應理論 Part 1–2</span>
+      </div>
+      <div class="chapters">
+
+        <a class="ch impl" href="impl/ch01_framebuffer.html">
+          <div class="ch-num" style="color:var(--orange)">I-01</div>
+          <div class="ch-body">
+            <div class="ch-title">
+              Framebuffer 與 SetPixel
+              <span class="badge" style="background:#2d1a0a;color:var(--orange);border:1px solid var(--orange)">已實作</span>
+            </div>
+            <div class="ch-desc">
+              ScreenManager 的記憶體佈局、pitch 計算、ARGB 打包。
+              SetPixel 的邊界檢查與直接記憶體寫入——每一行程式碼對應理論 Ch01 的哪個概念。
+            </div>
+            <div class="ch-tags">
+              <span class="ch-tag">RenderDevice</span>
+              <span class="ch-tag">frame_buffer</span>
+              <span class="ch-tag">pitch</span>
+            </div>
+          </div>
+          <div class="ch-arrow">→</div>
+        </a>
+
+        <a class="ch impl" href="impl/ch02_drawline.html">
+          <div class="ch-num" style="color:var(--orange)">I-02</div>
+          <div class="ch-body">
+            <div class="ch-title">
+              DrawLine — Bresenham 8 方向實作
+              <span class="badge" style="background:#2d1a0a;color:var(--orange);border:1px solid var(--orange)">已實作</span>
+            </div>
+            <div class="ch-desc">
+              逐行解析 DrawLine()：dx/dy 計算、sx/sy 正負號、err 初始化與更新。
+              每個變數對應理論 Ch04–06 的哪個推導步驟。
+            </div>
+            <div class="ch-tags">
+              <span class="ch-tag">DrawLine</span>
+              <span class="ch-tag">err</span>
+              <span class="ch-tag">sx sy</span>
+            </div>
+          </div>
+          <div class="ch-arrow">→</div>
+        </a>
+
+        <a class="ch impl" href="impl/ch03_drawtriangle.html">
+          <div class="ch-num" style="color:var(--orange)">I-03</div>
+          <div class="ch-body">
+            <div class="ch-title">
+              DrawTriangle — 包圍盒 + 重心座標實作
+              <span class="badge" style="background:#2d1a0a;color:var(--orange);border:1px solid var(--orange)">已實作</span>
+            </div>
+            <div class="ch-desc">
+              逐行解析 DrawTriangle()：包圍盒裁切、重心座標計算（叉積法）、
+              w1/w2/w3 的正負號判斷。對應理論 Ch08–09（尚未撰寫）的核心概念。
+            </div>
+            <div class="ch-tags">
+              <span class="ch-tag">DrawTriangle</span>
+              <span class="ch-tag">bounding box</span>
+              <span class="ch-tag">barycentric</span>
+            </div>
+          </div>
+          <div class="ch-arrow">→</div>
+        </a>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── BONUS TRACK ─────────────────────────────────────────────── -->
+<div style="background:var(--bg1);border-top:2px solid var(--border);">
+  <div class="container" style="padding-top:40px;padding-bottom:40px;">
+
+    <div style="text-align:center;margin-bottom:32px;">
+      <div style="font-family:'Consolas',monospace;font-size:0.78em;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:12px;">課外知識</div>
+      <div style="font-size:1.3em;color:var(--teal);margin-bottom:10px;font-weight:normal;">你學的東西在真實引擎裡長這樣</div>
+      <div style="color:var(--muted);font-size:0.88em;max-width:500px;margin:0 auto;line-height:1.8;">
+        不是主線內容，不需要現在搞懂。<br>
+        讀完當下章節後，隨時可以來這裡看「現實世界的對應」。
+      </div>
+    </div>
+
+    <div class="chapters">
+      <a class="ch bonus" href="bonus/real_engine_pipeline.html">
+        <div class="ch-num" style="color:var(--teal)">B-01</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            真實引擎怎麼渲染？— Unreal &amp; Unity 架構概覽
+            <span class="badge" style="background:#0a2d2d;color:var(--teal);border:1px solid var(--teal)">課外</span>
+          </div>
+          <div class="ch-desc">
+            Deferred / Forward / Forward+ 架構比較、GBuffer 設計原則、陰影貼圖演進（PCF → PCSS → CSM → VSM）、
+            抗鋸齒演進（MSAA → TAA → DLSS/FSR）。掃描線 vs 包圍盒光柵化、透視正確插值、Reverse-Z 深度緩衝。
+            開源渲染器導讀（mini3d、SRender）。推薦書單與論文。你的每行程式碼對應到引擎的哪個位置。
+          </div>
+          <div class="ch-tags">
+            <span class="ch-tag">Unreal Engine 5</span>
+            <span class="ch-tag">Unity HDRP/URP</span>
+            <span class="ch-tag">Nanite / Lumen / VSM</span>
+            <span class="ch-tag">論文 / 書單</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<div class="footer">
+  對應程式碼：<a href="../src/render_device.cpp" style="color:var(--blue)">src/render_device.cpp</a>
+  &nbsp;·&nbsp;
+  <a href="../src/render_device.h" style="color:var(--blue)">src/render_device.h</a>
+</div>
+
+</body>
+</html>

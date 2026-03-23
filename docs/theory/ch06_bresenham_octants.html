@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Bresenham — 8 個方向完整分析</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #1e1e2e; color: #cdd6f4;
+  font-family: 'Georgia', serif; font-size: 15px;
+  padding: 32px 20px; line-height: 1.9;
+  max-width: 900px; margin: 0 auto;
+}
+h1 { color: #89b4fa; font-size: 1.45em; margin-bottom: 6px; }
+.tagline { color: #6c7086; margin-bottom: 36px; font-size: 0.88em; }
+.sec { margin-bottom: 40px; }
+.sec-title {
+  font-family: 'Consolas', monospace; font-size: 1em;
+  color: #cba6f7; letter-spacing: 0.05em;
+  padding: 10px 0; border-bottom: 1px solid #313244;
+  margin-bottom: 22px;
+  display: flex; align-items: center; gap: 12px;
+}
+.sec-num {
+  background: #cba6f7; color: #1e1e2e; font-weight: bold;
+  border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 0.85em;
+}
+p { margin-bottom: 12px; }
+strong { color: #f9e2af; }
+
+.math {
+  background: #181825; border: 1px solid #313244; border-radius: 6px;
+  padding: 16px 22px; margin: 14px 0;
+  font-family: 'Consolas', monospace; font-size: 0.88em; line-height: 2.3;
+}
+.math .row { display: block; }
+.math .cmt { color: #6c7086; }
+.math .hi  { color: #f9e2af; font-weight: bold; }
+.math .ok  { color: #a6e3a1; }
+.math .em  { color: #f38ba8; }
+.math .kw  { color: #cba6f7; }
+.math .dim { color: #585b70; }
+
+.box-note { border-radius: 6px; padding: 13px 18px; margin: 14px 0; font-size: 0.9em; line-height: 1.8; }
+.box-blue  { background: #1e1e2e; border-left: 4px solid #89b4fa; }
+.box-green { background: #1e1e2e; border-left: 4px solid #a6e3a1; color: #a6e3a1; }
+.box-red   { background: #1e1e2e; border-left: 4px solid #f38ba8; }
+.box-yellow{ background: #1e1e2e; border-left: 4px solid #f9e2af; }
+.box-purple{ background: #1e1e2e; border-left: 4px solid #cba6f7; }
+
+.fig { margin: 20px auto; text-align: center; }
+.fig figcaption { color: #6c7086; font-size: 0.82em; margin-top: 8px; }
+
+table { width: 100%; border-collapse: collapse;
+  font-family: 'Consolas', monospace; font-size: 0.83em; margin: 14px 0; }
+th { background: #181825; color: #89b4fa; padding: 8px 12px;
+  text-align: left; border-bottom: 2px solid #313244; }
+td { padding: 7px 12px; border-bottom: 1px solid #1e1e2e; vertical-align: top; }
+tr:hover td { background: #1e1e2e; }
+
+.code {
+  background: #0d0d14; border: 1px solid #313244; border-radius: 8px;
+  padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em;
+  line-height: 2.1; margin: 14px 0;
+}
+.code .cmt { color: #6c7086; }
+.code .kw  { color: #cba6f7; }
+.code .val { color: #fab387; }
+.code .ok  { color: #a6e3a1; }
+.code .em  { color: #f38ba8; }
+.code .hi  { color: #f9e2af; }
+
+hr { border: none; border-top: 1px solid #313244; margin: 28px 0; }
+
+/* Octant grid */
+.oct-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 14px; margin: 16px 0;
+}
+.oct-card {
+  background: #181825; border: 1px solid #313244; border-radius: 8px;
+  padding: 14px 16px;
+}
+.oct-card.primary { border-color: #89b4fa; }
+.oct-title { font-family: 'Consolas', monospace; color: #89b4fa; font-size: 0.85em; margin-bottom: 10px; }
+.oct-label { color: #6c7086; font-size: 0.8em; margin-bottom: 4px; }
+.oct-val   { font-family: 'Consolas', monospace; font-size: 0.88em; }
+
+/* Two col */
+.two-col { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+.two-col > * { flex: 1; min-width: 280px; }
+</style>
+</head>
+<body>
+
+<nav style="font-family:'Consolas',monospace;font-size:0.78em;color:#6c7086;padding:14px 0;border-bottom:1px solid #313244;margin-bottom:32px;display:flex;align-items:center;gap:10px;">
+  <a href="../index.html" style="color:#6c7086;text-decoration:none;">軟體光柵化</a>
+  <span style="color:#313244">/</span>
+  <span style="color:#cdd6f4">Ch06 — 八個方向統一</span>
+  <span style="margin-left:auto;display:flex;gap:16px;">
+    <a href="ch05_bresenham_d1d2.html" style="color:#6c7086;text-decoration:none;">← Ch05</a>
+    <a href="ch07_bresenham_theory.html" style="color:#6c7086;text-decoration:none;">Ch07 →</a>
+  </span>
+</nav>
+
+<h1>Bresenham — 8 個方向完整分析</h1>
+<p class="tagline">從已推導的「左下→右上緩坡」出發，系統性地推廣到所有方向</p>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-title"><div class="sec-num">1</div>全部 8 個方向（8 個 Octant）</div>
+
+  <p>把座標系分成 8 個扇形，每個扇形有不同的主軸和方向：</p>
+
+  <div class="fig">
+    <svg width="480" height="480" viewBox="0 0 480 480">
+      <defs>
+        <marker id="arr" markerWidth="7" markerHeight="7" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L7,3 z" fill="#6c7086"/>
+        </marker>
+        <marker id="arr-b" markerWidth="7" markerHeight="7" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L7,3 z" fill="#89b4fa"/>
+        </marker>
+        <marker id="arr-o" markerWidth="7" markerHeight="7" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L7,3 z" fill="#fab387"/>
+        </marker>
+      </defs>
+
+      <!-- Octant fills -->
+      <!-- Oct 1: right gentle up (our derived case) -->
+      <path d="M240,240 L400,240 L400,130 Z" fill="#89b4fa" opacity="0.12"/>
+      <!-- Oct 2: steep up right -->
+      <path d="M240,240 L400,130 L240,80 Z" fill="#a6e3a1" opacity="0.10"/>
+      <!-- Oct 3: steep up left -->
+      <path d="M240,240 L240,80 L80,130 Z" fill="#a6e3a1" opacity="0.10"/>
+      <!-- Oct 4: left gentle up -->
+      <path d="M240,240 L80,130 L80,240 Z" fill="#cba6f7" opacity="0.10"/>
+      <!-- Oct 5: left gentle down -->
+      <path d="M240,240 L80,240 L80,350 Z" fill="#cba6f7" opacity="0.10"/>
+      <!-- Oct 6: steep down left -->
+      <path d="M240,240 L80,350 L240,400 Z" fill="#f38ba8" opacity="0.10"/>
+      <!-- Oct 7: steep down right -->
+      <path d="M240,240 L240,400 L400,350 Z" fill="#f38ba8" opacity="0.10"/>
+      <!-- Oct 8: right gentle down -->
+      <path d="M240,240 L400,350 L400,240 Z" fill="#f9e2af" opacity="0.10"/>
+
+      <!-- Diagonal dividers -->
+      <line x1="240" y1="240" x2="400" y2="130" stroke="#313244" stroke-width="1" stroke-dasharray="4,3"/>
+      <line x1="240" y1="240" x2="80"  y2="130" stroke="#313244" stroke-width="1" stroke-dasharray="4,3"/>
+      <line x1="240" y1="240" x2="80"  y2="350" stroke="#313244" stroke-width="1" stroke-dasharray="4,3"/>
+      <line x1="240" y1="240" x2="400" y2="350" stroke="#313244" stroke-width="1" stroke-dasharray="4,3"/>
+
+      <!-- Axis -->
+      <line x1="80" y1="240" x2="400" y2="240" stroke="#45475a" stroke-width="1.5" marker-end="url(#arr)"/>
+      <line x1="240" y1="400" x2="240" y2="80" stroke="#45475a" stroke-width="1.5" marker-end="url(#arr)"/>
+      <text x="408" y="245" fill="#6c7086" font-size="12" font-family="Consolas">x</text>
+      <text x="244" y="74" fill="#6c7086" font-size="12" font-family="Consolas">y</text>
+
+      <!-- Origin -->
+      <circle cx="240" cy="240" r="4" fill="#6c7086"/>
+      <text x="248" y="255" fill="#6c7086" font-size="11" font-family="Consolas">(0,0)</text>
+
+      <!-- Octant labels -->
+      <!-- Oct 1 (our case - highlight) -->
+      <text x="360" y="210" fill="#89b4fa" font-size="13" font-family="Consolas" font-weight="bold">① 緩坡右上</text>
+      <text x="360" y="226" fill="#89b4fa" font-size="11" font-family="Consolas">dx≥dy≥0</text>
+      <!-- Oct 2 -->
+      <text x="310" y="155" fill="#a6e3a1" font-size="12" font-family="Consolas">② 陡坡右上</text>
+      <text x="310" y="169" fill="#a6e3a1" font-size="11" font-family="Consolas">dy>dx≥0</text>
+      <!-- Oct 3 -->
+      <text x="98" y="155" fill="#a6e3a1" font-size="12" font-family="Consolas">③ 陡坡左上</text>
+      <text x="98" y="169" fill="#a6e3a1" font-size="11" font-family="Consolas">dy>dx≥0</text>
+      <!-- Oct 4 -->
+      <text x="88" y="210" fill="#cba6f7" font-size="12" font-family="Consolas">④ 緩坡左上</text>
+      <text x="88" y="224" fill="#cba6f7" font-size="11" font-family="Consolas">dx≥dy≥0</text>
+      <!-- Oct 5 -->
+      <text x="88" y="268" fill="#cba6f7" font-size="12" font-family="Consolas">⑤ 緩坡左下</text>
+      <text x="88" y="282" fill="#cba6f7" font-size="11" font-family="Consolas">dx≥dy≥0</text>
+      <!-- Oct 6 -->
+      <text x="98" y="330" fill="#f38ba8" font-size="12" font-family="Consolas">⑥ 陡坡左下</text>
+      <text x="98" y="344" fill="#f38ba8" font-size="11" font-family="Consolas">dy>dx≥0</text>
+      <!-- Oct 7 -->
+      <text x="305" y="330" fill="#f38ba8" font-size="12" font-family="Consolas">⑦ 陡坡右下</text>
+      <text x="305" y="344" fill="#f38ba8" font-size="11" font-family="Consolas">dy>dx≥0</text>
+      <!-- Oct 8 -->
+      <text x="358" y="268" fill="#f9e2af" font-size="12" font-family="Consolas">⑧ 緩坡右下</text>
+      <text x="358" y="282" fill="#f9e2af" font-size="11" font-family="Consolas">dx≥dy≥0</text>
+
+      <!-- Example arrows -->
+      <line x1="240" y1="240" x2="360" y2="195" stroke="#89b4fa" stroke-width="2" marker-end="url(#arr-b)"/>
+      <line x1="240" y1="240" x2="330" y2="135" stroke="#a6e3a1" stroke-width="2" marker-end="url(#arr)"/>
+
+      <!-- 45 degree label -->
+      <text x="388" y="186" fill="#313244" font-size="10" font-family="Georgia">45°</text>
+      <path d="M370,197 A20,20 0 0,0 376,178" fill="none" stroke="#313244" stroke-width="1"/>
+    </svg>
+    <figcaption>8 個扇形（Octant）。對稱軸（45°虛線）把緩坡和陡坡分開。</figcaption>
+  </div>
+
+  <p>觀察到兩個關鍵對稱性：</p>
+  <ol style="margin: 8px 0 12px 24px; line-height: 2.2;">
+    <li><strong>方向對稱</strong>：①②和⑤⑥是鏡像（左右翻），④③和⑧⑦是鏡像（上下翻）<br>
+        → 只要控制 <code>sx, sy</code> 的正負，誤差計算完全一樣</li>
+    <li><strong>軸對稱</strong>：①和②是鏡像（沿 45° 翻轉），緩坡換成陡坡<br>
+        → 只要交換 dx 和 dy 的角色（把 y 當主軸）</li>
+  </ol>
+
+  <div class="box-note box-blue">
+    所以不需要寫 8 套程式碼。用 <strong>3 個參數</strong> 統一處理：<br>
+    <code>sx</code>（x 方向）、<code>sy</code>（y 方向）、<code>dx vs dy</code>（誰是主軸）
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-title"><div class="sec-num">2</div>第一個對稱：方向（sx, sy）</div>
+
+  <p>已知 ① 緩坡右上（dx≥dy, sx=+1, sy=+1）的完整推導。
+  現在看方向翻轉對 d₁, d₂ 有什麼影響。</p>
+
+  <hr>
+
+  <p><strong>Case ⑧：緩坡右下（sx=+1, sy=−1）</strong></p>
+  <p>線從 (x₀,y₀) 往右下走，斜率為負，|m| ≤ 1。</p>
+  <p>下一個候選像素是 (x+1, Yᵢ) 或 (x+1, Yᵢ−1)（y 可能下降）。</p>
+
+  <div class="fig">
+    <svg width="360" height="180" viewBox="0 0 360 180">
+      <g stroke="#313244" stroke-width="0.5">
+        <line x1="20" y1="20" x2="20" y2="160"/><line x1="140" y1="20" x2="140" y2="160"/>
+        <line x1="260" y1="20" x2="260" y2="160"/><line x1="340" y1="20" x2="340" y2="160"/>
+        <line x1="20" y1="20" x2="340" y2="20"/>
+        <line x1="20" y1="100" x2="340" y2="100"/>
+        <line x1="20" y1="160" x2="340" y2="160"/>
+      </g>
+      <!-- current pixel -->
+      <rect x="20" y="20" width="120" height="80" fill="#89b4fa" opacity="0.5" rx="2"/>
+      <text x="80" y="66" fill="#89b4fa" font-size="12" text-anchor="middle" font-family="Consolas">(xᵢ, Yᵢ)</text>
+      <!-- upper candidate (same y) -->
+      <rect x="140" y="20" width="120" height="80" fill="#313244" opacity="0.6" rx="2"/>
+      <text x="200" y="66" fill="#a6e3a1" font-size="11" text-anchor="middle" font-family="Consolas">(xᵢ₊₁, Yᵢ)</text>
+      <!-- lower candidate -->
+      <rect x="140" y="100" width="120" height="60" fill="#313244" opacity="0.4" rx="2"/>
+      <text x="200" y="135" fill="#fab387" font-size="11" text-anchor="middle" font-family="Consolas">(xᵢ₊₁, Yᵢ−1)</text>
+      <!-- ideal line going down -->
+      <line x1="20" y1="40" x2="340" y2="130" stroke="#f38ba8" stroke-width="1.5" stroke-dasharray="5,4" opacity="0.7"/>
+      <!-- ideal y at xi+1 -->
+      <circle cx="200" cy="81" r="4" fill="#f38ba8"/>
+      <!-- d1 to upper -->
+      <line x1="280" y1="81" x2="280" y2="60" stroke="#a6e3a1" stroke-width="1.5"/>
+      <text x="292" y="74" fill="#a6e3a1" font-size="11" font-family="Consolas">d₁</text>
+      <!-- d2 to lower -->
+      <line x1="280" y1="81" x2="280" y2="120" stroke="#fab387" stroke-width="1.5"/>
+      <text x="292" y="105" fill="#fab387" font-size="11" font-family="Consolas">d₂</text>
+      <line x1="200" y1="60" x2="295" y2="60" stroke="#313244" stroke-width="0.5" stroke-dasharray="2,2"/>
+      <line x1="200" y1="120" x2="295" y2="120" stroke="#313244" stroke-width="0.5" stroke-dasharray="2,2"/>
+    </svg>
+    <figcaption>緩坡右下：候選像素是 Yᵢ（不動）或 Yᵢ−1（下降），d₁ d₂ 定義對稱翻轉</figcaption>
+  </div>
+
+  <p>d₁, d₂ 定義跟著翻轉：</p>
+  <div class="math">
+    <span class="row cmt">// 緩坡右下（sy = −1）</span>
+    <span class="row">d₁ = Yᵢ − [m(xᵢ₊₁) + b]          <span class="cmt">// 理想 y 到上方候選（不動那個）</span></span>
+    <span class="row">d₂ = [m(xᵢ₊₁) + b] − Yᵢ₋₁        <span class="cmt">// 理想 y 到下方候選（下降那個）</span></span>
+  </div>
+
+  <p>展開 d₁ − d₂，過程完全一樣（只是 Yᵢ₊₁ 換成 Yᵢ₋₁ = Yᵢ−1）：</p>
+  <div class="math">
+    <span class="row">d₁ − d₂ = 2Yᵢ − 2m(xᵢ₊₁) − 2b − 1</span>
+    <span class="row dim">         // × dx</span>
+    <span class="row hi">dx(d₁−d₂) = −2dy·xᵢ + 2dx·Yᵢ + (常數)</span>
+  </div>
+
+  <div class="box-note box-yellow">
+    結論：d₁−d₂ 的符號和 ① 完全一樣，<strong>只是 dy 的符號翻轉</strong>了。<br>
+    但我們已經用 <code>dy = |y₂−y₁|</code>（取絕對值），再用 <code>sy = −1</code> 控制 y 移動方向。<br>
+    所以 P 的計算和判斷條件<strong>完全不變</strong>，只需要在 y 步進時用 <code>y += sy</code>。
+  </div>
+
+  <p>同理，⑤ 緩坡左下（sx=−1, sy=−1）、④ 緩坡左上（sx=−1, sy=+1）等等，
+  全都是相同的推導，只是 <code>x += sx</code> 和 <code>y += sy</code>。</p>
+
+  <div class="box-note box-green">
+    <strong>方向對稱的結論：</strong><br>
+    取 dx = |x₂−x₁|，dy = |y₂−y₁|（全正），<br>
+    sx = sign(x₂−x₁)，sy = sign(y₂−y₁)（記方向），<br>
+    誤差 P 的公式和判斷條件對 ①②③④⑤⑥⑦⑧ 全部一樣。
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-title"><div class="sec-num">3</div>第二個對稱：陡坡（交換主軸）</div>
+
+  <p>當 dy &gt; dx（斜率 |m| &gt; 1），x 每走一步 y 可能要走好幾步。
+  這時候 <strong>x 不是主軸了，y 才是</strong>。</p>
+
+  <div class="two-col">
+    <div>
+      <p><strong>① 緩坡右上（dx ≥ dy）</strong></p>
+      <div class="math">
+        <span class="row">x 每步必走 +1</span>
+        <span class="row">y 在 Yᵢ 或 Yᵢ+1 選一個</span>
+        <span class="row cmt"></span>
+        <span class="row">P₀ = 2dy − dx</span>
+        <span class="row ok">P &lt; 0: P += 2dy        <span class="cmt">y 不動</span></span>
+        <span class="row em">P ≥ 0: y++; P += 2dy−2dx <span class="cmt">y 升</span></span>
+      </div>
+    </div>
+    <div>
+      <p><strong>② 陡坡右上（dy &gt; dx）</strong></p>
+      <div class="math">
+        <span class="row">y 每步必走 +1</span>
+        <span class="row">x 在 Xᵢ 或 Xᵢ+1 選一個</span>
+        <span class="row cmt"></span>
+        <span class="row">P₀ = 2dx − dy</span>
+        <span class="row ok">P &lt; 0: P += 2dx        <span class="cmt">x 不動</span></span>
+        <span class="row em">P ≥ 0: x++; P += 2dx−2dy <span class="cmt">x 走</span></span>
+      </div>
+    </div>
+  </div>
+
+  <p>推導過程完全對稱，只是把 dx 和 dy 對調，x 和 y 對調。</p>
+
+  <div class="fig">
+    <svg width="460" height="200" viewBox="0 0 460 200">
+      <!-- Gentle slope grid -->
+      <g>
+        <g stroke="#313244" stroke-width="0.5">
+          <line x1="20" y1="30" x2="20" y2="180"/><line x1="60" y1="30" x2="60" y2="180"/>
+          <line x1="100" y1="30" x2="100" y2="180"/><line x1="140" y1="30" x2="140" y2="180"/>
+          <line x1="180" y1="30" x2="180" y2="180"/><line x1="220" y1="30" x2="220" y2="180"/>
+          <line x1="20" y1="30" x2="220" y2="30"/><line x1="20" y1="75" x2="220" y2="75"/>
+          <line x1="20" y1="120" x2="220" y2="120"/><line x1="20" y1="165" x2="220" y2="165"/>
+          <line x1="20" y1="180" x2="220" y2="180"/>
+        </g>
+        <!-- Line going right gently -->
+        <line x1="20" y1="175" x2="220" y2="85" stroke="#89b4fa" stroke-width="2"/>
+        <!-- Pixels -->
+        <rect x="20" y="120" width="40" height="45" fill="#89b4fa" opacity="0.6" rx="1"/>
+        <rect x="60" y="120" width="40" height="45" fill="#89b4fa" opacity="0.6" rx="1"/>
+        <rect x="100" y="75" width="40" height="45" fill="#89b4fa" opacity="0.6" rx="1"/>
+        <rect x="140" y="75" width="40" height="45" fill="#89b4fa" opacity="0.6" rx="1"/>
+        <rect x="180" y="30" width="40" height="45" fill="#89b4fa" opacity="0.6" rx="1"/>
+        <!-- Arrow showing x is primary -->
+        <text x="120" y="18" fill="#89b4fa" font-size="11" font-family="Consolas" text-anchor="middle">x 是主軸 →→→</text>
+        <!-- Label -->
+        <text x="120" y="196" fill="#6c7086" font-size="10" font-family="Georgia" text-anchor="middle">① dx(5) ≥ dy(3)，緩坡</text>
+      </g>
+
+      <!-- Steep slope grid -->
+      <g transform="translate(240,0)">
+        <g stroke="#313244" stroke-width="0.5">
+          <line x1="20" y1="30" x2="20" y2="180"/><line x1="65" y1="30" x2="65" y2="180"/>
+          <line x1="110" y1="30" x2="110" y2="180"/><line x1="155" y1="30" x2="155" y2="180"/>
+          <line x1="200" y1="30" x2="200" y2="180"/>
+          <line x1="20" y1="30" x2="200" y2="30"/>
+          <line x1="20" y1="57" x2="200" y2="57"/><line x1="20" y1="84" x2="200" y2="84"/>
+          <line x1="20" y1="111" x2="200" y2="111"/><line x1="20" y1="138" x2="200" y2="138"/>
+          <line x1="20" y1="165" x2="200" y2="165"/><line x1="20" y1="180" x2="200" y2="180"/>
+        </g>
+        <!-- Steep line -->
+        <line x1="20" y1="178" x2="180" y2="32" stroke="#a6e3a1" stroke-width="2"/>
+        <!-- Pixels -->
+        <rect x="20" y="138" width="45" height="27" fill="#a6e3a1" opacity="0.6" rx="1"/>
+        <rect x="20" y="111" width="45" height="27" fill="#a6e3a1" opacity="0.6" rx="1"/>
+        <rect x="65" y="84" width="45" height="27" fill="#a6e3a1" opacity="0.6" rx="1"/>
+        <rect x="65" y="57" width="45" height="27" fill="#a6e3a1" opacity="0.6" rx="1"/>
+        <rect x="65" y="30" width="45" height="27" fill="#a6e3a1" opacity="0.6" rx="1"/>
+        <!-- Arrow showing y is primary -->
+        <text x="110" y="18" fill="#a6e3a1" font-size="11" font-family="Consolas" text-anchor="middle">y 是主軸 ↑↑↑</text>
+        <text x="110" y="196" fill="#6c7086" font-size="10" font-family="Georgia" text-anchor="middle">② dy(5) &gt; dx(3)，陡坡</text>
+      </g>
+    </svg>
+    <figcaption>左：x 是主軸，每步 x 必走，偶爾升 y｜右：y 是主軸，每步 y 必走，偶爾走 x</figcaption>
+  </div>
+
+  <p>再推一遍陡坡的 d₁, d₂（以 ② 陡坡右上為例）：</p>
+  <div class="math">
+    <span class="row cmt">// y 是主軸，每步 y+1；x 在 Xᵢ 或 Xᵢ+1 選一個</span>
+    <span class="row cmt">// 直線方程改用 x = (1/m)·y + b'，斜率換成 dx/dy</span>
+    <span class="row cmt"></span>
+    <span class="row">d₁ = [x_理想 at yᵢ₊₁] − Xᵢ       <span class="cmt">// 理想 x 到左方候選（不動）的距離</span></span>
+    <span class="row">d₂ = Xᵢ₊₁ − [x_理想 at yᵢ₊₁]    <span class="cmt">// 右方候選（前進）到理想 x 的距離</span></span>
+    <span class="row cmt"></span>
+    <span class="row cmt">// 展開 d₁−d₂，兩側 × dy：</span>
+    <span class="row hi">P₀ = 2dx − dy</span>
+    <span class="row ok">P &lt; 0: x 不動, P += 2dx</span>
+    <span class="row em">P ≥ 0: x++,    P += 2dx − 2dy</span>
+  </div>
+
+  <div class="box-note box-purple">
+    陡坡和緩坡的公式結構完全相同，只是 dx ↔ dy 互換。<br>
+    這也說明為什麼程式碼裡的 <code>err = dx−dy</code> 對兩種情況都成立——
+    dx−dy 的符號本身就反映了主軸是誰。
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-title"><div class="sec-num">4</div>8 個 Case 一覽表</div>
+
+  <table>
+    <tr>
+      <th>Case</th><th>方向</th><th>sx</th><th>sy</th><th>主軸</th><th>P₀</th><th>P&lt;0</th><th>P≥0</th>
+    </tr>
+    <tr>
+      <td style="color:#89b4fa">①</td><td>右上緩</td>
+      <td>+1</td><td>+1</td><td>x</td>
+      <td>2dy−dx</td><td>y不動, P+=2dy</td><td>y++, P+=2dy−2dx</td>
+    </tr>
+    <tr>
+      <td style="color:#a6e3a1">②</td><td>右上陡</td>
+      <td>+1</td><td>+1</td><td>y</td>
+      <td>2dx−dy</td><td>x不動, P+=2dx</td><td>x++, P+=2dx−2dy</td>
+    </tr>
+    <tr>
+      <td style="color:#a6e3a1">③</td><td>左上陡</td>
+      <td>−1</td><td>+1</td><td>y</td>
+      <td>2dx−dy</td><td>x不動, P+=2dx</td><td>x−−, P+=2dx−2dy</td>
+    </tr>
+    <tr>
+      <td style="color:#cba6f7">④</td><td>左上緩</td>
+      <td>−1</td><td>+1</td><td>x</td>
+      <td>2dy−dx</td><td>y不動, P+=2dy</td><td>y++, P+=2dy−2dx</td>
+    </tr>
+    <tr>
+      <td style="color:#cba6f7">⑤</td><td>左下緩</td>
+      <td>−1</td><td>−1</td><td>x</td>
+      <td>2dy−dx</td><td>y不動, P+=2dy</td><td>y−−, P+=2dy−2dx</td>
+    </tr>
+    <tr>
+      <td style="color:#f38ba8">⑥</td><td>左下陡</td>
+      <td>−1</td><td>−1</td><td>y</td>
+      <td>2dx−dy</td><td>x不動, P+=2dx</td><td>x−−, P+=2dx−2dy</td>
+    </tr>
+    <tr>
+      <td style="color:#f38ba8">⑦</td><td>右下陡</td>
+      <td>+1</td><td>−1</td><td>y</td>
+      <td>2dx−dy</td><td>x不動, P+=2dx</td><td>x++, P+=2dx−2dy</td>
+    </tr>
+    <tr>
+      <td style="color:#f9e2af">⑧</td><td>右下緩</td>
+      <td>+1</td><td>−1</td><td>x</td>
+      <td>2dy−dx</td><td>y不動, P+=2dy</td><td>y−−, P+=2dy−2dx</td>
+    </tr>
+  </table>
+
+  <p>看出規律：</p>
+  <ul style="margin: 8px 0 12px 24px; line-height: 2.2;">
+    <li>同一組「主軸」的 4 個 case，P 的公式完全一樣，只有步進方向（sx/sy）不同</li>
+    <li>緩坡組（①④⑤⑧）：P₀ = 2dy−dx，判斷 y 要不要動</li>
+    <li>陡坡組（②③⑥⑦）：P₀ = 2dx−dy，判斷 x 要不要動</li>
+  </ul>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-title"><div class="sec-num">5</div>程式碼如何把 8 個 Case 合併成一個迴圈</div>
+
+  <p>程式碼用 <code>err = dx − dy</code> 作為初始值，同時做 x 和 y 的判斷，
+  讓緩坡和陡坡自動選對主軸。</p>
+
+  <p>關鍵是把兩個判斷做成<strong>對稱的兩個獨立 if</strong>（不是 if-else）：</p>
+
+  <div class="math">
+    <span class="row">err = dx − dy</span>
+    <span class="row cmt">// 注意：這等於 −P₀（對比 ① 的 P₀ = 2dy−dx，除以 2 再取負）</span>
+    <span class="row cmt"></span>
+    <span class="row">e2 = 2 × err   <span class="cmt">// 快照，相當於 −P</span></span>
+    <span class="row cmt"></span>
+    <span class="row cmt">// 對稱判斷一：要不要走 x？</span>
+    <span class="row ok">if e2 &gt; −dy: x += sx;  err −= dy</span>
+    <span class="row cmt">// 對稱判斷二：要不要走 y？</span>
+    <span class="row em">if e2 &lt;  dx: y += sy;  err += dx</span>
+  </div>
+
+  <p>把這兩個判斷和上面 8 個 case 的 P 對應起來：</p>
+
+  <table>
+    <tr><th>情況</th><th>e2 和 −dy, dx 的關係</th><th>效果</th><th>對應 P 判斷</th></tr>
+    <tr>
+      <td>緩坡（dx&gt;dy），e2 大</td>
+      <td>e2 &gt; −dy（幾乎總是成立）<br>e2 &lt; dx（不一定）</td>
+      <td>x 必走；y 偶爾走</td>
+      <td>x 是主軸 → y 的判斷對應 P</td>
+    </tr>
+    <tr>
+      <td>陡坡（dy&gt;dx），e2 小</td>
+      <td>e2 &gt; −dy（不一定）<br>e2 &lt; dx（幾乎總是成立）</td>
+      <td>y 必走；x 偶爾走</td>
+      <td>y 是主軸 → x 的判斷對應 P</td>
+    </tr>
+    <tr>
+      <td>斜率 = 1（dx=dy）</td>
+      <td>兩個條件都成立</td>
+      <td>x 和 y 都走（對角線）</td>
+      <td>兩個 if 同時觸發</td>
+    </tr>
+  </table>
+
+  <div class="box-note box-blue">
+    兩個獨立 if（不是 if-else）正是為了處理斜率 = 1 的情況，讓 x 和 y 同時步進。<br>
+    用 <code>e2</code> 的快照而不是即時的 <code>err</code>，是因為第一個 if 改了 err 之後，
+    不能讓它影響第二個 if 的判斷。
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-title"><div class="sec-num">6</div>驗證：陡坡案例跑一遍</div>
+
+  <p>② 陡坡右上：(0,0) → (3,7)，dx=3, dy=7，sx=+1, sy=+1。<br>
+  初始 err = dx − dy = 3 − 7 = <strong>−4</strong></p>
+
+  <table>
+    <tr><th>步</th><th>畫</th><th>err</th><th>e2</th>
+        <th>e2&gt;−7? →走x</th><th>e2&lt;3? →走y</th><th>新err</th></tr>
+    <tr>
+      <td>0</td><td style="color:#89b4fa">(0,0)</td><td style="color:#f38ba8">−4</td><td>−8</td>
+      <td style="color:#6c7086">否</td><td style="color:#a6e3a1">是→y=1, err=−1</td><td>−1</td>
+    </tr>
+    <tr>
+      <td>1</td><td style="color:#89b4fa">(0,1)</td><td style="color:#f38ba8">−1</td><td>−2</td>
+      <td style="color:#6c7086">否</td><td style="color:#a6e3a1">是→y=2, err=2</td><td>2</td>
+    </tr>
+    <tr style="background:#1e1e2e">
+      <td>2</td><td style="color:#89b4fa">(0,2)</td><td style="color:#a6e3a1">2</td><td>4</td>
+      <td style="color:#fab387">是→x=1, err=−5</td><td style="color:#a6e3a1">是→y=3, err=−2</td><td>−2</td>
+    </tr>
+    <tr>
+      <td>3</td><td style="color:#89b4fa">(1,3)</td><td style="color:#f38ba8">−2</td><td>−4</td>
+      <td style="color:#6c7086">否</td><td style="color:#a6e3a1">是→y=4, err=1</td><td>1</td>
+    </tr>
+    <tr>
+      <td>4</td><td style="color:#89b4fa">(1,4)</td><td style="color:#a6e3a1">1</td><td>2</td>
+      <td style="color:#6c7086">否</td><td style="color:#a6e3a1">是→y=5, err=4</td><td>4</td>
+    </tr>
+    <tr style="background:#1e1e2e">
+      <td>5</td><td style="color:#89b4fa">(1,5)</td><td style="color:#a6e3a1">4</td><td>8</td>
+      <td style="color:#fab387">是→x=2, err=1</td><td style="color:#6c7086">否</td><td>1</td>
+    </tr>
+    <tr>
+      <td>6</td><td style="color:#89b4fa">(2,5)</td><td style="color:#a6e3a1">1</td><td>2</td>
+      <td style="color:#6c7086">否</td><td style="color:#a6e3a1">是→y=6, err=4</td><td>4</td>
+    </tr>
+    <tr style="background:#1e1e2e">
+      <td>7</td><td style="color:#89b4fa">(2,6)</td><td style="color:#a6e3a1">4</td><td>8</td>
+      <td style="color:#fab387">是→x=3, err=1</td><td style="color:#6c7086">否</td><td>1</td>
+    </tr>
+    <tr>
+      <td>8</td><td style="color:#89b4fa">(3,6)</td><td style="color:#a6e3a1">1</td><td>2</td>
+      <td style="color:#6c7086">否</td><td style="color:#a6e3a1">是→y=7, err=4</td><td>4</td>
+    </tr>
+    <tr>
+      <td>9</td><td style="color:#89b4fa">(3,7)</td><td colspan="5" style="color:#a6e3a1">終點 ✓</td>
+    </tr>
+  </table>
+
+  <p>y 每步幾乎都走（因為 y 是主軸），x 只走了 3 次。<br>
+  亮色行 = 兩個條件同時觸發（x 和 y 一起走），對應斜率在整數格「跨欄」的時刻。</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-title"><div class="sec-num">互動</div>八方向演示</div>
+
+  <p>選一個方向，觀察<strong>同一段程式碼</strong>（sx, sy 不同）如何在任意方向畫出正確的直線。</p>
+
+<style>
+.oct-wrap{margin:16px 0}
+.oct-btns{display:grid;grid-template-columns:repeat(3,auto);gap:6px;width:fit-content;margin:0 auto 16px}
+.oct-btn{padding:7px 14px;border:1px solid #313244;border-radius:5px;cursor:pointer;
+  font-family:'Consolas',monospace;font-size:0.78em;background:#181825;color:#6c7086;transition:all 0.2s}
+.oct-btn.active{background:#89b4fa;color:#1e1e2e;border-color:#89b4fa;font-weight:bold}
+.oct-btn:hover:not(.active){border-color:#585b70;color:#cdd6f4}
+.oct-btn.spacer{visibility:hidden;pointer-events:none}
+.oct-main{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap}
+.oct-panel{flex:1;min-width:200px;font-family:'Consolas',monospace;font-size:0.81em}
+.oct-sec{background:#181825;border:1px solid #313244;border-radius:6px;padding:12px 14px;margin-bottom:10px}
+.oct-sec h4{color:#89b4fa;margin-bottom:8px;font-size:0.88em}
+.oct-vars{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.oct-var{background:#1e1e2e;border-radius:5px;padding:6px 10px}
+.oct-lbl{color:#6c7086;font-size:0.72em;margin-bottom:1px}
+.oct-val{font-size:1em;font-weight:bold;color:#a6e3a1}
+.oct-ctrl{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.oct-ctrl button{padding:5px 10px;border:none;border-radius:5px;cursor:pointer;font-family:inherit;font-size:0.8em}
+.oct-step{text-align:center;color:#6c7086;font-size:0.8em;margin-bottom:6px}
+</style>
+
+<div class="oct-wrap">
+  <!-- Compass-style direction buttons -->
+  <div class="oct-btns" id="oct-btns">
+    <button class="oct-btn" data-dir="NW">↖ NW</button>
+    <button class="oct-btn" data-dir="N">↑ N</button>
+    <button class="oct-btn" data-dir="NE">↗ NE</button>
+    <button class="oct-btn" data-dir="W">← W</button>
+    <button class="oct-btn spacer"></button>
+    <button class="oct-btn" data-dir="E">→ E</button>
+    <button class="oct-btn" data-dir="SW">↙ SW</button>
+    <button class="oct-btn" data-dir="S">↓ S</button>
+    <button class="oct-btn" data-dir="SE" style="background:#89b4fa;color:#1e1e2e;border-color:#89b4fa;font-weight:bold">↘ SE</button>
+  </div>
+
+  <div class="oct-main">
+    <div>
+      <canvas id="oct-canvas" width="380" height="380" style="border:1px solid #313244;background:#181825;display:block"></canvas>
+    </div>
+    <div class="oct-panel">
+      <div class="oct-sec">
+        <h4>方向設定</h4>
+        <div class="oct-vars">
+          <div class="oct-var"><div class="oct-lbl">方向</div><div class="oct-val" id="oct-dir">SE ↘</div></div>
+          <div class="oct-var"><div class="oct-lbl">sx, sy</div><div class="oct-val" id="oct-sxsy">+1, +1</div></div>
+          <div class="oct-var"><div class="oct-lbl">dx, dy</div><div class="oct-val" id="oct-dxdy">7, 3</div></div>
+          <div class="oct-var"><div class="oct-lbl">主軸</div><div class="oct-val" id="oct-axis">x</div></div>
+        </div>
+      </div>
+      <div class="oct-sec">
+        <h4>當前變數</h4>
+        <div class="oct-vars">
+          <div class="oct-var"><div class="oct-lbl">x</div><div class="oct-val" id="oct-x">4</div></div>
+          <div class="oct-var"><div class="oct-lbl">y</div><div class="oct-val" id="oct-y">4</div></div>
+          <div class="oct-var"><div class="oct-lbl">err</div><div class="oct-val" id="oct-err" style="color:#89b4fa">4</div></div>
+          <div class="oct-var"><div class="oct-lbl">e2</div><div class="oct-val" id="oct-e2">—</div></div>
+        </div>
+      </div>
+      <div class="oct-sec">
+        <div class="oct-step" id="oct-step">步驟 0</div>
+        <div class="oct-ctrl">
+          <button id="oct-prev" style="background:#45475a;color:#cdd6f4">◀</button>
+          <button id="oct-next" style="background:#89b4fa;color:#1e1e2e;font-weight:bold">▶</button>
+          <button id="oct-play" style="background:#a6e3a1;color:#1e1e2e;font-weight:bold">▶ 播放</button>
+          <button id="oct-reset" style="background:#f38ba8;color:#1e1e2e">重置</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+const COLS=11,ROWS=11,CELL=32,OX=8,OY=8;
+const CX=Math.floor(COLS/2),CY=Math.floor(ROWS/2); // center origin
+
+// Direction configs: endpoint relative to center
+const DIRS={
+  NE:{dx:7,dy:3,label:'NE ↗'},
+  N: {dx:3,dy:7,label:'N ↑'},
+  NW:{dx:-7,dy:3,label:'NW ↖'},
+  W: {dx:-7,dy:-3,label:'W ←'},
+  SW:{dx:-7,dy:-3,label:'SW ↙'},
+  S: {dx:-3,dy:-7,label:'S ↓'},
+  SE:{dx:7,dy:3,label:'SE ↘'},
+  E: {dx:7,dy:-3,label:'E →'}
+};
+// Better: define absolute endpoints
+const DIR_CFG={
+  NE:{ex:CX+4,ey:CY-3},
+  N: {ex:CX+2,ey:CY-5},
+  NW:{ex:CX-4,ey:CY-3},
+  W: {ex:CX-5,ey:CY-2},
+  SW:{ex:CX-4,ey:CY+3},
+  S: {ex:CX-2,ey:CY+5},
+  SE:{ex:CX+4,ey:CY+3},
+  E: {ex:CX+5,ey:CY+2}
+};
+const DIR_LABELS={NE:'NE ↗',N:'N ↑',NW:'NW ↖',W:'W ←',SW:'SW ↙',S:'S ↓',SE:'SE ↘',E:'E →'};
+
+function bresenhamSteps(x1,y1,x2,y2){
+  const dx=Math.abs(x2-x1),dy=Math.abs(y2-y1);
+  const sx=x1<x2?1:-1,sy=y1<y2?1:-1;
+  let err=dx-dy,x=x1,y=y1;
+  const steps=[];
+  while(true){
+    steps.push({x,y,err,e2:null,mx:false,my:false});
+    if(x===x2&&y===y2)break;
+    const e2=2*err;
+    const t=steps[steps.length-1];
+    t.e2=e2;t.mx=e2>-dy;t.my=e2<dx;
+    if(t.mx){err-=dy;x+=sx;}
+    if(t.my){err+=dx;y+=sy;}
+  }
+  return steps;
+}
+
+let curDir='SE';
+let STEPS=[];
+let cur=0,timer=null;
+
+const cv=document.getElementById('oct-canvas');
+const ctx=cv.getContext('2d');
+
+function scx(col){return OX+col*CELL+CELL/2;}
+function scy(row){return OY+row*CELL+CELL/2;}
+function cellLeft(col){return OX+col*CELL;}
+function cellTop(row){return OY+row*CELL;}
+
+function loadDir(dir){
+  curDir=dir;
+  const cfg=DIR_CFG[dir];
+  STEPS=bresenhamSteps(CX,CY,cfg.ex,cfg.ey);
+  cur=0;
+  // update direction buttons
+  document.querySelectorAll('.oct-btn:not(.spacer)').forEach(b=>{
+    b.style.background=b.dataset.dir===dir?'#89b4fa':'#181825';
+    b.style.color=b.dataset.dir===dir?'#1e1e2e':'#6c7086';
+    b.style.borderColor=b.dataset.dir===dir?'#89b4fa':'#313244';
+    b.style.fontWeight=b.dataset.dir===dir?'bold':'normal';
+  });
+  const dx=Math.abs(cfg.ex-CX),dy=Math.abs(cfg.ey-CY);
+  const sx=CX<cfg.ex?'+1':'-1',sy=CY<cfg.ey?'+1':'-1';
+  document.getElementById('oct-dir').textContent=DIR_LABELS[dir];
+  document.getElementById('oct-sxsy').textContent=sx+', '+sy;
+  document.getElementById('oct-dxdy').textContent=dx+', '+dy;
+  document.getElementById('oct-axis').textContent=dx>=dy?'x（緩坡）':'y（陡坡）';
+  render();
+}
+
+function draw(){
+  ctx.clearRect(0,0,cv.width,cv.height);
+  // grid
+  ctx.strokeStyle='#313244';ctx.lineWidth=0.5;
+  for(let c=0;c<=COLS;c++){ctx.beginPath();ctx.moveTo(OX+c*CELL,OY);ctx.lineTo(OX+c*CELL,OY+ROWS*CELL);ctx.stroke();}
+  for(let r=0;r<=ROWS;r++){ctx.beginPath();ctx.moveTo(OX,OY+r*CELL);ctx.lineTo(OX+COLS*CELL,OY+r*CELL);ctx.stroke();}
+  // center marker
+  ctx.fillStyle='rgba(137,180,250,0.1)';
+  ctx.fillRect(cellLeft(CX),cellTop(CY),CELL,CELL);
+  // axis lines
+  ctx.strokeStyle='rgba(88,91,112,0.4)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(scx(CX),OY);ctx.lineTo(scx(CX),OY+ROWS*CELL);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(OX,scy(CY));ctx.lineTo(OX+COLS*CELL,scy(CY));ctx.stroke();
+  // ideal line
+  const cfg=DIR_CFG[curDir];
+  ctx.save();ctx.strokeStyle='rgba(243,139,168,0.35)';ctx.lineWidth=1.5;ctx.setLineDash([4,4]);
+  ctx.beginPath();ctx.moveTo(scx(CX),scy(CY));ctx.lineTo(scx(cfg.ex),scy(cfg.ey));ctx.stroke();ctx.restore();
+  // past pixels
+  for(let i=0;i<cur;i++){
+    const s=STEPS[i];
+    ctx.fillStyle='rgba(137,180,250,0.7)';
+    ctx.fillRect(cellLeft(s.x)+1,cellTop(s.y)+1,CELL-2,CELL-2);
+  }
+  // current
+  const sc=STEPS[cur]||STEPS[STEPS.length-1];
+  ctx.fillStyle=cur===STEPS.length-1?'rgba(166,227,161,0.85)':'rgba(245,194,231,0.75)';
+  ctx.fillRect(cellLeft(sc.x)+1,cellTop(sc.y)+1,CELL-2,CELL-2);
+  // labels
+  ctx.fillStyle='#89b4fa';ctx.font='bold 9px Consolas';ctx.textAlign='center';
+  ctx.fillText('S',scx(CX),scy(CY)-CELL/2+4);
+  ctx.fillStyle='#a6e3a1';
+  ctx.fillText('E',scx(cfg.ex),scy(cfg.ey)-CELL/2+4);
+}
+
+function updateUI(){
+  const s=STEPS[cur]||STEPS[STEPS.length-1];
+  document.getElementById('oct-x').textContent=s.x-CX; // show relative
+  document.getElementById('oct-y').textContent=s.y-CY;
+  document.getElementById('oct-err').textContent=s.err;
+  document.getElementById('oct-e2').textContent=s.e2!==null?s.e2:'—';
+  document.getElementById('oct-step').textContent='步驟 '+cur+' / '+(STEPS.length-1);
+}
+
+function render(){draw();updateUI();}
+function stopTimer(){if(timer){clearInterval(timer);timer=null;document.getElementById('oct-play').textContent='▶ 播放';}}
+
+document.getElementById('oct-next').onclick=()=>{if(cur<STEPS.length-1){cur++;render();}};
+document.getElementById('oct-prev').onclick=()=>{if(cur>0){cur--;render();}};
+document.getElementById('oct-reset').onclick=()=>{stopTimer();cur=0;render();};
+document.getElementById('oct-play').onclick=function(){
+  if(timer){stopTimer();return;}
+  document.getElementById('oct-play').textContent='⏸ 暫停';
+  timer=setInterval(()=>{if(cur>=STEPS.length-1){stopTimer();return;}cur++;render();},600);
+};
+document.querySelectorAll('.oct-btn:not(.spacer)').forEach(b=>{
+  b.addEventListener('click',()=>{stopTimer();loadDir(b.dataset.dir);});
+});
+
+loadDir('SE');
+})();
+</script>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-title"><div class="sec-num">總結</div></div>
+
+  <div class="box-note box-blue">
+    <strong>從 ① 推廣到全部 8 個方向，只需要三個步驟：</strong><br><br>
+    <strong>1. 方向</strong>：sx = sign(dx_raw)，sy = sign(dy_raw)，dx dy 取絕對值<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ 步進時用 <code>x += sx</code>，<code>y += sy</code><br><br>
+    <strong>2. 主軸</strong>：dx ≥ dy 時 x 是主軸，dy &gt; dx 時 y 是主軸<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ 程式碼用 <code>err = dx − dy</code> + 兩個對稱 if，自動選對主軸<br><br>
+    <strong>3. 同時步進</strong>：兩個 if 獨立（不是 if-else），處理斜率 = 1 的對角走法<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ 用 <code>e2</code> 快照，避免第一個 if 改 err 後影響第二個判斷
+  </div>
+</div>
+
+</body>
+</html>

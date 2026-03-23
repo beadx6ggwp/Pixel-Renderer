@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Impl-01 — Framebuffer 與 SetPixel</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #1e1e2e; color: #cdd6f4;
+  font-family: 'Georgia', serif; font-size: 15px;
+  padding: 0 20px 60px; max-width: 900px; margin: 0 auto;
+  line-height: 1.9;
+}
+
+nav {
+  font-family: 'Consolas', monospace; font-size: 0.78em; color: #6c7086;
+  padding: 14px 0; border-bottom: 1px solid #313244;
+  margin-bottom: 36px; display: flex; align-items: center; gap: 10px;
+}
+nav a { color: #6c7086; text-decoration: none; }
+nav a:hover { color: #fab387; }
+
+.ch-header { margin-bottom: 36px; }
+.ch-label {
+  font-family: 'Consolas', monospace; font-size: 0.78em;
+  color: #6c7086; letter-spacing: 0.1em; margin-bottom: 8px;
+}
+.ch-title { color: #fab387; font-size: 1.8em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub   { color: #6c7086; font-size: 0.88em; }
+
+h2 {
+  color: #cba6f7; font-family: 'Consolas', monospace; font-size: 1em;
+  letter-spacing: 0.05em; padding: 10px 0; border-bottom: 1px solid #313244;
+  margin: 40px 0 20px; display: flex; align-items: center; gap: 12px;
+}
+h2 .n {
+  background: #fab387; color: #1e1e2e; font-weight: bold;
+  border-radius: 50%; width: 26px; height: 26px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 0.85em;
+}
+h3 { color: #f9e2af; font-size: 0.95em; margin: 22px 0 10px; }
+p  { margin-bottom: 12px; }
+strong { color: #f9e2af; }
+em { color: #fab387; font-style: normal; }
+
+.theory-link {
+  background: #181825; border: 1px solid #313244; border-left: 3px solid #fab387;
+  border-radius: 6px; padding: 10px 16px; margin: 20px 0;
+  font-size: 0.88em; color: #6c7086;
+}
+.theory-link a { color: #89b4fa; text-decoration: none; }
+.theory-link a:hover { text-decoration: underline; }
+
+/* Code block */
+.code-block {
+  background: #11111b; border: 1px solid #313244; border-radius: 8px;
+  padding: 0; margin: 20px 0; overflow: hidden;
+}
+.code-header {
+  background: #181825; border-bottom: 1px solid #313244;
+  padding: 8px 16px; font-family: 'Consolas', monospace; font-size: 0.78em;
+  color: #6c7086; display: flex; align-items: center; gap: 10px;
+}
+.code-header .file { color: #89b4fa; }
+.code-body {
+  padding: 16px 0; overflow-x: auto;
+}
+.code-body table { border-collapse: collapse; width: 100%; }
+.code-body td {
+  padding: 1px 0; font-family: 'Consolas', monospace; font-size: 0.84em;
+  line-height: 1.7; vertical-align: top;
+}
+.ln {
+  color: #45475a; text-align: right; padding: 0 16px 0 16px;
+  user-select: none; min-width: 48px;
+}
+.code {
+  padding: 0 20px 0 12px; white-space: pre;
+  color: #cdd6f4;
+}
+.code .kw  { color: #cba6f7; }  /* keyword */
+.code .ty  { color: #89b4fa; }  /* type */
+.code .cm  { color: #6c7086; }  /* comment */
+.code .st  { color: #a6e3a1; }  /* string */
+.code .nm  { color: #fab387; }  /* number */
+.code .fn  { color: #89b4fa; }  /* function call */
+
+/* Highlight row */
+tr.hl td { background: #2a1e0a; }
+tr.hl .code { border-left: 2px solid #fab387; padding-left: 10px; }
+
+.annotation {
+  background: #181825; border-left: 3px solid #f9e2af;
+  border-radius: 0 6px 6px 0; padding: 10px 16px;
+  margin: -4px 0 16px; font-size: 0.88em; line-height: 1.7;
+}
+
+.box {
+  border-radius: 6px; padding: 14px 18px; margin: 16px 0;
+  font-size: 0.9em; line-height: 1.85;
+}
+.box-blue   { background: #1e1e2e; border-left: 4px solid #89b4fa; }
+.box-orange { background: #1e1e2e; border-left: 4px solid #fab387; }
+.box-green  { background: #1e1e2e; border-left: 4px solid #a6e3a1; }
+
+.chapter-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 56px; padding-top: 24px; border-top: 1px solid #313244;
+  font-family: 'Consolas', monospace; font-size: 0.85em;
+}
+.chapter-nav a { color: #6c7086; text-decoration: none; }
+.chapter-nav a:hover { color: #fab387; }
+.chapter-nav .next { color: #fab387; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">軟體光柵化</a>
+  <span style="color:#313244">/</span>
+  <span style="color:#fab387">實作</span>
+  <span style="color:#313244">/</span>
+  <span style="color:#cdd6f4">I-01 — Framebuffer 與 SetPixel</span>
+  <span style="margin-left:auto;display:flex;gap:16px;">
+    <a href="ch02_drawline.html">I-02 →</a>
+  </span>
+</nav>
+
+<!-- Header -->
+<div class="ch-header">
+  <div class="ch-label">IMPL-01 · 像素與 Framebuffer</div>
+  <div class="ch-title">Framebuffer 與 SetPixel</div>
+  <div class="ch-sub">逐行解析 RenderDevice 的初始化與最底層的像素操作</div>
+</div>
+
+<div class="theory-link">
+  對應理論章節：<a href="../theory/ch01_intro.html">Ch01 — 什麼是光柵化？</a>
+  ——先讀理論再來看程式碼，效果最好。
+</div>
+
+<!-- 1 -->
+<h2><span class="n">1</span> 資料結構：RenderDevice 知道什麼？</h2>
+
+<p>
+  <code>RenderDevice</code> 只需要知道四件事，就能在任何位置畫像素：
+  哪塊記憶體（<strong>frame_buffer</strong>）、每行幾個位元組（<strong>pitch</strong>）、
+  畫面寬（<strong>width</strong>）、畫面高（<strong>height</strong>）。
+</p>
+
+<div class="code-block">
+  <div class="code-header">
+    <span class="file">render_device.h</span>
+    <span>— private 成員</span>
+  </div>
+  <div class="code-body">
+    <table>
+      <tr><td class="ln">30</td><td class="code"><span class="kw">private</span>:</td></tr>
+      <tr class="hl"><td class="ln">31</td><td class="code">    <span class="ty">ScreenManager</span>* screen;         <span class="cm">// 視窗系統橋接器</span></td></tr>
+      <tr class="hl"><td class="ln">32</td><td class="code">    <span class="kw">unsigned char</span>* frame_buffer;    <span class="cm">// 記憶體起點</span></td></tr>
+      <tr class="hl"><td class="ln">33</td><td class="code">    <span class="kw">int</span> pitch;                       <span class="cm">// 每行的位元組數</span></td></tr>
+      <tr class="hl"><td class="ln">34</td><td class="code">    <span class="kw">int</span> width;                       <span class="cm">// 畫面寬（像素）</span></td></tr>
+      <tr class="hl"><td class="ln">35</td><td class="code">    <span class="kw">int</span> height;                      <span class="cm">// 畫面高（像素）</span></td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="annotation">
+  <strong>為什麼需要 pitch？</strong><br>
+  Framebuffer 在記憶體裡是一維陣列。理論上每行 = width × 4 bytes（ARGB 各 1 byte），
+  但顯示驅動程式常因對齊需求在每行末尾加入 padding bytes。
+  <strong>pitch</strong>（又稱 stride）= 每行實際佔用的位元組數，包含 padding。
+  永遠用 pitch 計算位址，不要用 width × 4，否則跨行時位址會錯。
+</div>
+
+<!-- 2 -->
+<h2><span class="n">2</span> 建構子：向 ScreenManager 問到所有資訊</h2>
+
+<div class="code-block">
+  <div class="code-header">
+    <span class="file">render_device.cpp</span>
+    <span>— RenderDevice::RenderDevice()</span>
+  </div>
+  <div class="code-body">
+    <table>
+      <tr><td class="ln">7</td><td class="code"><span class="ty">RenderDevice</span>::<span class="ty">RenderDevice</span>(<span class="ty">ScreenManager</span>* s) : <span class="fn">screen</span>(s) {</td></tr>
+      <tr class="hl"><td class="ln">8</td><td class="code">    frame_buffer = screen-><span class="fn">GetFrameBuffer</span>();  <span class="cm">// unsigned char* 起始位址</span></td></tr>
+      <tr class="hl"><td class="ln">9</td><td class="code">    pitch        = screen-><span class="fn">GetPitch</span>();         <span class="cm">// 每行位元組數</span></td></tr>
+      <tr class="hl"><td class="ln">10</td><td class="code">    width        = screen-><span class="fn">GetWidth</span>();         <span class="cm">// 畫面寬</span></td></tr>
+      <tr class="hl"><td class="ln">11</td><td class="code">    height       = screen-><span class="fn">GetHeight</span>();        <span class="cm">// 畫面高</span></td></tr>
+      <tr><td class="ln">12</td><td class="code">}</td></tr>
+    </table>
+  </div>
+</div>
+
+<p>
+  <code>ScreenManager</code> 是平台抽象層（Windows GDI / SDL 等），
+  <code>RenderDevice</code> 只透過它取得 framebuffer 指標，
+  之後的所有像素操作都直接操作記憶體，不再呼叫任何平台 API。
+</p>
+
+<!-- 3 -->
+<h2><span class="n">3</span> Clear()：填滿整個畫面</h2>
+
+<div class="code-block">
+  <div class="code-header">
+    <span class="file">render_device.cpp</span>
+    <span>— RenderDevice::Clear()</span>
+  </div>
+  <div class="code-body">
+    <table>
+      <tr><td class="ln">16</td><td class="code"><span class="kw">void</span> <span class="ty">RenderDevice</span>::<span class="fn">Clear</span>(<span class="ty">uint32_t</span> color) {</td></tr>
+      <tr><td class="ln">17</td><td class="code">    <span class="kw">for</span> (<span class="kw">int</span> y = <span class="nm">0</span>; y &lt; height; y++) {</td></tr>
+      <tr class="hl"><td class="ln">18</td><td class="code">        <span class="ty">uint32_t</span>* row = (<span class="ty">uint32_t</span>*)(frame_buffer + y * pitch);</td></tr>
+      <tr class="hl"><td class="ln">19</td><td class="code">        std::<span class="fn">fill</span>(row, row + width, color);</td></tr>
+      <tr><td class="ln">20</td><td class="code">    }</td></tr>
+      <tr><td class="ln">21</td><td class="code">}</td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="annotation">
+  <strong>第 18 行：位址計算</strong><br>
+  <code>frame_buffer + y * pitch</code> 是第 y 行的起始位址（<code>unsigned char*</code> 型別）。<br>
+  強制轉型為 <code>uint32_t*</code> 後，每次 +1 跳 4 bytes（一個 ARGB 像素）。<br><br>
+  <strong>第 19 行：<code>std::fill</code></strong><br>
+  用標準庫的填充函式，從 row[0] 填到 row[width-1]，每個寫入 4 bytes 的顏色值。
+  底層通常會編譯成 SIMD 指令（SSE/AVX），一次寫 16/32 bytes。
+</div>
+
+<!-- 4 -->
+<h2><span class="n">4</span> SetPixel()：在指定座標畫一個像素</h2>
+
+<div class="code-block">
+  <div class="code-header">
+    <span class="file">render_device.cpp</span>
+    <span>— RenderDevice::SetPixel()</span>
+  </div>
+  <div class="code-body">
+    <table>
+      <tr><td class="ln">23</td><td class="code"><span class="kw">void</span> <span class="ty">RenderDevice</span>::<span class="fn">SetPixel</span>(<span class="kw">int</span> x, <span class="kw">int</span> y, <span class="ty">uint32_t</span> color) {</td></tr>
+      <tr class="hl"><td class="ln">24</td><td class="code">    <span class="kw">if</span> (x &gt;= <span class="nm">0</span> &amp;&amp; x &lt; width &amp;&amp; y &gt;= <span class="nm">0</span> &amp;&amp; y &lt; height) {</td></tr>
+      <tr class="hl"><td class="ln">25</td><td class="code">        *(<span class="ty">uint32_t</span>*)(frame_buffer + y * pitch + x * <span class="nm">4</span>) = color;</td></tr>
+      <tr><td class="ln">26</td><td class="code">    }</td></tr>
+      <tr><td class="ln">27</td><td class="code">}</td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="annotation">
+  <strong>第 24 行：邊界檢查</strong><br>
+  DrawLine / DrawTriangle 傳入的座標可能超出畫面（例如 Bresenham 走到畫面外）。
+  這裡做一次統一的檢查，讓上層呼叫者不需要各自處理越界問題。<br><br>
+  <strong>第 25 行：位址公式</strong><br>
+  <code>frame_buffer + y * pitch</code> → 跳到第 y 行<br>
+  <code>+ x * 4</code> → 在該行往右跳 x 個像素（每像素 4 bytes）<br>
+  強制轉為 <code>uint32_t*</code> 再解引用，一次寫入 4 bytes 的顏色。
+</div>
+
+<div class="box box-orange">
+  <strong>顏色格式：ARGB（0xAARRGGBB）</strong><br>
+  <code>uint32_t</code> 的 4 bytes 對應：A（透明度）· R（紅）· G（綠）· B（藍）。
+  例如不透明紅色 = <code>0xFF0000FF</code>（視平台的位元組順序而定）。
+  目前 DrawTriangle 等函式直接傳入 <code>uint32_t color</code> 不做轉換，
+  顏色打包由呼叫端負責。
+</div>
+
+<!-- 5 -->
+<h2><span class="n">5</span> 目前 render_device 的完整狀態</h2>
+
+<p>完成本章後，render_device 具備的能力：</p>
+
+<div class="box box-green">
+  ✓ 向 ScreenManager 取得 framebuffer 指標與尺寸資訊<br>
+  ✓ Clear()：用指定顏色填滿整個畫面（逐行 std::fill）<br>
+  ✓ SetPixel()：在 (x,y) 位置安全寫入單一像素（含邊界檢查）<br>
+  ⬜ DrawLine()：見 <a href="ch02_drawline.html" style="color:#fab387">I-02</a><br>
+  ⬜ DrawTriangle()：見 <a href="ch03_drawtriangle.html" style="color:#fab387">I-03</a>
+</div>
+
+<div class="chapter-nav">
+  <a href="../index.html">← 首頁</a>
+  <a class="next" href="ch02_drawline.html">I-02 — DrawLine →</a>
+</div>
+
+</body>
+</html>
