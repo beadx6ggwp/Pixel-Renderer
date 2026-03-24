@@ -34,6 +34,7 @@ public:
 				device->SetPixel(x, y, color);
 			}
 		}
+		device->DrawTriangle({400, 100}, {500, 300}, {300, 300}, 0xFF0000);
 		printf("Rendered frame %d\n", frame);
 	}
 

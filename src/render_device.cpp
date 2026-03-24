@@ -63,7 +63,23 @@ void RenderDevice::DrawTriangle(const Vertex& v1, const Vertex& v2,
     max_x = std::min(max_x, width - 1);
     max_y = std::min(max_y, height - 1);
 
-    // scan through the bounding box and check if each pixel is inside the triangle
+    // scan through the bounding box and check if each pixel is inside the
+    // triangle using barycentric coordinates
+    //
+    // TODO: Refactor to Edge Function for production use
+    // ===================================================
+    // Current implementation: Barycentric coordinates (educational version)
+    // - Easier to understand and implement
+    // - Directly provides interpolation coefficients (w1, w2, w3)
+    // - Required for color/UV/depth interpolation
+    // - Involves division (potential floating-point precision issue)
+    //
+    // Future implementation: Edge Function (production standard)
+    // - Tests which side of each edge the point lies on
+    // - Pure linear operations: add/subtract/multiply only (no division)
+    // - Avoids floating-point precision issues
+    // - Ideal for rasterization: hardware can parallelize efficiently
+    // - Industry standard in modern graphics engines
     for (int y = min_y; y <= max_y; y++) {
         for (int x = min_x; x <= max_x; x++) {
             // check if (x,y) is inside the triangle using barycentric
