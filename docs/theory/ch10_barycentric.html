@@ -115,7 +115,19 @@ ul, ol { margin: 8px 0 14px 26px; line-height: 2.2; }
 
 /* ── Figures ──────────────────────────────────────────── */
 .fig { margin: 24px auto; text-align: center; }
-.fig figcaption { color: var(--muted); font-size: 0.82em; margin-top: 8px; font-style: italic; }
+.fig figcaption { color: var(--muted); font-size: 0.88em; margin-top: 10px; font-style: italic; }
+.katex-display {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 6px;
+  padding: 18px 24px; margin: 14px 0; overflow-x: auto;
+}
+.katex-display > .katex { color: var(--text); }
+.katex { color: var(--text); font-size: 1.0em; }
+.next-ch { margin-top: 56px; padding: 20px 24px; background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 20px; }
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+.next-title { color: var(--blue); font-size: 1em; }
+.next-desc  { color: var(--muted); font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: var(--blue); font-size: 1.6em; text-decoration: none; }
+.next-arrow:hover { color: var(--purple); }
 
 /* ── Property list ────────────────────────────────────── */
 .prop-list { margin: 16px 0; }
@@ -140,7 +152,7 @@ ul, ol { margin: 8px 0 14px 26px; line-height: 2.2; }
 .interp-label { font-family: 'Consolas', monospace; font-size: 0.8em; color: var(--muted); margin-bottom: 6px; }
 .interp-val   { font-family: 'Consolas', monospace; font-size: 1.1em; font-weight: bold; }
 
-/* ── Chapter nav ──────────────────────────────────────── */
+/* chapter-nav removed */
 .chapter-nav {
   display: flex; justify-content: space-between; align-items: center;
   margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border);
@@ -156,6 +168,15 @@ ul, ol { margin: 8px 0 14px 26px; line-height: 2.2; }
 
 hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
 </style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$', right: '$', display: true},
+      {left: '\\(', right: '\\)', display: false}
+    ]
+  });"></script>
 </head>
 <body>
 
@@ -257,26 +278,19 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
   定義三個重心座標：
 </p>
 
-<div class="math">
-  <span class="r cmt">令 S = 三角形 V0V1V2 的有向面積 = ½ · cross(V1−V0, V2−V0)</span>
-  <span class="r"></span>
-  <span class="r"><span class="ok">w0</span> = Area(△PV1V2) / S   <span class="cmt">← T₀ 面積比，對應 V0</span></span>
-  <span class="r"><span class="or">w1</span> = Area(△V0PV2) / S   <span class="cmt">← T₁ 面積比，對應 V1</span></span>
-  <span class="r"><span class="bl">w2</span> = Area(△V0V1P) / S   <span class="cmt">← T₂ 面積比，對應 V2</span></span>
-</div>
+<p style="color:var(--muted);font-size:0.88em;margin-bottom:4px">令 \(S\) = 三角形 \(V_0V_1V_2\) 的有向面積 \(= \tfrac{1}{2}\,\text{cross}(\mathbf{V}_1-\mathbf{V}_0,\;\mathbf{V}_2-\mathbf{V}_0)\)</p>
+$\begin{array}{rll}
+\textcolor{#a6e3a1}{w_0} &= \dfrac{\text{Area}(\triangle P V_1 V_2)}{S} & \text{（T₀ 面積比，對應 V₀）}\\[10pt]
+\textcolor{#fab387}{w_1} &= \dfrac{\text{Area}(\triangle V_0 P V_2)}{S} & \text{（T₁ 面積比，對應 V₁）}\\[10pt]
+\textcolor{#89b4fa}{w_2} &= \dfrac{\text{Area}(\triangle V_0 V_1 P)}{S} & \text{（T₂ 面積比，對應 V₂）}
+\end{array}$
 
 <p>
   子三角形的面積就是 Edge Function 的值的一半，所以：
 </p>
 
-<div class="math">
-  <span class="r cmt">E0(P) = cross(V1−V0, P−V0)  →  Area(△V0V1P) = E0/2</span>
-  <span class="r cmt">（注意：Edge Function 的歸屬需對應到正確的子三角形）</span>
-  <span class="r"></span>
-  <span class="r"><span class="ok">w0</span> = E0(P) / E_total     <span class="cmt">E_total = cross(V1−V0, V2−V0)</span></span>
-  <span class="r"><span class="or">w1</span> = E1(P) / E_total</span>
-  <span class="r"><span class="bl">w2</span> = E2(P) / E_total</span>
-</div>
+<p style="color:var(--muted);font-size:0.88em;margin-bottom:4px">子三角形面積 = Edge Function 值的一半，其中 \(E_{\text{total}} = \text{cross}(\mathbf{V}_1-\mathbf{V}_0,\;\mathbf{V}_2-\mathbf{V}_0)\)</p>
+$\textcolor{#a6e3a1}{w_0} = \dfrac{E_0(\mathbf{P})}{E_{\text{total}}},\qquad \textcolor{#fab387}{w_1} = \dfrac{E_1(\mathbf{P})}{E_{\text{total}}},\qquad \textcolor{#89b4fa}{w_2} = \dfrac{E_2(\mathbf{P})}{E_{\text{total}}}$
 
 <div class="box box-blue">
   <strong>計算上的好消息：</strong>你在 Ch09 掃描迴圈裡已經算好了 e0、e1、e2。
@@ -363,9 +377,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
   有了 w0、w1、w2，你可以在三角形內插值<em>任何頂點屬性</em>：
 </p>
 
-<div class="math">
-  <span class="r"><span class="hi">屬性(P)</span> = <span class="ok">w0</span> · 屬性(V0)  +  <span class="or">w1</span> · 屬性(V1)  +  <span class="bl">w2</span> · 屬性(V2)</span>
-</div>
+$\text{屬性}(P) = \textcolor{#a6e3a1}{w_0}\cdot\text{屬性}(V_0) + \textcolor{#fab387}{w_1}\cdot\text{屬性}(V_1) + \textcolor{#89b4fa}{w_2}\cdot\text{屬性}(V_2)$
 
 <p>這個公式適用於：</p>
 <ul>
@@ -397,12 +409,12 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
 
 <p>重心點（w0 = w1 = w2 = 1/3）的顏色：</p>
 
-<div class="math">
-  <span class="r">R = ⅓·1 + ⅓·0 + ⅓·0 = <span class="hi">0.333</span></span>
-  <span class="r">G = ⅓·0 + ⅓·1 + ⅓·0 = <span class="hi">0.333</span></span>
-  <span class="r">B = ⅓·0 + ⅓·0 + ⅓·1 = <span class="hi">0.333</span></span>
-  <span class="r cmt">→ 灰色（三者等比混合）</span>
-</div>
+$\begin{array}{rcl}
+R &=& \tfrac{1}{3}{\cdot}1 + \tfrac{1}{3}{\cdot}0 + \tfrac{1}{3}{\cdot}0 = \textcolor{#f9e2af}{0.333}\\[6pt]
+G &=& \tfrac{1}{3}{\cdot}0 + \tfrac{1}{3}{\cdot}1 + \tfrac{1}{3}{\cdot}0 = \textcolor{#f9e2af}{0.333}\\[6pt]
+B &=& \tfrac{1}{3}{\cdot}0 + \tfrac{1}{3}{\cdot}0 + \tfrac{1}{3}{\cdot}1 = \textcolor{#f9e2af}{0.333}
+\end{array}$
+<p style="color:var(--muted);font-size:0.88em;margin-top:4px">→ 灰色（三者等比混合）</p>
 
 <div class="fig">
   <svg width="240" height="220" viewBox="0 0 240 220">
@@ -523,10 +535,13 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
   並分析為什麼這個方法比掃描線法更適合現代 GPU。
 </p>
 
-<!-- ── Chapter nav ─────────────────────────────────────────────── -->
-<div class="chapter-nav">
-  <a href="ch09_edge_function.html">← Ch09 邊緣函數</a>
-  <a class="next" href="ch11_bounding_box.html">Ch11 包圍盒掃描法 →</a>
+<div class="next-ch">
+  <div>
+    <div class="next-label">PART 3 · CHAPTER 11</div>
+    <div class="next-title">包圍盒掃描法（完整演算法）</div>
+    <div class="next-desc">整合 Ch08–10：min/max 找包圍盒 → 增量 Edge Function 掃描 → 重心座標插值 → SetPixel。掃描線法 vs 包圍盒法比較。</div>
+  </div>
+  <a href="ch11_bounding_box.html" class="next-arrow">→</a>
 </div>
 
 </body>

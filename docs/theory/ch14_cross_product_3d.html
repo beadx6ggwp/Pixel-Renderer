@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Ch14 — 3D 叉積（Cross Product）</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:     #1e1e2e;
+  --bg1:    #181825;
+  --bg2:    #11111b;
+  --border: #313244;
+  --muted:  #6c7086;
+  --text:   #cdd6f4;
+  --blue:   #89b4fa;
+  --green:  #a6e3a1;
+  --yellow: #f9e2af;
+  --orange: #fab387;
+  --red:    #f38ba8;
+  --purple: #cba6f7;
+  --teal:   #94e2d5;
+}
+body {
+  background: var(--bg); color: var(--text);
+  font-family: 'Georgia', serif; font-size: 15px;
+  padding: 0 20px 80px; max-width: 900px; margin: 0 auto;
+  line-height: 1.9;
+}
+nav {
+  font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted);
+  padding: 14px 0; border-bottom: 1px solid var(--border);
+  margin-bottom: 36px; display: flex; align-items: center; gap: 10px;
+}
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--blue); }
+.nav-sep { color: var(--border); }
+.nav-cur { color: var(--text); }
+.nav-right { margin-left: auto; display: flex; gap: 16px; }
+.ch-header { margin-bottom: 40px; }
+.ch-label { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px; }
+.ch-title { color: var(--blue); font-size: 1.7em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub   { color: var(--muted); font-size: 0.88em; margin-bottom: 14px; }
+.ch-tags  { display: flex; gap: 6px; flex-wrap: wrap; }
+.ch-tag   { font-family: 'Consolas', monospace; font-size: 0.75em; padding: 2px 10px; border-radius: 99px; border: 1px solid var(--border); color: var(--muted); }
+h2 {
+  color: var(--purple); font-size: 1em;
+  font-family: 'Consolas', monospace; letter-spacing: 0.05em;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+  margin: 40px 0 20px; display: flex; align-items: center; gap: 12px;
+}
+h2 .n {
+  background: var(--purple); color: var(--bg2); font-weight: bold;
+  border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 0.85em;
+}
+h3 { color: var(--yellow); font-size: 0.95em; margin: 22px 0 10px; }
+p  { margin-bottom: 12px; }
+strong { color: var(--yellow); }
+em { color: var(--orange); font-style: normal; }
+.box { border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 0.9em; line-height: 1.85; }
+.box-blue   { background: var(--bg1); border-left: 4px solid var(--blue); }
+.box-green  { background: var(--bg1); border-left: 4px solid var(--green); }
+.box-yellow { background: var(--bg1); border-left: 4px solid var(--yellow); }
+.box-red    { background: var(--bg1); border-left: 4px solid var(--red); }
+.box-purple { background: var(--bg1); border-left: 4px solid var(--purple); }
+.box-gray   { background: var(--bg1); border: 1px solid var(--border); border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 0.9em; }
+.math {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 6px;
+  padding: 16px 22px; margin: 14px 0;
+  font-family: 'Consolas', monospace; font-size: 0.87em; line-height: 2.3;
+}
+.math .r   { display: block; }
+.math .cmt { color: var(--muted); }
+.math .hi  { color: var(--yellow); font-weight: bold; }
+.math .ok  { color: var(--green); }
+.math .em  { color: var(--red); }
+.math .kw  { color: var(--purple); }
+.math .bl  { color: var(--blue); }
+.math .or  { color: var(--orange); }
+.code {
+  background: #0d0d14; border: 1px solid var(--border); border-radius: 8px;
+  padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em;
+  line-height: 2.0; margin: 14px 0; white-space: pre;
+}
+.code .cmt { color: var(--muted); }
+.code .kw  { color: var(--purple); }
+.code .val { color: var(--orange); }
+.code .ok  { color: var(--green); }
+.code .fn  { color: var(--blue); }
+.code .ty  { color: var(--teal); }
+.fig { margin: 24px auto; text-align: center; }
+.fig figcaption { color: var(--muted); font-size: 0.88em; margin-top: 10px; font-style: italic; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+.two-col > div { background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; }
+.col-title { font-family: 'Consolas', monospace; font-size: 0.85em; margin-bottom: 10px; color: var(--blue); }
+table { width: 100%; border-collapse: collapse; font-size: 0.87em; margin: 14px 0; }
+th { background: var(--bg1); color: var(--blue); padding: 9px 14px; text-align: left; border-bottom: 2px solid var(--border); font-family: 'Consolas', monospace; }
+td { padding: 8px 14px; border-bottom: 1px solid var(--bg1); vertical-align: top; }
+tr:hover td { background: var(--bg1); }
+.next-ch { margin-top: 56px; padding: 20px 24px; background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 20px; }
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+.next-title { color: var(--blue); font-size: 1em; }
+.next-desc  { color: var(--muted); font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: var(--blue); font-size: 1.6em; text-decoration: none; }
+.next-arrow:hover { color: var(--purple); }
+.katex-display {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 6px;
+  padding: 18px 24px; margin: 14px 0; overflow-x: auto;
+}
+.katex-display > .katex { color: var(--text); }
+.katex { color: var(--text); font-size: 1.0em; }
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$', right: '$', display: true},
+      {left: '\\(', right: '\\)', display: false}
+    ]
+  });"></script>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">軟體光柵化</a>
+  <span class="nav-sep">/</span>
+  <span>理論</span>
+  <span class="nav-sep">/</span>
+  <span class="nav-cur">Ch14</span>
+  <div class="nav-right">
+    <a href="ch13_dot_product.html">← Ch13</a>
+    <a href="ch15_matrix.html">Ch15 →</a>
+  </div>
+</nav>
+
+<div class="ch-header">
+  <div class="ch-label">PART 4 · CHAPTER 14</div>
+  <div class="ch-title">3D 叉積（Cross Product）</div>
+  <div class="ch-sub">從三角形的兩條邊計算法向量——N·L 光照裡那個 N 就是這樣來的</div>
+  <div class="ch-tags">
+    <span class="ch-tag">cross product</span>
+    <span class="ch-tag">法向量</span>
+    <span class="ch-tag">右手定則</span>
+    <span class="ch-tag">sinθ</span>
+    <span class="ch-tag">反交換律</span>
+    <span class="ch-tag">背面剔除</span>
+  </div>
+</div>
+
+<p>
+  Ch13 的 N·L 光照公式裡，N 是<strong>表面法向量（surface normal）</strong>——一個垂直於三角形平面的單位向量。
+  但我們從來沒說過它是如何計算出來的。答案是<em>叉積（Cross Product）</em>。
+</p>
+<p>
+  叉積接受兩個 3D 向量，回傳第三個向量，且這個結果向量<strong>垂直於前兩者所構成的平面</strong>。
+  只要取三角形的兩條邊，叉積就能給出那個三角形的法向量。
+</p>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">1</div>定義：行列式展開公式</h2>
+
+<p>
+  給定兩個 3D 向量 <strong>a = (a<sub>x</sub>, a<sub>y</sub>, a<sub>z</sub>)</strong> 和
+  <strong>b = (b<sub>x</sub>, b<sub>y</sub>, b<sub>z</sub>)</strong>，
+  它們的叉積 <strong>a × b</strong> 定義為下列 3×3 行列式的展開：
+</p>
+
+$\mathbf{a} \times \mathbf{b} = \begin{vmatrix} \mathbf{i} & \mathbf{j} & \mathbf{k} \\ a_x & a_y & a_z \\ b_x & b_y & b_z \end{vmatrix}$
+<p style="color:var(--muted);font-size:0.88em;margin:6px 0">沿第一列展開（cofactor expansion）：</p>
+$= \textcolor{#89b4fa}{\mathbf{i}}\,(a_y b_z - a_z b_y) - \textcolor{#89b4fa}{\mathbf{j}}\,(a_x b_z - a_z b_x) + \textcolor{#89b4fa}{\mathbf{k}}\,(a_x b_y - a_y b_x)$
+<p style="color:var(--muted);font-size:0.88em;margin:6px 0">整理為分量形式（實作只需記這一行）：</p>
+$\mathbf{a} \times \mathbf{b} = \bigl(\;\textcolor{#a6e3a1}{a_y b_z - a_z b_y},\;\;\textcolor{#a6e3a1}{a_z b_x - a_x b_z},\;\;\textcolor{#a6e3a1}{a_x b_y - a_y b_x}\;\bigr)$
+
+<p>
+  其中 <strong>i, j, k</strong> 是 x, y, z 方向的<em>單位基向量（standard basis vectors）</em>。
+  行列式展開是推導公式的方法，但實際寫程式只需要記住最後那行分量形式。
+</p>
+
+<div class="box box-yellow">
+  <strong>記憶法：循環置換（cyclic permutation）</strong><br>
+  x 分量：<code>y·z − z·y</code>（跳過 x）<br>
+  y 分量：<code>z·x − x·z</code>（跳過 y，符號翻轉因為展開時 j 前有負號）<br>
+  z 分量：<code>x·y − y·x</code>（跳過 z）<br><br>
+  另一種記法：寫出循環 x→y→z→x，叉積的每個分量都是「後兩個的乘積差」。
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">2</div>幾何意義：方向與大小</h2>
+
+<h3>方向：右手定則（Right-Hand Rule）</h3>
+<p>
+  <strong>a × b</strong> 的方向垂直於 a 和 b 所構成的平面，具體朝哪一側由<em>右手定則</em>決定：
+  伸出右手，四指從 a 的方向<strong>彎向</strong> b 的方向，大拇指所指的方向就是 a × b。
+</p>
+
+<figure class="fig">
+<svg width="520" height="230" viewBox="0 0 520 230" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="ah-y14" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#f9e2af"/>
+    </marker>
+    <marker id="ah-g14" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#a6e3a1"/>
+    </marker>
+    <marker id="ah-r14" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#f38ba8"/>
+    </marker>
+    <marker id="ah-rr14" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#f38ba8"/>
+    </marker>
+  </defs>
+
+  <!-- === LEFT PANEL: a×b pointing UP === -->
+  <!-- Parallelogram fill -->
+  <polygon points="95,185 205,163 165,108 55,130" fill="#89b4fa" fill-opacity="0.1" stroke="#313244" stroke-width="1"/>
+  <!-- Vector a (yellow) -->
+  <line x1="95" y1="185" x2="198" y2="165" stroke="#f9e2af" stroke-width="2.5" marker-end="url(#ah-y14)"/>
+  <text x="148" y="190" font-size="14" fill="#f9e2af" font-family="Consolas" text-anchor="middle">a</text>
+  <!-- Vector b (green) -->
+  <line x1="95" y1="185" x2="59" y2="132" stroke="#a6e3a1" stroke-width="2.5" marker-end="url(#ah-g14)"/>
+  <text x="63" y="172" font-size="14" fill="#a6e3a1" font-family="Consolas">b</text>
+  <!-- θ arc -->
+  <path d="M 128,181 A 34,34 0 0,0 97,152" fill="none" stroke="#6c7086" stroke-width="1.5"/>
+  <text x="122" y="162" font-size="12" fill="#6c7086" font-family="Consolas">θ</text>
+  <!-- N = a×b (red), from centroid of parallelogram upward -->
+  <!-- centroid = ((95+205+165+55)/4, (185+163+108+130)/4) = (130, 146.5) -->
+  <line x1="130" y1="146" x2="130" y2="52" stroke="#f38ba8" stroke-width="2.5" marker-end="url(#ah-r14)"/>
+  <text x="137" y="78" font-size="13" fill="#f38ba8" font-family="Consolas">a×b</text>
+  <!-- Origin dot -->
+  <circle cx="95" cy="185" r="3.5" fill="#cdd6f4"/>
+  <!-- Area label -->
+  <text x="130" y="148" font-size="11" fill="#89b4fa" font-family="Consolas" text-anchor="middle">area</text>
+  <!-- Panel title -->
+  <text x="130" y="215" font-size="12" fill="#6c7086" font-family="Consolas" text-anchor="middle">a × b（朝上）</text>
+
+  <!-- === DIVIDER === -->
+  <line x1="260" y1="20" x2="260" y2="205" stroke="#313244" stroke-width="1" stroke-dasharray="4,4"/>
+
+  <!-- === RIGHT PANEL: b×a pointing DOWN === -->
+  <!-- Parallelogram fill (same shape, mirrored) -->
+  <polygon points="355,185 465,163 425,108 315,130" fill="#89b4fa" fill-opacity="0.1" stroke="#313244" stroke-width="1"/>
+  <!-- Vector b first (green) — same direction as a in left panel -->
+  <line x1="355" y1="185" x2="458" y2="165" stroke="#f9e2af" stroke-width="2.5" marker-end="url(#ah-y14)"/>
+  <text x="408" y="190" font-size="14" fill="#f9e2af" font-family="Consolas" text-anchor="middle">b</text>
+  <!-- Vector a (yellow) — same direction as b in left panel -->
+  <line x1="355" y1="185" x2="319" y2="132" stroke="#a6e3a1" stroke-width="2.5" marker-end="url(#ah-g14)"/>
+  <text x="323" y="172" font-size="14" fill="#a6e3a1" font-family="Consolas">a</text>
+  <!-- b×a (red), pointing DOWN from centroid -->
+  <!-- centroid same relative position = (390, 146) -->
+  <line x1="390" y1="146" x2="390" y2="218" stroke="#f38ba8" stroke-width="2.5" marker-end="url(#ah-rr14)"/>
+  <text x="397" y="210" font-size="13" fill="#f38ba8" font-family="Consolas">b×a</text>
+  <!-- Origin dot -->
+  <circle cx="355" cy="185" r="3.5" fill="#cdd6f4"/>
+  <!-- Panel title -->
+  <text x="390" y="35" font-size="12" fill="#6c7086" font-family="Consolas" text-anchor="middle">b × a（朝下）</text>
+
+  <!-- Center equality label -->
+  <text x="260" y="18" font-size="12" fill="#f38ba8" font-family="Consolas" text-anchor="middle">a×b = −(b×a)</text>
+</svg>
+<figcaption>左：a×b 朝上（右手從 a 轉向 b，拇指向上）；右：交換順序得 b×a，方向完全反轉。兩者大小相同，方向相反。</figcaption>
+</figure>
+
+<h3>大小：平行四邊形面積</h3>
+<p>
+  叉積的<strong>長度（magnitude）</strong>等於以 a 和 b 為邊的平行四邊形面積：
+</p>
+
+$|\mathbf{a} \times \mathbf{b}| = |\mathbf{a}|\,|\mathbf{b}|\sin\theta \quad (0° \le \theta \le 180°,\;\sin\theta \ge 0)$
+$\begin{array}{rcl}
+\theta = 0° \text{ 或 } 180°\text{（平行）} & \Rightarrow & \textcolor{#f38ba8}{\mathbf{a} \times \mathbf{b} = \mathbf{0}}\\[6pt]
+\theta = 90°\text{（垂直）} & \Rightarrow & \textcolor{#a6e3a1}{|\mathbf{a} \times \mathbf{b}| = |\mathbf{a}||\mathbf{b}|}\text{（面積最大）}
+\end{array}$
+
+<div class="box box-blue">
+  <strong>對比點積與叉積：</strong><br>
+  點積 a·b = |a||b|<strong>cos</strong>θ → 衡量「同向程度」，垂直時為 0<br>
+  叉積 |a×b| = |a||b|<strong>sin</strong>θ → 衡量「垂直程度」，平行時為 0<br><br>
+  兩者互補：cos²θ + sin²θ = 1，聯立可以同時描述向量的全部幾何關係。
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">3</div>重要性質</h2>
+
+<table>
+  <tr>
+    <th>性質</th>
+    <th>公式</th>
+    <th>備註</th>
+  </tr>
+  <tr>
+    <td><strong>反交換律</strong></td>
+    <td><code>a × b = −(b × a)</code></td>
+    <td>順序相反，結果方向相反。這是叉積最重要的性質，與點積的交換律完全不同。</td>
+  </tr>
+  <tr>
+    <td><strong>自叉積為零</strong></td>
+    <td><code>a × a = 0</code></td>
+    <td>由反交換律推出：a×a = −(a×a) → 2(a×a) = 0 → a×a = 0</td>
+  </tr>
+  <tr>
+    <td><strong>純量乘法</strong></td>
+    <td><code>(ka) × b = k(a × b)</code></td>
+    <td>純量可以提出，與矩陣行列式的性質一致</td>
+  </tr>
+  <tr>
+    <td><strong>向量加法分配律</strong></td>
+    <td><code>a × (b + c) = a×b + a×c</code></td>
+    <td>對加法分配，可以用行列式線性性質推導</td>
+  </tr>
+  <tr>
+    <td><strong>不滿足結合律</strong></td>
+    <td><code>a × (b × c) ≠ (a × b) × c</code></td>
+    <td>叉積<em>不可隨意加括號</em>。展開後結果完全不同。</td>
+  </tr>
+  <tr>
+    <td><strong>結果垂直於兩向量</strong></td>
+    <td><code>(a × b) · a = 0<br>(a × b) · b = 0</code></td>
+    <td>可以用分量展開直接驗證，是「法向量」用途的根據</td>
+  </tr>
+</table>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">4</div>與 Ch08 的 2D 叉積：同一回事</h2>
+
+<p>
+  在 Ch08（Edge Function）中，我們計算過一個「2D 叉積」來判斷點在邊的哪一側：
+</p>
+
+<p style="color:var(--muted);font-size:0.88em;margin-bottom:4px">Ch08 的 2D 叉積（回顧）：</p>
+$\text{cross2D}(\mathbf{a},\mathbf{b}) = a_x b_y - a_y b_x$
+<p style="color:var(--muted);font-size:0.88em;margin:8px 0 4px">令 \(a_z = b_z = 0\)（向量在 z=0 平面上），代入 3D 叉積：</p>
+$\mathbf{a} \times \mathbf{b}\big|_{a_z=b_z=0} = \bigl(\;0,\;\;0,\;\;\textcolor{#f9e2af}{a_x b_y - a_y b_x}\;\bigr)$
+<p style="color:var(--muted);font-size:0.88em;margin-top:6px">z 分量就是 2D 叉積！</p>
+
+<p>
+  當兩個向量都在 xy 平面（z = 0）時，3D 叉積的 x、y 分量必然為零，
+  只剩 z 分量——而那個 z 分量就是 Ch08 的 2D 叉積。
+</p>
+<p>
+  這意味著 Ch08 裡所有「叉積判斷哪一側」的直覺，在 3D 裡仍然成立：
+  z 分量的正負號就是右手定則在 z 方向的投影，對應同一側或反側。
+</p>
+
+<div class="box box-purple">
+  <strong>一句話總結：</strong>
+  2D 叉積是 3D 叉積的 z 分量在 z=0 平面上的特例。
+  3D 叉積是 2D 叉積的自然延伸，把「方向」從純量擴展到向量。
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">5</div>應用：三角形法向量</h2>
+
+<p>
+  光柵化時每個三角形都有三個頂點 v<sub>0</sub>, v<sub>1</sub>, v<sub>2</sub>。
+  從 v<sub>0</sub> 出發可以建立兩條邊向量：
+</p>
+
+$\mathbf{e}_1 = \mathbf{v}_1 - \mathbf{v}_0, \qquad \mathbf{e}_2 = \mathbf{v}_2 - \mathbf{v}_0$
+$\mathbf{N} = \mathbf{e}_1 \times \mathbf{e}_2$
+$\hat{N} = \dfrac{\mathbf{N}}{|\mathbf{N}|}$
+
+<figure class="fig">
+<svg width="380" height="250" viewBox="0 0 380 250" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="ah-b14" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#89b4fa"/>
+    </marker>
+    <marker id="ah-g14b" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#a6e3a1"/>
+    </marker>
+    <marker id="ah-r14b" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#f38ba8"/>
+    </marker>
+    <marker id="ah-o14" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#fab387"/>
+    </marker>
+  </defs>
+
+  <!-- Triangle: v0=(80,200), v1=(300,200), v2=(200,120) -->
+  <!-- Isometric tilt: shift v1 slightly up, v2 further up -->
+  <!-- v0=80,200  v1=290,195  v2=185,115 -->
+  <polygon points="80,200 290,195 185,115" fill="#a6e3a1" fill-opacity="0.08" stroke="#a6e3a1" stroke-width="1.5"/>
+
+  <!-- v0 label -->
+  <circle cx="80" cy="200" r="4" fill="#cdd6f4"/>
+  <text x="62" y="215" font-size="13" fill="#cdd6f4" font-family="Consolas">v₀</text>
+
+  <!-- v1 label -->
+  <circle cx="290" cy="195" r="4" fill="#cdd6f4"/>
+  <text x="294" y="210" font-size="13" fill="#cdd6f4" font-family="Consolas">v₁</text>
+
+  <!-- v2 label -->
+  <circle cx="185" cy="115" r="4" fill="#cdd6f4"/>
+  <text x="190" y="112" font-size="13" fill="#cdd6f4" font-family="Consolas">v₂</text>
+
+  <!-- e1 = v1 - v0: from v0 to v1 (blue) -->
+  <line x1="80" y1="200" x2="283" y2="196" stroke="#89b4fa" stroke-width="2.5" marker-end="url(#ah-b14)"/>
+  <text x="175" y="218" font-size="13" fill="#89b4fa" font-family="Consolas" text-anchor="middle">e1 = v1−v0</text>
+
+  <!-- e2 = v2 - v0: from v0 to v2 (green) -->
+  <line x1="80" y1="200" x2="181" y2="119" stroke="#a6e3a1" stroke-width="2.5" marker-end="url(#ah-g14b)"/>
+  <text x="98" y="158" font-size="13" fill="#a6e3a1" font-family="Consolas">e2 = v2−v0</text>
+
+  <!-- N = e1×e2: from centroid of triangle, pointing upward -->
+  <!-- centroid = ((80+290+185)/3, (200+195+115)/3) = (185, 170) -->
+  <line x1="185" y1="170" x2="185" y2="62" stroke="#f38ba8" stroke-width="2.5" marker-end="url(#ah-r14b)"/>
+  <text x="193" y="88" font-size="13" fill="#f38ba8" font-family="Consolas">N = e1×e2</text>
+
+  <!-- Right angle mark: small square at centroid base -->
+  <rect x="185" y="163" width="7" height="7" fill="none" stroke="#f38ba8" stroke-width="1.2"/>
+</svg>
+<figcaption>e1 和 e2 都從 v₀ 出發。N = e1 × e2 垂直於三角形所在平面，正規化後即為 N·L 所需的表面法向量。</figcaption>
+</figure>
+
+<div class="box box-yellow">
+  <strong>e1 × e2 的方向取決於頂點繞向（winding order）</strong><br>
+  若 v₀ → v₁ → v₂ 是<em>逆時針（CCW）</em>，N 朝<strong>向外</strong>（朝向觀察者）。<br>
+  若頂點是順時針（CW），N 方向相反——可用 <code>e2 × e1</code> 修正，或在讀資料時保持一致的繞向。<br><br>
+  這就是為什麼 Ch12 強調頂點繞向的一致性：繞向錯誤會讓法向量指向錯誤方向，導致光照完全不對。
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">6</div>應用：背面剔除（Back-face Culling）</h2>
+
+<p>
+  計算出法向量 N 之後，可以用它來做<em>背面剔除（back-face culling）</em>：
+  判斷這個三角形是否朝向攝影機，若背對攝影機則直接跳過，省去光柵化的開銷。
+</p>
+
+<p style="color:var(--muted);font-size:0.88em;margin-bottom:4px">
+  設 \(\hat{V}\) 為攝影機方向（指向觀察者；通常是 \((0,0,1)\) 或 view direction 的反向）：
+</p>
+$\begin{array}{ll}
+\textcolor{#a6e3a1}{\hat{N} \cdot \hat{V} > 0} & \Rightarrow\;\text{法向量朝向攝影機}\Rightarrow\textbf{正面（front-face），需要渲染}\\[6pt]
+\textcolor{#f38ba8}{\hat{N} \cdot \hat{V} < 0} & \Rightarrow\;\text{法向量背向攝影機}\Rightarrow\textbf{背面（back-face），可以剔除}\\[6pt]
+\hat{N} \cdot \hat{V} = 0 & \Rightarrow\;\text{三角形平行於視線，邊緣情況}
+\end{array}$
+
+<p>
+  這裡出現了 Ch13 的點積（N·V）和本章的叉積（計算 N）的組合：
+  兩章的工具協同工作，完成一個完整的幾何判斷。
+  在 MVP 管線完成前，可以先在物件空間或世界空間做背面剔除，
+  減少後續計算量。
+</p>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">7</div>C++ 實作</h2>
+
+<p>
+  叉積的實作直接對應公式，沒有任何近似或技巧——只需確保分量順序正確：
+</p>
+
+<div class="code"><span class="cmt">// 延伸 Ch13 的 Vec3，加入向量加減與叉積</span>
+<span class="kw">struct</span> <span class="ty">Vec3</span> {
+    <span class="kw">float</span> x, y, z;
+
+    <span class="ty">Vec3</span> <span class="kw">operator</span>-(<span class="kw">const</span> <span class="ty">Vec3</span>&amp; o) <span class="kw">const</span> { <span class="kw">return</span> {x-o.x, y-o.y, z-o.z}; }
+    <span class="ty">Vec3</span> <span class="kw">operator</span>+(<span class="kw">const</span> <span class="ty">Vec3</span>&amp; o) <span class="kw">const</span> { <span class="kw">return</span> {x+o.x, y+o.y, z+o.z}; }
+    <span class="ty">Vec3</span> <span class="kw">operator</span>*(<span class="kw">float</span> t)       <span class="kw">const</span> { <span class="kw">return</span> {x*t, y*t, z*t}; }
+
+    <span class="kw">float</span> <span class="fn">length_sq</span>() <span class="kw">const</span> { <span class="kw">return</span> x*x + y*y + z*z; }
+    <span class="kw">float</span> <span class="fn">length</span>()    <span class="kw">const</span> { <span class="kw">return</span> std::<span class="fn">sqrt</span>(<span class="fn">length_sq</span>()); }
+    <span class="ty">Vec3</span>  <span class="fn">normalize</span>() <span class="kw">const</span> { <span class="kw">float</span> l = <span class="fn">length</span>(); <span class="kw">return</span> {x/l, y/l, z/l}; }
+};
+
+<span class="cmt">// 點積（Ch13）</span>
+<span class="kw">float</span> <span class="fn">dot</span>(<span class="ty">Vec3</span> a, <span class="ty">Vec3</span> b) {
+    <span class="kw">return</span> a.x*b.x + a.y*b.y + a.z*b.z;
+}
+
+<span class="cmt">// 叉積：結果垂直於 a 和 b</span>
+<span class="ty">Vec3</span> <span class="fn">cross</span>(<span class="ty">Vec3</span> a, <span class="ty">Vec3</span> b) {
+    <span class="kw">return</span> {
+        a.y * b.z - a.z * b.y,   <span class="cmt">// x</span>
+        a.z * b.x - a.x * b.z,   <span class="cmt">// y</span>
+        a.x * b.y - a.y * b.x    <span class="cmt">// z</span>
+    };
+}
+
+<span class="cmt">// 從三角形三頂點計算單位法向量</span>
+<span class="ty">Vec3</span> <span class="fn">triangle_normal</span>(<span class="ty">Vec3</span> v0, <span class="ty">Vec3</span> v1, <span class="ty">Vec3</span> v2) {
+    <span class="ty">Vec3</span> e1 = v1 - v0;
+    <span class="ty">Vec3</span> e2 = v2 - v0;
+    <span class="kw">return</span> <span class="fn">cross</span>(e1, e2).<span class="fn">normalize</span>();
+}
+
+<span class="cmt">// 背面剔除：V 為攝影機方向（世界空間，朝向觀察者）</span>
+<span class="kw">bool</span> <span class="fn">is_back_face</span>(<span class="ty">Vec3</span> v0, <span class="ty">Vec3</span> v1, <span class="ty">Vec3</span> v2, <span class="ty">Vec3</span> view_dir) {
+    <span class="ty">Vec3</span> N = <span class="fn">triangle_normal</span>(v0, v1, v2);
+    <span class="kw">return</span> <span class="fn">dot</span>(N, view_dir) < <span class="val">0.0f</span>;
+}</div>
+
+<div class="box box-gray">
+  <strong>分量順序容易寫錯：</strong>叉積的 y 分量是
+  <code>a.z*b.x − a.x*b.z</code>（注意：不是 <code>a.x*b.z − a.z*b.x</code>）。
+  每個分量展開時都有一個「減號在前」的部分，y 分量整體還帶負號（行列式展開的符號規則）。
+  最保險的方式是對照記憶法：x→<code>yz−zy</code>，y→<code>zx−xz</code>，z→<code>xy−yx</code>。
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">8</div>小結</h2>
+
+<div class="two-col">
+  <div>
+    <div class="col-title" style="color:var(--green)">✓ 本章掌握的概念</div>
+    <ul style="font-size:0.88em;line-height:2.2;margin-left:16px;color:var(--text)">
+      <li>叉積行列式公式：三個分量的計算</li>
+      <li>右手定則：方向的判斷</li>
+      <li>大小 = |a||b|sinθ = 平行四邊形面積</li>
+      <li>反交換律：a×b = −b×a，順序影響方向</li>
+      <li>2D 叉積 = 3D 叉積的 z 分量（z=0 情形）</li>
+      <li>從兩條邊計算三角形法向量 N</li>
+      <li>背面剔除：N·V 的符號判斷</li>
+    </ul>
+  </div>
+  <div>
+    <div class="col-title" style="color:var(--blue)">→ 下一章預備</div>
+    <ul style="font-size:0.88em;line-height:2.2;margin-left:16px;color:var(--text)">
+      <li>矩陣：如何用一個 3×3 矩陣描述旋轉、縮放</li>
+      <li>多個變換的組合：矩陣相乘</li>
+      <li>為什麼需要 4×4 矩陣來做平移（下下章 MVP 的前提）</li>
+      <li>基向量觀點：矩陣乘法的幾何意義</li>
+    </ul>
+  </div>
+</div>
+
+<div class="next-ch">
+  <div>
+    <div class="next-label">PART 4 · CHAPTER 15</div>
+    <div class="next-title">矩陣與線性變換（Matrix & Linear Transforms）</div>
+    <div class="next-desc">從 2×2 到 3×3，縮放、旋轉矩陣的推導，以及為什麼變換可以「組合」成一個矩陣乘法。</div>
+  </div>
+  <a href="ch15_matrix.html" class="next-arrow">→</a>
+</div>
+
+</body>
+</html>

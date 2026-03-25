@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Ch13 — 點積（Dot Product）</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:     #1e1e2e;
+  --bg1:    #181825;
+  --bg2:    #11111b;
+  --border: #313244;
+  --muted:  #6c7086;
+  --text:   #cdd6f4;
+  --blue:   #89b4fa;
+  --green:  #a6e3a1;
+  --yellow: #f9e2af;
+  --orange: #fab387;
+  --red:    #f38ba8;
+  --purple: #cba6f7;
+  --teal:   #94e2d5;
+}
+body {
+  background: var(--bg); color: var(--text);
+  font-family: 'Georgia', serif; font-size: 15px;
+  padding: 0 20px 80px; max-width: 900px; margin: 0 auto;
+  line-height: 1.9;
+}
+nav {
+  font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted);
+  padding: 14px 0; border-bottom: 1px solid var(--border);
+  margin-bottom: 36px; display: flex; align-items: center; gap: 10px;
+}
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--blue); }
+.nav-sep { color: var(--border); }
+.nav-cur { color: var(--text); }
+.nav-right { margin-left: auto; display: flex; gap: 16px; }
+.ch-header { margin-bottom: 40px; }
+.ch-label { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px; }
+.ch-title { color: var(--blue); font-size: 1.7em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub   { color: var(--muted); font-size: 0.88em; margin-bottom: 14px; }
+.ch-tags  { display: flex; gap: 6px; flex-wrap: wrap; }
+.ch-tag   { font-family: 'Consolas', monospace; font-size: 0.75em; padding: 2px 10px; border-radius: 99px; border: 1px solid var(--border); color: var(--muted); }
+h2 {
+  color: var(--purple); font-size: 1em;
+  font-family: 'Consolas', monospace; letter-spacing: 0.05em;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+  margin: 40px 0 20px; display: flex; align-items: center; gap: 12px;
+}
+h2 .n {
+  background: var(--purple); color: var(--bg2); font-weight: bold;
+  border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 0.85em;
+}
+h3 { color: var(--yellow); font-size: 0.95em; margin: 22px 0 10px; }
+p  { margin-bottom: 12px; }
+strong { color: var(--yellow); }
+em { color: var(--orange); font-style: normal; }
+.box { border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 0.9em; line-height: 1.85; }
+.box-blue   { background: var(--bg1); border-left: 4px solid var(--blue); }
+.box-green  { background: var(--bg1); border-left: 4px solid var(--green); }
+.box-yellow { background: var(--bg1); border-left: 4px solid var(--yellow); }
+.box-red    { background: var(--bg1); border-left: 4px solid var(--red); }
+.box-purple { background: var(--bg1); border-left: 4px solid var(--purple); }
+.box-gray   { background: var(--bg1); border: 1px solid var(--border); border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 0.9em; }
+.math {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 6px;
+  padding: 16px 22px; margin: 14px 0;
+  font-family: 'Consolas', monospace; font-size: 0.87em; line-height: 2.3;
+}
+.math .r   { display: block; }
+.math .cmt { color: var(--muted); }
+.math .hi  { color: var(--yellow); font-weight: bold; }
+.math .ok  { color: var(--green); }
+.math .em  { color: var(--red); }
+.math .kw  { color: var(--purple); }
+.code {
+  background: #0d0d14; border: 1px solid var(--border); border-radius: 8px;
+  padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em;
+  line-height: 2.0; margin: 14px 0; white-space: pre;
+}
+.code .cmt { color: var(--muted); }
+.code .kw  { color: var(--purple); }
+.code .val { color: var(--orange); }
+.code .ok  { color: var(--green); }
+.code .fn  { color: var(--blue); }
+.code .ty  { color: var(--teal); }
+.fig { margin: 24px auto; text-align: center; }
+.fig figcaption { color: var(--muted); font-size: 0.88em; margin-top: 10px; font-style: italic; }
+.katex-display {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 6px;
+  padding: 18px 24px; margin: 14px 0; overflow-x: auto;
+}
+.katex-display > .katex { color: var(--text); }
+.katex { color: var(--text); font-size: 1.0em; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+.two-col > div { background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; }
+.col-title { font-family: 'Consolas', monospace; font-size: 0.85em; margin-bottom: 10px; color: var(--blue); }
+table { width: 100%; border-collapse: collapse; font-size: 0.87em; margin: 14px 0; }
+th { background: var(--bg1); color: var(--blue); padding: 9px 14px; text-align: left; border-bottom: 2px solid var(--border); font-family: 'Consolas', monospace; }
+td { padding: 8px 14px; border-bottom: 1px solid var(--bg1); vertical-align: top; }
+tr:hover td { background: var(--bg1); }
+.next-ch { margin-top: 56px; padding: 20px 24px; background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 20px; }
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+.next-title { color: var(--blue); font-size: 1em; }
+.next-desc  { color: var(--muted); font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: var(--blue); font-size: 1.6em; text-decoration: none; }
+.next-arrow:hover { color: var(--purple); }
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$', right: '$', display: true},
+      {left: '\\(', right: '\\)', display: false}
+    ]
+  });"></script>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">軟體光柵化</a>
+  <span class="nav-sep">/</span>
+  <span>理論</span>
+  <span class="nav-sep">/</span>
+  <span class="nav-cur">Ch13</span>
+  <div class="nav-right">
+    <a href="ch12_zbuffer.html">← Ch12</a>
+    <a href="ch14_cross_product_3d.html">Ch14 →</a>
+  </div>
+</nav>
+
+<div class="ch-header">
+  <div class="ch-label">PART 4 · CHAPTER 13</div>
+  <div class="ch-title">點積（Dot Product）</div>
+  <div class="ch-sub">從「兩向量的乘法」到「光照角度計算」，N·L 是所有光照模型的基礎</div>
+  <div class="ch-tags">
+    <span class="ch-tag">dot product</span>
+    <span class="ch-tag">投影</span>
+    <span class="ch-tag">cosθ</span>
+    <span class="ch-tag">N·L 光照</span>
+    <span class="ch-tag">正規化</span>
+  </div>
+</div>
+
+<p>
+  Part 3 結束後，你已經能在螢幕上正確填滿三角形、做深度測試。
+  但那些三角形的頂點是直接給的螢幕座標——現實中，3D 物件存在於世界空間，
+  需要一連串的矩陣變換才能投影到螢幕。
+</p>
+<p>
+  Part 4 的目標是建立這套變換的數學基礎。一切從最基本的 <strong>向量運算</strong> 開始。
+  點積是其中最常用的工具，幾乎每一個光照計算都離不開它。
+</p>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">1</div>定義：兩種等價的寫法</h2>
+
+<p>
+  點積（Dot Product，又叫內積 Inner Product）接受兩個同維度的向量，回傳一個<em>純量（scalar）</em>。
+  它有兩種完全等價的計算方式：
+</p>
+
+<div class="two-col">
+  <div>
+    <div class="col-title">代數定義（直接計算）</div>
+    $\mathbf{a} \cdot \mathbf{b} = a_x b_x + a_y b_y + a_z b_z$
+    <p style="font-size:0.85em;color:var(--muted);margin-top:6px">
+      \(\mathbf{a} = (a_x, a_y, a_z)\)，\(\mathbf{b} = (b_x, b_y, b_z)\)
+    </p>
+  </div>
+  <div>
+    <div class="col-title">幾何定義（夾角）</div>
+    $\mathbf{a} \cdot \mathbf{b} = |\mathbf{a}|\,|\mathbf{b}|\cos\theta$
+    <p style="font-size:0.85em;color:var(--muted);margin-top:6px">
+      \(|\mathbf{a}| = \sqrt{a_x^2+a_y^2+a_z^2}\)，θ 為 a 與 b 的夾角
+    </p>
+  </div>
+</div>
+
+<p>
+  兩個定義描述同一件事。代數定義方便計算；幾何定義揭示意義。
+</p>
+
+<h3>具體例子</h3>
+
+$\mathbf{a} = (1,\;2,\;3),\quad \mathbf{b} = (4,\;{-1},\;0)$
+$\mathbf{a} \cdot \mathbf{b} = 1{\times}4 + 2{\times}({-1}) + 3{\times}0 = 4 - 2 + 0 = \textcolor{#a6e3a1}{2}$
+
+<div class="box box-blue">
+  <strong>點積是純量，沒有方向。</strong><br>
+  這和叉積（下一章）不同。叉積的結果是向量；點積只是一個數字。
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">2</div>幾何意義：投影</h2>
+
+<p>
+  從幾何定義 a·b = |a||b|cosθ 可以推導出點積最直觀的意義：
+  <strong>a 在 b 方向上的投影長度，乘以 |b|</strong>。
+</p>
+
+<div class="fig">
+  <svg width="480" height="180" viewBox="0 0 480 180">
+    <defs>
+      <marker id="arr-b" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0 0,8 3,0 6" fill="#89b4fa"/>
+      </marker>
+      <marker id="arr-g" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0 0,8 3,0 6" fill="#a6e3a1"/>
+      </marker>
+      <marker id="arr-y" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0 0,8 3,0 6" fill="#f9e2af"/>
+      </marker>
+    </defs>
+
+    <!-- Origin -->
+    <circle cx="80" cy="130" r="3" fill="#6c7086"/>
+    <text x="70" y="148" fill="#6c7086" font-size="11" font-family="Consolas">O</text>
+
+    <!-- b vector (blue, horizontal-ish) -->
+    <line x1="80" y1="130" x2="300" y2="130" stroke="#89b4fa" stroke-width="2" marker-end="url(#arr-b)"/>
+    <text x="295" y="148" fill="#89b4fa" font-size="12" font-family="Consolas">b̂</text>
+
+    <!-- a vector (green, angled) -->
+    <line x1="80" y1="130" x2="240" y2="45" stroke="#a6e3a1" stroke-width="2" marker-end="url(#arr-g)"/>
+    <text x="168" y="72" fill="#a6e3a1" font-size="12" font-family="Consolas">a</text>
+
+    <!-- angle arc -->
+    <path d="M 130,130 A 50,50 0 0,0 110,99" fill="none" stroke="#6c7086" stroke-width="1"/>
+    <text x="132" y="114" fill="#6c7086" font-size="11" font-family="Consolas">θ</text>
+
+    <!-- projection line (dashed) -->
+    <line x1="240" y1="45" x2="240" y2="130" stroke="#6c7086" stroke-width="1" stroke-dasharray="4,3"/>
+
+    <!-- projection on b (yellow) -->
+    <line x1="80" y1="130" x2="240" y2="130" stroke="#f9e2af" stroke-width="2.5"/>
+    <text x="155" y="155" fill="#f9e2af" font-size="11" font-family="Consolas" text-anchor="middle">|a|·cosθ</text>
+
+    <!-- right angle mark -->
+    <rect x="232" y="122" width="8" height="8" fill="none" stroke="#6c7086" stroke-width="1"/>
+
+    <!-- formula region -->
+    <text x="360" y="80" fill="#6c7086" font-size="11" font-family="Consolas">若 b̂ 是單位向量：</text>
+    <text x="360" y="100" fill="#f9e2af" font-size="12" font-family="Consolas">a · b̂ = |a|·cosθ</text>
+    <text x="360" y="120" fill="#6c7086" font-size="11" font-family="Consolas">= a 在 b̂ 方向的投影</text>
+  </svg>
+  <figcaption>當 b̂ 是單位向量，a·b̂ 等於 a 在 b̂ 方向上的有號投影長度</figcaption>
+</div>
+
+<p>
+  「有號」的意思是：cosθ 的正負告訴你方向。這讓點積能直接回答
+  「這兩個向量是同一個方向還是反方向？」
+</p>
+
+$\begin{array}{rcl}
+\textcolor{#a6e3a1}{\mathbf{a} \cdot \mathbf{b} > 0} & \Rightarrow & \theta < 90°\text{，同側（夾角銳角）}\\[6pt]
+\textcolor{#cba6f7}{\mathbf{a} \cdot \mathbf{b} = 0} & \Rightarrow & \theta = 90°\text{，垂直（正交）}\\[6pt]
+\textcolor{#f38ba8}{\mathbf{a} \cdot \mathbf{b} < 0} & \Rightarrow & \theta > 90°\text{，反側（夾角鈍角）}
+\end{array}$
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">3</div>常用恆等式</h2>
+
+<h3>自點積 = 長度的平方</h3>
+
+$\mathbf{a} \cdot \mathbf{a} = a_x^2 + a_y^2 + a_z^2 = |\mathbf{a}|^2 \implies |\mathbf{a}| = \sqrt{\mathbf{a} \cdot \mathbf{a}}$
+
+<p>
+  這個恆等式很有用：需要向量長度時，先算點積再開根號，
+  比分別平方再相加略快（程式碼層面一樣，但語意更清晰）。
+</p>
+
+<h3>正規化（Normalization）</h3>
+
+<p>
+  長度為 1 的向量叫<em>單位向量（unit vector）</em>，通常寫作 \(\hat{a}\) 或 \(\hat{n}\)。
+  把任意向量除以自身長度就能得到：
+</p>
+
+$\hat{\mathbf{a}} = \dfrac{\mathbf{a}}{|\mathbf{a}|} = \dfrac{\mathbf{a}}{\sqrt{\mathbf{a} \cdot \mathbf{a}}} \implies \hat{\mathbf{a}} \cdot \hat{\mathbf{a}} = 1$
+
+<div class="box box-yellow">
+  <strong>光照計算幾乎都在用單位向量。</strong><br>
+  法向量 N、光照方向 L、視角方向 V——這三個向量在 Phong 模型中全部需要正規化，
+  因為我們只關心「方向」，不關心「長度」。
+  傳入 GPU shader 前通常已經正規化。
+</div>
+
+<h3>交換律與分配律</h3>
+
+$\begin{array}{rll}
+\mathbf{a} \cdot \mathbf{b} &= \mathbf{b} \cdot \mathbf{a} & \text{（交換律）}\\[6pt]
+\mathbf{a} \cdot (\mathbf{b} + \mathbf{c}) &= \mathbf{a}\cdot\mathbf{b} + \mathbf{a}\cdot\mathbf{c} & \text{（分配律）}\\[6pt]
+(k\mathbf{a}) \cdot \mathbf{b} &= k(\mathbf{a} \cdot \mathbf{b}) & \text{（純量結合律）}
+\end{array}$
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">4</div>核心應用：N·L 光照</h2>
+
+<p>
+  點積在圖形學最重要的應用就是 <strong>Lambert（朗伯）漫反射光照模型</strong>：
+</p>
+
+$\text{diffuse} = \max\!\left(0,\;\textcolor{#cba6f7}{\hat{N}} \cdot \textcolor{#f9e2af}{\hat{L}}\right) \times \text{light\_color} \times \text{surface\_color}$
+<div class="box box-gray" style="margin-top:10px;font-size:0.88em">
+  \(\textcolor{#cba6f7}{\hat{N}}\) = 表面法向量（單位向量，垂直於三角形平面）<br>
+  \(\textcolor{#f9e2af}{\hat{L}}\) = 指向光源的方向向量（單位向量）<br>
+  \(\hat{N}\cdot\hat{L} = \cos\theta\)，θ 是光線照射角度
+</div>
+
+<div class="fig">
+  <svg width="480" height="195" viewBox="0 0 480 195">
+    <defs>
+      <marker id="arr-n" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0 0,8 3,0 6" fill="#cdd6f4"/>
+      </marker>
+      <marker id="arr-l" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0 0,8 3,0 6" fill="#f9e2af"/>
+      </marker>
+    </defs>
+
+    <!-- Scene 1: θ=0°, N and L both point straight up from surface -->
+    <g transform="translate(30, 15)">
+      <text x="60" y="12" fill="#6c7086" font-size="10" font-family="Consolas" text-anchor="middle">θ = 0°（光從正上方）</text>
+      <rect x="0" y="128" width="120" height="8" rx="2" fill="#2a3a6a" stroke="#89b4fa" stroke-width="1"/>
+      <!-- N: surface → up, slightly left -->
+      <line x1="52" y1="128" x2="52" y2="38" stroke="#cdd6f4" stroke-width="1.8" marker-end="url(#arr-n)"/>
+      <text x="30" y="82" fill="#cdd6f4" font-size="11" font-family="Consolas">N</text>
+      <!-- L: surface → up, slightly right (same direction) -->
+      <line x1="68" y1="128" x2="68" y2="38" stroke="#f9e2af" stroke-width="1.8" marker-end="url(#arr-l)"/>
+      <text x="72" y="82" fill="#f9e2af" font-size="11" font-family="Consolas">L</text>
+      <!-- N‖L annotation -->
+      <text x="60" y="28" fill="#6c7086" font-size="9" font-family="Consolas" text-anchor="middle">N ∥ L</text>
+      <text x="60" y="152" fill="#a6e3a1" font-size="11" font-family="Consolas" text-anchor="middle">N·L = 1.0</text>
+      <text x="60" y="166" fill="#a6e3a1" font-size="10" font-family="Consolas" text-anchor="middle">全亮</text>
+    </g>
+
+    <!-- Scene 2: θ=60°, L from surface at 60° from N -->
+    <g transform="translate(190, 15)">
+      <text x="60" y="12" fill="#6c7086" font-size="10" font-family="Consolas" text-anchor="middle">θ = 60°（光從斜上方）</text>
+      <rect x="0" y="128" width="120" height="8" rx="2" fill="#2a3a6a" stroke="#89b4fa" stroke-width="1"/>
+      <!-- N: straight up from surface point (60,128) -->
+      <line x1="60" y1="128" x2="60" y2="38" stroke="#cdd6f4" stroke-width="1.8" marker-end="url(#arr-n)"/>
+      <text x="38" y="82" fill="#cdd6f4" font-size="11" font-family="Consolas">N</text>
+      <!-- L: from surface (60,128), 60° from vertical
+           sin60=0.866, cos60=0.5, length=85px
+           endpoint: (60+85*0.866, 128-85*0.5) = (60+74, 128-42) = (134→clamp to 118, 86)
+           use length 67px: (60+58, 128-33) = (118, 95) -->
+      <line x1="60" y1="128" x2="118" y2="95" stroke="#f9e2af" stroke-width="1.8" marker-end="url(#arr-l)"/>
+      <text x="114" y="90" fill="#f9e2af" font-size="11" font-family="Consolas">L</text>
+      <!-- angle arc from N to L, radius 32px -->
+      <path d="M 60,96 A 32,32 0 0,1 88,111" fill="none" stroke="#6c7086" stroke-width="1"/>
+      <text x="80" y="98" fill="#6c7086" font-size="9" font-family="Consolas">60°</text>
+      <text x="60" y="152" fill="#f9e2af" font-size="11" font-family="Consolas" text-anchor="middle">N·L = 0.5</text>
+      <text x="60" y="166" fill="#f9e2af" font-size="10" font-family="Consolas" text-anchor="middle">半亮</text>
+    </g>
+
+    <!-- Scene 3: θ=90°, L from surface going horizontal -->
+    <g transform="translate(350, 15)">
+      <text x="60" y="12" fill="#6c7086" font-size="10" font-family="Consolas" text-anchor="middle">θ = 90°（光從側面）</text>
+      <rect x="0" y="128" width="120" height="8" rx="2" fill="#2a3a6a" stroke="#89b4fa" stroke-width="1"/>
+      <!-- N: straight up -->
+      <line x1="60" y1="128" x2="60" y2="38" stroke="#cdd6f4" stroke-width="1.8" marker-end="url(#arr-n)"/>
+      <text x="38" y="82" fill="#cdd6f4" font-size="11" font-family="Consolas">N</text>
+      <!-- L: from surface (60,128) going right (horizontal) -->
+      <line x1="60" y1="128" x2="112" y2="128" stroke="#f9e2af" stroke-width="1.8" marker-end="url(#arr-l)"/>
+      <text x="115" y="125" fill="#f9e2af" font-size="11" font-family="Consolas">L</text>
+      <!-- right angle mark at (60,128) -->
+      <path d="M 60,120 L 68,120 L 68,128" fill="none" stroke="#6c7086" stroke-width="1"/>
+      <text x="60" y="152" fill="#f38ba8" font-size="11" font-family="Consolas" text-anchor="middle">N·L = 0</text>
+      <text x="60" y="166" fill="#f38ba8" font-size="10" font-family="Consolas" text-anchor="middle">背光，截斷為 0</text>
+    </g>
+  </svg>
+  <figcaption>N 和 L 都從表面同一點出發。N·L = cosθ 決定光照強度：正射 = 1.0，斜射 = 0.5，側射 = 0</figcaption>
+</div>
+
+<p>
+  <code>max(0, N·L)</code> 裡的 <code>max(0, …)</code> 是截斷負值：背光面的點積是負數，
+  但我們不希望光照強度是負的（那沒有物理意義），所以截斷為 0。
+</p>
+
+<div class="box box-green">
+  <strong>這是 Phong 光照模型中「漫反射」那一項的完整計算。</strong><br>
+  之後引入法向量（Ch14 3D 叉積計算）和 MVP 矩陣（Ch16）後，
+  我們的 DrawTriangle 就能根據光照角度為每個像素著色——而非固定顏色。
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">5</div>其他應用</h2>
+
+<h3>高光計算：V·R（Phong 反射）</h3>
+
+<p>
+  Phong 模型的高光項需要計算「視角方向 V 和反射光方向 R 的夾角」：
+</p>
+
+$\text{specular} = \max\!\left(0,\;\hat{V} \cdot \hat{R}\right)^{\text{shininess}}$
+<p style="color:var(--muted);font-size:0.88em;margin-top:6px">
+  \(\hat{R} = 2(\hat{N}\cdot\hat{L})\hat{N} - \hat{L}\)（反射向量，由 N 和 L 推導）；shininess 越大，高光越小越亮（金屬感）
+</p>
+
+<h3>方向測試：背面判斷的推廣</h3>
+
+<p>
+  Ch12 的背面剔除用的是 2D 叉積的符號。在 3D 空間中，也可以用點積判斷：
+  如果三角形法向量 N 和攝影機方向 V 的點積 &lt; 0，代表攝影機在三角形背面。
+</p>
+
+$\begin{array}{ll}
+\textcolor{#a6e3a1}{\hat{N} \cdot \hat{V} > 0} & \Rightarrow\;\text{正面（front-face），需要渲染}\\[6pt]
+\textcolor{#f38ba8}{\hat{N} \cdot \hat{V} < 0} & \Rightarrow\;\text{背面（back-face），可以剔除}
+\end{array}$
+<p style="color:var(--muted);font-size:0.88em;margin-top:4px">Ch12 的 2D 叉積法是這個的螢幕空間版本。</p>
+
+<h3>距離與投影</h3>
+
+<table>
+  <tr>
+    <th>用途</th>
+    <th>公式</th>
+    <th>說明</th>
+  </tr>
+  <tr>
+    <td style="color:var(--yellow)">向量長度</td>
+    <td><code>|a| = √(a·a)</code></td>
+    <td>自點積開根號</td>
+  </tr>
+  <tr>
+    <td style="color:var(--yellow)">點到平面距離</td>
+    <td><code>d = (P − Q) · N̂</code></td>
+    <td>P 到過 Q 點法向量 N̂ 平面的距離</td>
+  </tr>
+  <tr>
+    <td style="color:var(--yellow)">向量投影</td>
+    <td><code>proj = (a·b̂) b̂</code></td>
+    <td>a 在 b̂ 方向的投影向量</td>
+  </tr>
+  <tr>
+    <td style="color:var(--yellow)">正交分解</td>
+    <td><code>a_perp = a − (a·b̂)b̂</code></td>
+    <td>a 垂直於 b 的分量（Gram-Schmidt）</td>
+  </tr>
+</table>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">6</div>C++ 實作</h2>
+
+<p>
+  點積的實作極簡單。這是之後 Vec3 類別的核心運算：
+</p>
+
+<div class="code"><span class="kw">struct</span> <span class="ty">Vec3</span> {
+    <span class="kw">float</span> x, y, z;
+
+    <span class="cmt">// 長度平方（避免開根號，適合比較距離）</span>
+    <span class="kw">float</span> <span class="fn">length_sq</span>() <span class="kw">const</span> { <span class="kw">return</span> x*x + y*y + z*z; }
+
+    <span class="cmt">// 長度</span>
+    <span class="kw">float</span> <span class="fn">length</span>()    <span class="kw">const</span> { <span class="kw">return</span> std::<span class="fn">sqrt</span>(<span class="fn">length_sq</span>()); }
+
+    <span class="cmt">// 正規化（回傳單位向量）</span>
+    <span class="ty">Vec3</span>  <span class="fn">normalize</span>() <span class="kw">const</span> { <span class="kw">float</span> l = <span class="fn">length</span>(); <span class="kw">return</span> {x/l, y/l, z/l}; }
+};
+
+<span class="cmt">// 點積</span>
+<span class="kw">float</span> <span class="fn">dot</span>(<span class="ty">Vec3</span> a, <span class="ty">Vec3</span> b) {
+    <span class="kw">return</span> a.x*b.x + a.y*b.y + a.z*b.z;
+}
+
+<span class="cmt">// 漫反射光照計算</span>
+<span class="kw">float</span> diffuse = std::<span class="fn">max</span>(<span class="val">0.0f</span>, <span class="fn">dot</span>(N.<span class="fn">normalize</span>(), L.<span class="fn">normalize</span>()));</div>
+
+<div class="box box-gray">
+  <strong>注意：</strong>呼叫 <code>dot(N, L)</code> 前一定要確認 N 和 L 都已正規化，
+  否則結果不是 cosθ，而是 |N||L|cosθ——計算光照強度時會出錯。
+  養成習慣：傳入 <code>normalize()</code> 後的結果，或在函式內部正規化。
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">7</div>小結</h2>
+
+<div class="two-col">
+  <div>
+    <div class="col-title" style="color:var(--green)">✓ 本章掌握的概念</div>
+    <ul style="font-size:0.88em;line-height:2.2;margin-left:16px;color:var(--text)">
+      <li>點積代數定義：逐項相乘再相加</li>
+      <li>點積幾何意義：|a||b|cosθ，有號投影</li>
+      <li>符號判斷：同向 &gt;0 / 垂直 =0 / 反向 &lt;0</li>
+      <li>正規化：單位向量，點積直接等於 cosθ</li>
+      <li>N·L 漫反射：光照強度公式</li>
+    </ul>
+  </div>
+  <div>
+    <div class="col-title" style="color:var(--blue)">→ 下一章預備</div>
+    <ul style="font-size:0.88em;line-height:2.2;margin-left:16px;color:var(--text)">
+      <li>3D 叉積：如何從三角形兩條邊計算法向量</li>
+      <li>法向量是 N·L 裡 N 的來源</li>
+      <li>反交換律：a×b ≠ b×a（和點積不同）</li>
+    </ul>
+  </div>
+</div>
+
+<div class="next-ch">
+  <div>
+    <div class="next-label">PART 4 · CHAPTER 14</div>
+    <div class="next-title">3D 叉積（Cross Product）</div>
+    <div class="next-desc">計算三角形法向量的工具。行列式公式、結果垂直於兩向量、
+    與 Ch08 的 2D 叉積有什麼關係？</div>
+  </div>
+  <a href="ch14_cross_product_3d.html" class="next-arrow">→</a>
+</div>
+
+</body>
+</html>

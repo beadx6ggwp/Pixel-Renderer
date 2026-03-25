@@ -139,7 +139,13 @@ em { color: var(--orange); font-style: normal; }
 
 /* ── Figures ──────────────────────────────────────────── */
 .fig { margin: 24px auto; text-align: center; }
-.fig figcaption { color: var(--muted); font-size: 0.82em; margin-top: 8px; font-style: italic; }
+.fig figcaption { color: var(--muted); font-size: 0.88em; margin-top: 10px; font-style: italic; }
+.katex-display {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 6px;
+  padding: 18px 24px; margin: 14px 0; overflow-x: auto;
+}
+.katex-display > .katex { color: var(--text); }
+.katex { color: var(--text); font-size: 1.0em; }
 
 /* ── Two-col layout ──────────────────────────────────── */
 .two-col {
@@ -188,6 +194,15 @@ tr:hover td { background: var(--bg1); }
 .next-arrow { margin-left: auto; color: var(--blue); font-size: 1.6em; text-decoration: none; }
 .next-arrow:hover { color: var(--purple); }
 </style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$', right: '$', display: true},
+      {left: '\\(', right: '\\)', display: false}
+    ]
+  });"></script>
 </head>
 <body>
 
@@ -200,7 +215,7 @@ tr:hover td { background: var(--bg1); }
   <span class="nav-cur">Ch12</span>
   <div class="nav-right">
     <a href="ch11_bounding_box.html">← Ch11</a>
-    <a href="#">Ch13 →</a>
+    <a href="ch13_dot_product.html">Ch13 →</a>
   </div>
 </nav>
 
@@ -258,18 +273,32 @@ tr:hover td { background: var(--bg1); }
       <text x="110" y="186" fill="#a6e3a1" font-size="11" font-family="Consolas" text-anchor="middle">先畫遠，再畫近 → 正確</text>
     </g>
 
-    <!-- Right: cyclic case -->
+    <!-- Right: cyclic case — solid triangles woven with clipPath -->
     <g transform="translate(280,10)">
       <text x="110" y="14" fill="#6c7086" font-size="11" font-family="Consolas" text-anchor="middle">循環遮擋：無法排序</text>
-      <!-- A covers B's left, B covers C's left, C covers A's left -->
-      <polygon points="60,50 200,80 130,170" fill="none" stroke="#f38ba8" stroke-width="1.5" stroke-dasharray="4,2"/>
-      <polygon points="30,130 175,50 195,160" fill="none" stroke="#cba6f7" stroke-width="1.5" stroke-dasharray="4,2"/>
-      <polygon points="50,90 180,150 100,40"  fill="none" stroke="#f9e2af" stroke-width="1.5" stroke-dasharray="4,2"/>
-      <text x="55"  y="100" fill="#f38ba8" font-size="12" font-family="Consolas">A</text>
-      <text x="175" y="95"  fill="#cba6f7" font-size="12" font-family="Consolas">B</text>
-      <text x="105" y="170" fill="#f9e2af" font-size="12" font-family="Consolas">C</text>
-      <!-- cyclic arrows -->
-      <text x="110" y="186" fill="#f38ba8" font-size="11" font-family="Consolas" text-anchor="middle">A 蓋 B，B 蓋 C，C 蓋 A</text>
+      <defs>
+        <!-- C covers A at upper-right -->
+        <clipPath id="cc1"><rect x="100" y="20" width="120" height="72"/></clipPath>
+        <!-- B covers C at lower-right -->
+        <clipPath id="cc2"><rect x="115" y="108" width="105" height="72"/></clipPath>
+      </defs>
+      <!-- 1. B bottom -->
+      <polygon points="10,75 215,118 75,160" fill="#89b4fa"/>
+      <!-- 2. C -->
+      <polygon points="115,25 190,155 80,140" fill="#9399b2"/>
+      <!-- 3. A covers B (A蓋B ✓) -->
+      <polygon points="5,110 200,40 105,85" fill="#f38ba8"/>
+      <!-- 4. C clipped upper-right: C蓋A ✓ -->
+      <polygon points="115,25 190,155 80,140" fill="#9399b2" clip-path="url(#cc1)"/>
+      <!-- 5. B clipped lower-right: B蓋C ✓ -->
+      <polygon points="10,75 215,118 75,160" fill="#89b4fa" clip-path="url(#cc2)"/>
+      <!-- Labels -->
+      <text x="42"  y="104" fill="#1e1e2e" font-size="11" font-family="Consolas" font-weight="bold">A</text>
+      <text x="48"  y="150" fill="#1e1e2e" font-size="11" font-family="Consolas" font-weight="bold">B</text>
+      <text x="128" y="52"  fill="#1e1e2e" font-size="11" font-family="Consolas" font-weight="bold">C</text>
+      <text x="110" y="186" fill="#6c7086" font-size="11" font-family="Consolas" text-anchor="middle">
+        <tspan fill="#f38ba8">A</tspan><tspan> 蓋 </tspan><tspan fill="#89b4fa">B</tspan><tspan>，</tspan><tspan fill="#89b4fa">B</tspan><tspan> 蓋 </tspan><tspan fill="#9399b2">C</tspan><tspan>，</tspan><tspan fill="#9399b2">C</tspan><tspan> 蓋 </tspan><tspan fill="#f38ba8">A</tspan>
+      </text>
     </g>
   </svg>
   <figcaption>畫家算法在循環遮擋（cyclic occlusion）時無解</figcaption>
@@ -412,12 +441,11 @@ tr:hover td { background: var(--bg1); }
   在三個頂點之間<em>線性插值</em>：
 </p>
 
-<div class="math">
-<span class="r"><span class="hi">z_P</span> = w1 · z1 + w2 · z2 + w3 · z3</span>
-<span class="r cmt">──────────────────────────────────────────</span>
-<span class="r">w1, w2, w3  ← 重心座標（Ch10 求得）</span>
-<span class="r">z1, z2, z3  ← 三個頂點的 z 值（Vertex.z）</span>
-<span class="r"><span class="hi">z_P</span>         ← 插值後像素的深度</span>
+$z_P = w_1 z_1 + w_2 z_2 + w_3 z_3$
+<div class="box box-gray" style="font-size:0.88em;margin-top:8px">
+  \(w_1, w_2, w_3\) — 重心座標（Ch10 求得）<br>
+  \(z_1, z_2, z_3\) — 三個頂點的 z 值（Vertex.z）<br>
+  \(z_P\) — 插值後像素的深度
 </div>
 
 <p>
@@ -510,16 +538,13 @@ tr:hover td { background: var(--bg1); }
   三角形的「有向面積」就是 Ch08 學的 2D 叉積——它的符號正好反映了頂點的繞向：
 </p>
 
-<div class="math">
-<span class="r"><span class="kw">edge01</span> = V1 - V0  <span class="cmt">= (V1.x - V0.x, V1.y - V0.y)</span></span>
-<span class="r"><span class="kw">edge02</span> = V2 - V0  <span class="cmt">= (V2.x - V0.x, V2.y - V0.y)</span></span>
-<span class="r"></span>
-<span class="r"><span class="hi">E_total</span> = edge01.x × edge02.y − edge01.y × edge02.x</span>
-<span class="r"></span>
-<span class="r"><span class="ok">E_total &gt; 0</span>  →  CCW，正面，繼續光柵化</span>
-<span class="r"><span class="em">E_total &lt; 0</span>  →  CW，背面，丟棄</span>
-<span class="r"><span class="cmt">E_total = 0   →  退化三角形（三點共線），丟棄</span></span>
-</div>
+$\mathbf{e}_{01} = \mathbf{V}_1 - \mathbf{V}_0,\qquad \mathbf{e}_{02} = \mathbf{V}_2 - \mathbf{V}_0$
+$E_{\text{total}} = e_{01}.x \cdot e_{02}.y - e_{01}.y \cdot e_{02}.x$
+$\begin{array}{ll}
+\textcolor{#a6e3a1}{E_{\text{total}} > 0} & \Rightarrow\;\text{CCW，正面，繼續光柵化}\\[6pt]
+\textcolor{#f38ba8}{E_{\text{total}} < 0} & \Rightarrow\;\text{CW，背面，丟棄}\\[6pt]
+E_{\text{total}} = 0 & \Rightarrow\;\text{退化三角形（三點共線），丟棄}
+\end{array}$
 
 <div class="box box-yellow">
   <strong>CCW 還是 CW 是正面？這是約定，不是真理。</strong><br>
@@ -696,11 +721,10 @@ tr:hover td { background: var(--bg1); }
 <div class="next-ch">
   <div>
     <div class="next-label">PART 4 · CHAPTER 13</div>
-    <div class="next-title">向量幾何：點積與叉積（3D 版）</div>
-    <div class="next-desc">點積 = 投影 = 光照角度；3D 叉積 = 法向量 = 面的朝向。
-    Phong 光照模型 N·L 的根基。</div>
+    <div class="next-title">點積（Dot Product）</div>
+    <div class="next-desc">a·b = |a||b|cosθ 的代數與幾何雙重定義。投影、夾角判斷、正規化。最重要的應用：N·L 漫反射光照公式——所有光照模型的根基。</div>
   </div>
-  <a href="#" class="next-arrow">→</a>
+  <a href="ch13_dot_product.html" class="next-arrow">→</a>
 </div>
 
 </body>

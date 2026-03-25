@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Ch19 — 視圖矩陣（Look At）</title>
+
+<!-- KaTeX -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$', right: '$', display: true},
+      {left: '\\(', right: '\\)', display: false}
+    ]
+  });"></script>
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:     #1e1e2e;
+  --bg1:    #181825;
+  --bg2:    #11111b;
+  --border: #313244;
+  --muted:  #6c7086;
+  --text:   #cdd6f4;
+  --blue:   #89b4fa;
+  --green:  #a6e3a1;
+  --yellow: #f9e2af;
+  --orange: #fab387;
+  --red:    #f38ba8;
+  --purple: #cba6f7;
+  --teal:   #94e2d5;
+}
+body {
+  background: var(--bg); color: var(--text);
+  font-family: 'Georgia', serif; font-size: 15px;
+  padding: 0 20px 80px; max-width: 900px; margin: 0 auto;
+  line-height: 1.9;
+}
+nav {
+  font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted);
+  padding: 14px 0; border-bottom: 1px solid var(--border);
+  margin-bottom: 36px; display: flex; align-items: center; gap: 10px;
+}
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--blue); }
+.nav-sep { color: var(--border); }
+.nav-cur { color: var(--text); }
+.nav-right { margin-left: auto; display: flex; gap: 16px; }
+.ch-header { margin-bottom: 40px; }
+.ch-label { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px; }
+.ch-title { color: var(--blue); font-size: 1.7em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub   { color: var(--muted); font-size: 0.88em; margin-bottom: 14px; }
+.ch-tags  { display: flex; gap: 6px; flex-wrap: wrap; }
+.ch-tag   { font-family: 'Consolas', monospace; font-size: 0.75em; padding: 2px 10px; border-radius: 99px; border: 1px solid var(--border); color: var(--muted); }
+h2 {
+  color: var(--purple); font-size: 1em;
+  font-family: 'Consolas', monospace; letter-spacing: 0.05em;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+  margin: 40px 0 20px; display: flex; align-items: center; gap: 12px;
+}
+h2 .n {
+  background: var(--purple); color: var(--bg2); font-weight: bold;
+  border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 0.85em;
+}
+h3 { color: var(--yellow); font-size: 0.95em; margin: 22px 0 10px; }
+p  { margin-bottom: 12px; }
+strong { color: var(--yellow); }
+em { color: var(--orange); font-style: normal; }
+.box { border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 0.9em; line-height: 1.85; }
+.box-blue   { background: var(--bg1); border-left: 4px solid var(--blue); }
+.box-green  { background: var(--bg1); border-left: 4px solid var(--green); }
+.box-yellow { background: var(--bg1); border-left: 4px solid var(--yellow); }
+.box-red    { background: var(--bg1); border-left: 4px solid var(--red); }
+.box-purple { background: var(--bg1); border-left: 4px solid var(--purple); }
+.box-gray   { background: var(--bg1); border: 1px solid var(--border); border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 0.9em; }
+.katex-display {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 6px;
+  padding: 18px 24px; margin: 14px 0; overflow-x: auto;
+}
+.katex-display > .katex { color: var(--text); }
+.katex { color: var(--text); font-size: 1.0em; }
+.code {
+  background: #0d0d14; border: 1px solid var(--border); border-radius: 8px;
+  padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em;
+  line-height: 2.0; margin: 14px 0; white-space: pre;
+}
+.code .cmt { color: var(--muted); }
+.code .kw  { color: var(--purple); }
+.code .val { color: var(--orange); }
+.code .fn  { color: var(--blue); }
+.code .ty  { color: var(--teal); }
+.fig { margin: 24px auto; text-align: center; }
+.fig figcaption { color: var(--muted); font-size: 0.88em; margin-top: 10px; font-style: italic; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+.two-col > div { background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; }
+.col-title { font-family: 'Consolas', monospace; font-size: 0.85em; margin-bottom: 10px; color: var(--blue); }
+table { width: 100%; border-collapse: collapse; font-size: 0.87em; margin: 14px 0; }
+th { background: var(--bg1); color: var(--blue); padding: 9px 14px; text-align: left; border-bottom: 2px solid var(--border); font-family: 'Consolas', monospace; }
+td { padding: 8px 14px; border-bottom: 1px solid var(--bg1); vertical-align: top; }
+tr:hover td { background: var(--bg1); }
+.next-ch { margin-top: 56px; padding: 20px 24px; background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 20px; }
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+.next-title { color: var(--blue); font-size: 1em; }
+.next-desc  { color: var(--muted); font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: var(--blue); font-size: 1.6em; text-decoration: none; }
+.next-arrow:hover { color: var(--purple); }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">軟體光柵化</a>
+  <span class="nav-sep">/</span>
+  <span>理論</span>
+  <span class="nav-sep">/</span>
+  <span class="nav-cur">Ch19</span>
+  <div class="nav-right">
+    <a href="ch18_perspective.html">← Ch18</a>
+    <a href="ch20_viewport.html">Ch20 →</a>
+  </div>
+</nav>
+
+<div class="ch-header">
+  <div class="ch-label">PART 5 · CHAPTER 19</div>
+  <div class="ch-title">視圖矩陣（Look At）</div>
+  <div class="ch-sub">從 eye、center、world_up 三個向量推導相機座標系——Gram-Schmidt 正交化與 View 矩陣的幾何含義</div>
+  <div class="ch-tags">
+    <span class="ch-tag">Look At</span>
+    <span class="ch-tag">相機座標系</span>
+    <span class="ch-tag">Gram-Schmidt</span>
+    <span class="ch-tag">View 矩陣</span>
+    <span class="ch-tag">正交化</span>
+  </div>
+</div>
+
+<p>
+  MVP 管線中的三個矩陣依序作用在頂點上：
+</p>
+
+$\text{gl\_Position} = P \cdot V \cdot M \cdot \mathbf{v}$
+
+<p>
+  Ch17 推導了 Model 矩陣（M），Ch18 推導了 Projection 矩陣（P）。
+  本章補上中間缺失的 <strong>View 矩陣（V）</strong>：它把世界空間的頂點轉換到相機視角，
+  使攝影機位於原點、看向 \(-Z\) 方向，再讓投影矩陣接手。
+</p>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">1</div>三個輸入向量</h2>
+
+<p>
+  <code>lookAt()</code> 接受三個向量來描述相機在世界空間中的狀態：
+</p>
+
+<table>
+  <thead><tr><th>參數</th><th>型別</th><th>含義</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong style="color:var(--purple)">eye</strong></td>
+      <td>Vec3</td>
+      <td>相機在世界空間的位置</td>
+    </tr>
+    <tr>
+      <td><strong style="color:var(--yellow)">center</strong></td>
+      <td>Vec3</td>
+      <td>相機看向的目標點（任意世界空間座標）</td>
+    </tr>
+    <tr>
+      <td><strong style="color:var(--green)">world_up</strong></td>
+      <td>Vec3</td>
+      <td>世界的「上」方向，通常為 \((0,1,0)\)，用於確定相機不歪斜</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+  這三個向量共同確定了相機在世界空間中的<strong>位置</strong>和<strong>姿態（朝向）</strong>。
+  但光有這些還不夠——我們需要從中建構出一個完整的相機座標系，才能寫出矩陣。
+</p>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">2</div>相機的三個局部軸</h2>
+
+<p>
+  相機有自己的局部座標系，由三個互相垂直的單位向量組成。
+  它們在<em>世界空間</em>中表示相機的「右方」、「上方」、「後方」：
+</p>
+
+<div class="fig">
+  <!-- Camera axes diagram: top-down + perspective view -->
+  <!-- eye = (165, 165), center = (365, 90) -->
+  <!-- look dir: (200, -75), len=214, norm=(0.935, -0.351) -->
+  <!-- forward = -look = (-0.935, 0.351), endpoint: (165-56, 165+21) = (109, 186) -->
+  <!-- right (90°CCW from look): (0.351, 0.935), endpoint: (165+19, 165+51) = (184, 216) -->
+  <!-- up: straight up, endpoint (165, 165-65) = (165, 100) -->
+  <svg width="480" height="265" viewBox="0 0 480 265">
+    <!-- Subtle grid -->
+    <defs>
+      <pattern id="g19" width="40" height="40" patternUnits="userSpaceOnUse">
+        <path d="M40 0 L0 0 0 40" fill="none" stroke="#313244" stroke-width="0.5"/>
+      </pattern>
+    </defs>
+    <rect width="480" height="265" fill="#1e1e2e"/>
+    <rect width="480" height="265" fill="url(#g19)"/>
+
+    <!-- world_up reference arrow (dashed green, on right side) -->
+    <line x1="400" y1="195" x2="400" y2="110" stroke="#a6e3a1" stroke-width="1.2" stroke-dasharray="4,3" opacity="0.6"/>
+    <polygon points="400,108 395,120 405,120" fill="#a6e3a1" opacity="0.6"/>
+    <text x="408" y="148" fill="#a6e3a1" font-size="9" font-family="Consolas" opacity="0.7">world_up</text>
+    <text x="408" y="160" fill="#a6e3a1" font-size="9" font-family="Consolas" opacity="0.7">(0,1,0)</text>
+    <!-- base dot for world_up -->
+    <circle cx="400" cy="195" r="2" fill="#a6e3a1" opacity="0.5"/>
+
+    <!-- Dashed line: eye → center (look direction) -->
+    <line x1="165" y1="165" x2="365" y2="90" stroke="#fab387" stroke-width="1" stroke-dasharray="5,3" opacity="0.6"/>
+
+    <!-- Center target -->
+    <circle cx="365" cy="90" r="5" fill="none" stroke="#f9e2af" stroke-width="1.5"/>
+    <line x1="360" y1="85" x2="370" y2="95" stroke="#f9e2af" stroke-width="1.5"/>
+    <line x1="370" y1="85" x2="360" y2="95" stroke="#f9e2af" stroke-width="1.5"/>
+    <text x="371" y="88" fill="#f9e2af" font-size="10" font-family="Consolas">center</text>
+
+    <!-- Arrow: F (forward) — orange, away from center -->
+    <!-- dir = (-0.935, 0.351)*60 → (109, 186) -->
+    <line x1="165" y1="165" x2="109" y2="186" stroke="#fab387" stroke-width="2"/>
+    <!-- arrowhead: tip=(109,186), base center=(109+0.935*11,186-0.351*11)=(119.3,182.1), perp=(0.351,0.935) -->
+    <polygon points="109,186 123.6,186.3 118.9,177.8" fill="#fab387"/>
+    <text x="76" y="196" fill="#fab387" font-size="11" font-family="Consolas" font-weight="bold">F</text>
+    <text x="60" y="210" fill="#fab387" font-size="9" font-family="Consolas">(forward)</text>
+
+    <!-- Arrow: R (right) — blue -->
+    <!-- dir = (0.351, 0.935)*55 → (165+19, 165+51) = (184, 216) -->
+    <line x1="165" y1="165" x2="184" y2="216" stroke="#89b4fa" stroke-width="2"/>
+    <!-- arrowhead: tip=(184,216), base center=(184-0.351*11, 216-0.935*11)=(180.1,205.7), perp=(0.935,-0.351) -->
+    <polygon points="184,216 190.5,196.6 175.2,201.4" fill="#89b4fa"/>
+    <text x="188" y="226" fill="#89b4fa" font-size="11" font-family="Consolas" font-weight="bold">R</text>
+    <text x="180" y="240" fill="#89b4fa" font-size="9" font-family="Consolas">(right)</text>
+
+    <!-- Arrow: U (up) — green, straight up -->
+    <line x1="165" y1="165" x2="165" y2="100" stroke="#a6e3a1" stroke-width="2"/>
+    <!-- arrowhead: tip=(165,100), base center=(165,112) -->
+    <polygon points="165,100 160,112 170,112" fill="#a6e3a1"/>
+    <text x="172" y="103" fill="#a6e3a1" font-size="11" font-family="Consolas" font-weight="bold">U</text>
+    <text x="172" y="117" fill="#a6e3a1" font-size="9" font-family="Consolas">(up)</text>
+
+    <!-- eye position -->
+    <circle cx="165" cy="165" r="6" fill="#cba6f7"/>
+    <text x="148" y="155" fill="#cba6f7" font-size="10" font-family="Consolas">eye</text>
+
+    <!-- Labels for formula reference -->
+    <text x="20" y="252" fill="#6c7086" font-size="9" font-family="Consolas">F = normalize(eye − center)　R = normalize(world_up × F)　U = F × R</text>
+  </svg>
+  <figcaption>相機的三個局部軸。F（橙）指向遠離目標的方向；R（藍）在水平面上朝右；U（綠）向上。world_up 是建構 R 時的參考。</figcaption>
+</div>
+
+<p>
+  相機的三個局部軸及其含義：
+</p>
+
+<table>
+  <thead><tr><th>軸</th><th>名稱</th><th>方向（在世界空間中）</th><th>對應相機空間</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong style="color:var(--orange)">F</strong></td>
+      <td>forward</td>
+      <td>從 center 指向 eye（「背對目標」）</td>
+      <td>相機 +Z 軸（注意相機看向 −Z）</td>
+    </tr>
+    <tr>
+      <td><strong style="color:var(--blue)">R</strong></td>
+      <td>right</td>
+      <td>相機水平右方，與 F 和 world_up 皆垂直</td>
+      <td>相機 +X 軸</td>
+    </tr>
+    <tr>
+      <td><strong style="color:var(--green)">U</strong></td>
+      <td>up</td>
+      <td>相機正上方，與 F 和 R 皆垂直</td>
+      <td>相機 +Y 軸</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="box box-yellow">
+  <strong>為什麼 F = eye − center，而不是 center − eye？</strong><br>
+  OpenGL 慣例：相機看向 <strong>−Z</strong> 方向。若相機在 eye 位置看向 center，
+  則「相機的 +Z 方向」應指向 eye 離開 center 的方向——即 eye − center。
+  因此攝影機「往前走」會讓 eye 沿 −F 移動（沿 center 方向移動）。
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">3</div>Gram-Schmidt 正交化</h2>
+
+<p>
+  有了 eye、center、world_up，用三步建構相機座標系：
+</p>
+
+$\mathbf{f} = \text{normalize}(\text{eye} - \text{center})$
+
+$\mathbf{r} = \text{normalize}(\text{world\_up} \times \mathbf{f})$
+
+$\mathbf{u} = \mathbf{f} \times \mathbf{r}$
+
+<p>
+  為什麼需要第三步重新計算 \(\mathbf{u}\)，而不直接用 world_up？
+  因為 world_up 不保證與 \(\mathbf{f}\) 垂直——只要相機稍微仰望或俯視，
+  world_up 就和 \(\mathbf{f}\) 有夾角，直接用它會讓 \(\mathbf{u}\) 不垂直於 \(\mathbf{f}\)。
+  第三步的叉積保證 \(\mathbf{u} \perp \mathbf{f}\) 和 \(\mathbf{u} \perp \mathbf{r}\)。
+</p>
+
+<div class="fig">
+  <!-- Gram-Schmidt: 3-step flow diagram -->
+  <svg width="480" height="180" viewBox="0 0 480 180">
+    <rect width="480" height="180" fill="#1e1e2e"/>
+
+    <!-- Step 1 box -->
+    <rect x="10" y="20" width="130" height="140" rx="6" fill="#181825" stroke="#313244" stroke-width="1"/>
+    <text x="75" y="40" fill="#6c7086" font-size="9" font-family="Consolas" text-anchor="middle">Step 1</text>
+    <!-- world_up arrow -->
+    <line x1="75" y1="130" x2="75" y2="65" stroke="#a6e3a1" stroke-width="1.8" stroke-dasharray="4,2.5"/>
+    <polygon points="75,63 71,75 79,75" fill="#a6e3a1"/>
+    <text x="81" y="92" fill="#a6e3a1" font-size="9" font-family="Consolas">world_up</text>
+    <!-- f arrow (45° lower-right) -->
+    <line x1="75" y1="130" x2="118" y2="87" stroke="#fab387" stroke-width="1.8"/>
+    <polygon points="118,87 108,94 115,102" fill="#fab387"/>
+    <text x="110" y="83" fill="#fab387" font-size="10" font-family="Consolas" font-weight="bold">f</text>
+    <circle cx="75" cy="130" r="3" fill="#cba6f7"/>
+    <!-- formula label -->
+    <text x="75" y="155" fill="#fab387" font-size="8" font-family="Consolas" text-anchor="middle">f = normalize(eye−c)</text>
+
+    <!-- Arrow between boxes -->
+    <line x1="145" y1="90" x2="165" y2="90" stroke="#585b70" stroke-width="1.5"/>
+    <polygon points="165,90 158,86 158,94" fill="#585b70"/>
+
+    <!-- Step 2 box -->
+    <rect x="170" y="20" width="130" height="140" rx="6" fill="#181825" stroke="#313244" stroke-width="1"/>
+    <text x="235" y="40" fill="#6c7086" font-size="9" font-family="Consolas" text-anchor="middle">Step 2</text>
+    <!-- world_up (dashed) -->
+    <line x1="235" y1="130" x2="235" y2="72" stroke="#a6e3a1" stroke-width="1.2" stroke-dasharray="3,2" opacity="0.4"/>
+    <!-- f arrow -->
+    <line x1="235" y1="130" x2="278" y2="87" stroke="#fab387" stroke-width="1.8"/>
+    <polygon points="278,87 268,94 275,102" fill="#fab387"/>
+    <text x="270" y="83" fill="#fab387" font-size="10" font-family="Consolas" font-weight="bold">f</text>
+    <!-- r arrow (perpendicular, going right) -->
+    <line x1="235" y1="130" x2="285" y2="130" stroke="#89b4fa" stroke-width="1.8"/>
+    <polygon points="285,130 273,125 273,135" fill="#89b4fa"/>
+    <text x="280" y="122" fill="#89b4fa" font-size="10" font-family="Consolas" font-weight="bold">r</text>
+    <!-- right angle mark between f and r -->
+    <rect x="243" y="120" width="8" height="8" fill="none" stroke="#585b70" stroke-width="0.8"/>
+    <circle cx="235" cy="130" r="3" fill="#cba6f7"/>
+    <!-- formula label -->
+    <text x="235" y="155" fill="#89b4fa" font-size="8" font-family="Consolas" text-anchor="middle">r = normalize(up × f)</text>
+
+    <!-- Arrow between boxes -->
+    <line x1="305" y1="90" x2="325" y2="90" stroke="#585b70" stroke-width="1.5"/>
+    <polygon points="325,90 318,86 318,94" fill="#585b70"/>
+
+    <!-- Step 3 box -->
+    <rect x="330" y="20" width="140" height="140" rx="6" fill="#181825" stroke="#313244" stroke-width="1"/>
+    <text x="400" y="40" fill="#6c7086" font-size="9" font-family="Consolas" text-anchor="middle">Step 3（結果）</text>
+    <!-- f arrow -->
+    <line x1="385" y1="130" x2="428" y2="87" stroke="#fab387" stroke-width="1.8"/>
+    <polygon points="428,87 418,94 425,102" fill="#fab387"/>
+    <text x="422" y="83" fill="#fab387" font-size="10" font-family="Consolas" font-weight="bold">f</text>
+    <!-- r arrow -->
+    <line x1="385" y1="130" x2="455" y2="130" stroke="#89b4fa" stroke-width="1.8"/>
+    <polygon points="455,130 443,125 443,135" fill="#89b4fa"/>
+    <text x="450" y="122" fill="#89b4fa" font-size="10" font-family="Consolas" font-weight="bold">r</text>
+    <!-- u arrow (straight up) -->
+    <line x1="385" y1="130" x2="385" y2="65" stroke="#a6e3a1" stroke-width="1.8"/>
+    <polygon points="385,63 380,75 390,75" fill="#a6e3a1"/>
+    <text x="391" y="75" fill="#a6e3a1" font-size="10" font-family="Consolas" font-weight="bold">u</text>
+    <!-- right angle marks -->
+    <rect x="393" y="120" width="8" height="8" fill="none" stroke="#585b70" stroke-width="0.8"/>
+    <rect x="385" y="112" width="8" height="8" fill="none" stroke="#585b70" stroke-width="0.8" transform="rotate(-45,389,116)"/>
+    <circle cx="385" cy="130" r="3" fill="#cba6f7"/>
+    <!-- formula label -->
+    <text x="400" y="155" fill="#a6e3a1" font-size="8" font-family="Consolas" text-anchor="middle">u = f × r</text>
+  </svg>
+  <figcaption>Gram-Schmidt 正交化三步。最終 f、r、u 兩兩互相垂直，形成右手座標系。</figcaption>
+</div>
+
+<div class="box box-blue">
+  <strong>叉積的方向規則（右手定則）</strong><br>
+  \(\text{world\_up} \times \mathbf{f}\)：右手四指從 world_up 彎向 f，大拇指指向 r（朝右）。<br>
+  \(\mathbf{f} \times \mathbf{r}\)：右手四指從 f 彎向 r，大拇指指向 u（朝上）。<br>
+  順序不能搞錯——\(\mathbf{r} \times \mathbf{f}\) 會得到 \(-\mathbf{u}\)。
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">4</div>View 矩陣推導：旋轉 × 平移</h2>
+
+<p>
+  View 矩陣要把世界空間的點 \(\mathbf{P}\) 轉換到相機空間。
+  拆成兩步：
+</p>
+
+<h3>Step 1：平移——把 eye 移到原點</h3>
+
+$T = \begin{bmatrix} 1 & 0 & 0 & -e_x \\ 0 & 1 & 0 & -e_y \\ 0 & 0 & 1 & -e_z \\ 0 & 0 & 0 & 1 \end{bmatrix}$
+
+<h3>Step 2：旋轉——讓相機軸對齊世界軸</h3>
+
+<p>
+  相機的局部軸 \(\mathbf{r}, \mathbf{u}, \mathbf{f}\) 在世界空間中是已知的。
+  我們要找旋轉矩陣 \(R\) 使得：
+</p>
+
+$R\,\mathbf{r}_{\text{world}} = \hat{x} = (1,0,0)^T, \quad
+  R\,\mathbf{u}_{\text{world}} = \hat{y} = (0,1,0)^T, \quad
+  R\,\mathbf{f}_{\text{world}} = \hat{z} = (0,0,1)^T$
+
+<p>
+  「把相機軸對齊到世界軸」的逆操作——即<em>「相機到世界」的旋轉矩陣的轉置</em>：
+</p>
+
+$M_{c \to w} = \begin{bmatrix} r_x & u_x & f_x \\ r_y & u_y & f_y \\ r_z & u_z & f_z \end{bmatrix}
+\quad \Rightarrow \quad
+R = M_{c \to w}^{-1} = M_{c \to w}^T = \begin{bmatrix} r_x & r_y & r_z \\ u_x & u_y & u_z \\ f_x & f_y & f_z \end{bmatrix}$
+
+<p>
+  （旋轉矩陣為正交矩陣，\(M^{-1} = M^T\)）
+</p>
+
+<h3>合併：\(V = R \cdot T\)</h3>
+
+<p>
+  合併後，旋轉部分的最後一列由 \(R \cdot (-\text{eye})\) 產生：
+</p>
+
+$\begin{bmatrix} r_x & r_y & r_z \\ u_x & u_y & u_z \\ f_x & f_y & f_z \end{bmatrix}
+\begin{bmatrix} -e_x \\ -e_y \\ -e_z \end{bmatrix}
+= \begin{bmatrix} -\mathbf{r} \cdot \mathbf{e} \\ -\mathbf{u} \cdot \mathbf{e} \\ -\mathbf{f} \cdot \mathbf{e} \end{bmatrix}$
+
+<p>
+  因此完整的 4×4 View 矩陣為：
+</p>
+
+$\boxed{
+V = \begin{bmatrix}
+  r_x & r_y & r_z & -(\mathbf{r} \cdot \text{eye}) \\
+  u_x & u_y & u_z & -(\mathbf{u} \cdot \text{eye}) \\
+  f_x & f_y & f_z & -(\mathbf{f} \cdot \text{eye}) \\
+  0   & 0   & 0   & 1
+\end{bmatrix}
+}$
+
+<div class="box box-green">
+  <strong>記憶方法</strong>：View 矩陣的三個 3D 行（row）是 r、u、f——即相機的三個局部軸。
+  最後一欄是「平移補償」：\(-\mathbf{r} \cdot \text{eye}\) 消去相機偏移對 r 軸的影響，以此類推。
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">5</div>幾何直覺：矩陣在做什麼</h2>
+
+<div class="two-col">
+  <div>
+    <div class="col-title">平移部分 T</div>
+    把整個世界平移，讓 eye 移到原點。
+    <br><br>
+    若相機在 \((3, 2, 5)\)，則所有頂點都減去 \((3, 2, 5)\)。
+    相機「原地不動」，世界跑向它。
+  </div>
+  <div>
+    <div class="col-title">旋轉部分 R</div>
+    旋轉世界，讓相機的局部 \(\mathbf{r}\) 軸對齊世界 \(+X\)，\(\mathbf{u}\) 對齊 \(+Y\)，\(\mathbf{f}\) 對齊 \(+Z\)。
+    <br><br>
+    對一個點取點積 \(\mathbf{r} \cdot \mathbf{P}'\)，就是在問：「這個點在相機右方多遠？」
+  </div>
+</div>
+
+<p>
+  兩步合起來，View 矩陣把世界中任意一個點用「相機視角」重新描述：
+  相機空間的 \(+X\) 是「往右看」，\(+Y\) 是「往上看」，\(-Z\) 是「往前看」。
+</p>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">6</div>C++ 實作</h2>
+
+<div class="code"><span class="cmt">// 建構 View（Look At）矩陣</span>
+<span class="cmt">// eye    ：相機在世界空間的位置</span>
+<span class="cmt">// center ：相機看向的目標點</span>
+<span class="cmt">// world_up：世界的「上」向量，通常為 (0,1,0)</span>
+<span class="ty">Mat4</span> <span class="fn">lookAt</span>(<span class="ty">Vec3</span> eye, <span class="ty">Vec3</span> center, <span class="ty">Vec3</span> world_up) {
+    <span class="ty">Vec3</span> f = <span class="fn">normalize</span>(eye - center);          <span class="cmt">// forward：背對目標</span>
+    <span class="ty">Vec3</span> r = <span class="fn">normalize</span>(<span class="fn">cross</span>(world_up, f));   <span class="cmt">// right：world_up × f</span>
+    <span class="ty">Vec3</span> u = <span class="fn">cross</span>(f, r);                      <span class="cmt">// up：f × r，已是單位向量</span>
+
+    <span class="ty">Mat4</span> view;
+    view[<span class="val">0</span>] = { r.x,  r.y,  r.z,  -<span class="fn">dot</span>(r, eye) };
+    view[<span class="val">1</span>] = { u.x,  u.y,  u.z,  -<span class="fn">dot</span>(u, eye) };
+    view[<span class="val">2</span>] = { f.x,  f.y,  f.z,  -<span class="fn">dot</span>(f, eye) };
+    view[<span class="val">3</span>] = { <span class="val">0.0f</span>, <span class="val">0.0f</span>, <span class="val">0.0f</span>, <span class="val">1.0f</span>       };
+    <span class="kw">return</span> view;
+}
+
+<span class="cmt">// 使用範例</span>
+<span class="ty">Mat4</span> V = <span class="fn">lookAt</span>(
+    {<span class="val">3.0f</span>, <span class="val">2.0f</span>, <span class="val">5.0f</span>},   <span class="cmt">// eye</span>
+    {<span class="val">0.0f</span>, <span class="val">0.0f</span>, <span class="val">0.0f</span>},   <span class="cmt">// center（看向原點）</span>
+    {<span class="val">0.0f</span>, <span class="val">1.0f</span>, <span class="val">0.0f</span>}    <span class="cmt">// world_up</span>
+);</div>
+
+<p>
+  在 vertex shader 中，View 矩陣和 Projection 矩陣通常組合成 PV 傳入，
+  或分開作為 <code>uniform</code> 使用：
+</p>
+
+<div class="code"><span class="cmt">// GLSL vertex shader（概念示意）</span>
+<span class="kw">uniform</span> <span class="ty">mat4</span> uModel, uView, uProjection;
+
+<span class="ty">vec4</span> worldPos = uModel * <span class="ty">vec4</span>(aPosition, <span class="val">1.0</span>);
+<span class="ty">vec4</span> camPos   = uView  * worldPos;
+gl_Position    = uProjection * camPos;</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">7</div>常見陷阱</h2>
+
+<h3>陷阱一：world_up 與 forward 平行</h3>
+
+<p>
+  若 eye、center 連線恰好平行於 world_up（例如相機正對正上方或正下方看），
+  則 \(\text{world\_up} \times \mathbf{f} = \mathbf{0}\)，無法正規化，right 向量消失。
+</p>
+
+<div class="box box-red">
+  <strong>偵測方法</strong>：<code>|cross(world_up, f)| &lt; ε</code> 時切換備用 up 向量，例如從 (0,1,0) 換成 (1,0,0)。
+  或限制相機俯仰角不超過 ±89°，保留一點安全邊距。
+</div>
+
+<h3>陷阱二：行列混淆</h3>
+
+<p>
+  View 矩陣的旋轉部分，\(\mathbf{r}, \mathbf{u}, \mathbf{f}\) 是<strong>行（row）</strong>而不是列（column）。
+  若誤用為列，相機會朝錯誤方向旋轉（畫面整個翻轉）。
+</p>
+
+<div class="two-col">
+  <div>
+    <div class="col-title">✓ 正確（row）</div>
+    $\begin{bmatrix} r_x & r_y & r_z \\ u_x & u_y & u_z \\ f_x & f_y & f_z \end{bmatrix}$
+    \(\mathbf{r}\) 在第 0 行——與 \(\mathbf{P}\) 點積得 \(P\) 在右方多遠
+  </div>
+  <div>
+    <div class="col-title">✗ 錯誤（column）</div>
+    $\begin{bmatrix} r_x & u_x & f_x \\ r_y & u_y & f_y \\ r_z & u_z & f_z \end{bmatrix}$
+    這是「相機到世界」的旋轉，是 View 旋轉的<em>逆</em>
+  </div>
+</div>
+
+<h3>陷阱三：右手 vs. 左手座標系</h3>
+
+<p>
+  本章推導基於 OpenGL 的右手座標系（相機看向 −Z）。若你的引擎用左手座標系（DirectX 慣例，相機看向 +Z），
+  則 \(\mathbf{f} = \text{normalize}(\text{center} - \text{eye})\)——forward 符號相反。
+  以及 <code>cross</code> 的參數順序需要相應調整。
+</p>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="box box-purple">
+  <strong>本章重點總結</strong>
+  <ul style="margin-top:8px;margin-left:16px;line-height:2.0;font-size:0.9em">
+    <li>lookAt() 從 eye/center/world_up 以三步 Gram-Schmidt 正交化建構 f、r、u 三個相機軸</li>
+    <li>forward = normalize(eye − center)，背對目標，對應相機空間 +Z（相機看向 −Z）</li>
+    <li>View 矩陣 = 旋轉（行為 r, u, f）× 平移（−eye），合併後最後一欄為 −dot(軸, eye)</li>
+    <li>旋轉部分是正交矩陣；「相機到世界」矩陣的列 = r, u, f，View 取其轉置（=逆）</li>
+    <li>world_up 與 forward 平行時叉積為零，需特判（如萬向節鎖場景）</li>
+  </ul>
+</div>
+
+<div class="next-ch">
+  <div>
+    <div class="next-label">PART 5 · CHAPTER 20</div>
+    <div class="next-title">視口變換</div>
+    <div class="next-desc">投影後的 NDC \([-1,1]^3\) 如何映射到螢幕像素座標？y 軸為何翻轉？viewport_matrix() 的推導與實作。</div>
+  </div>
+  <a href="ch20_viewport.html" class="next-arrow">→</a>
+</div>
+
+</body>
+</html>

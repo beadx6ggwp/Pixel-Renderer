@@ -52,7 +52,7 @@ em { color: #fab387; font-style: normal; }
 
 /* Grid SVG */
 .fig { margin: 20px auto; text-align: center; }
-.fig figcaption { color: #6c7086; font-size: 0.82em; margin-top: 8px; }
+.fig figcaption { color: #6c7086; font-size: 0.88em; margin-top: 8px; }
 
 /* Step trace table */
 table {
@@ -116,7 +116,29 @@ hr { border: none; border-top: 1px solid #313244; margin: 32px 0; }
   margin: 10px 0; font-size: 0.88em;
 }
 .dot { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
+
+.katex-display {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 6px;
+  padding: 18px 24px; margin: 14px 0; overflow-x: auto;
+}
+.katex-display > .katex { color: var(--text); }
+.katex { color: var(--text); font-size: 1.0em; }
+.next-ch { margin-top: 56px; padding: 20px 24px; background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 20px; }
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+.next-title { color: var(--blue); font-size: 1em; }
+.next-desc  { color: var(--muted); font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: var(--blue); font-size: 1.6em; text-decoration: none; }
+.next-arrow:hover { color: var(--purple); }
 </style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$', right: '$', display: true},
+      {left: '\\(', right: '\\)', display: false}
+    ]
+  });"></script>
 </head>
 <body>
 
@@ -209,15 +231,15 @@ hr { border: none; border-top: 1px solid #313244; margin: 32px 0; }
 
   <p>定義一個 <strong>誤差值 err</strong>，表示「理想 y 比目前像素的 y 多出來多少」：</p>
 
-  <div class="math">
-    <span class="row cmt">// 初始：還沒走，誤差為 0</span>
-    <span class="row">err = 0</span>
-    <span class="row cmt"></span>
-    <span class="row cmt">// 每走一步 x：</span>
-    <span class="row">err += m  <span class="cmt">// 理想 y 增加了 m = dy/dx</span></span>
-    <span class="row cmt"></span>
-    <span class="row cmt">// 判斷：誤差超過 0.5，代表理想 y 已經超過下一個整數格的一半</span>
-    <span class="row"><span class="kw">if</span> err ≥ 0.5 :  y += 1;  err -= 1</span>
+  <div class="code">
+<span class="cmt">// 初始：還沒走，誤差為 0</span><br>
+err = 0<br>
+<br>
+<span class="cmt">// 每走一步 x：</span><br>
+err += m  <span class="cmt">// 理想 y 增加了 m = dy/dx</span><br>
+<br>
+<span class="cmt">// 判斷：誤差超過 0.5，代表理想 y 已經超過下一個整數格的一半</span><br>
+<span class="kw">if</span> err ≥ 0.5 :  y += 1;  err -= 1
   </div>
 
   <p>來跑一遍 (0,0) → (7,3)，m = 3/7：</p>
@@ -248,27 +270,27 @@ hr { border: none; border-top: 1px solid #313244; margin: 32px 0; }
   <p><strong>第一步：用 dy、dx 取代 m = dy/dx</strong></p>
   <p>把 err 乘以 dx，就不用除法了：</p>
 
-  <div class="math">
-    <span class="row cmt">// 原本</span>
-    <span class="row">err = 0</span>
-    <span class="row">err += dy/dx  →  判斷 err ≥ 0.5  →  y++; err -= 1</span>
-    <span class="row cmt"></span>
-    <span class="row cmt">// 兩側全部 × dx（dx > 0，不影響大小關係）</span>
-    <span class="row"><span class="hi">err = 0</span></span>
-    <span class="row"><span class="hi">err += dy</span>       <span class="cmt">// 原來的 dy/dx × dx</span></span>
-    <span class="row"><span class="hi">判斷 err ≥ dx/2</span> <span class="cmt">// 原來的 0.5 × dx</span></span>
-    <span class="row"><span class="hi">y++; err -= dx</span>  <span class="cmt">// 原來的 1 × dx</span></span>
+  <div class="code">
+<span class="cmt">// 原本</span><br>
+err = 0<br>
+err += dy/dx  →  判斷 err ≥ 0.5  →  y++; err -= 1<br>
+<br>
+<span class="cmt">// 兩側全部 × dx（dx > 0，不影響大小關係）</span><br>
+<span class="hi">err = 0</span><br>
+<span class="hi">err += dy</span>  <span class="cmt">// 原來的 dy/dx × dx</span><br>
+<span class="hi">判斷 err ≥ dx/2</span>  <span class="cmt">// 原來的 0.5 × dx</span><br>
+<span class="hi">y++; err -= dx</span>  <span class="cmt">// 原來的 1 × dx</span>
   </div>
 
   <p>還剩一個問題：<strong>dx/2</strong> 如果 dx 是奇數就還是分數。</p>
 
   <p><strong>第二步：全部再乘以 2</strong>，徹底消掉 /2：</p>
 
-  <div class="math">
-    <span class="row"><span class="hi">err = 0</span></span>
-    <span class="row"><span class="hi">err += 2·dy</span></span>
-    <span class="row"><span class="hi">判斷 err ≥ dx</span>   <span class="cmt">// 原來的 dx/2 × 2 = dx</span></span>
-    <span class="row"><span class="hi">y++; err -= 2·dx</span></span>
+  <div class="code">
+<span class="hi">err = 0</span><br>
+<span class="hi">err += 2·dy</span><br>
+<span class="hi">判斷 err ≥ dx</span>  <span class="cmt">// 原來的 dx/2 × 2 = dx</span><br>
+<span class="hi">y++; err -= 2·dx</span>
   </div>
 
   <div class="box box-ok">
@@ -306,16 +328,14 @@ hr { border: none; border-top: 1px solid #313244; margin: 32px 0; }
   <div class="two-col">
     <div>
       <p><strong>斜率 ≤ 1（x 是主軸）：</strong></p>
-      <div class="math">
-        <span class="row">每步 x 必走 +1</span>
-        <span class="row">判斷 y 要不要 +1</span>
+      <div class="box box-q" style="font-size:0.88em;line-height:2;margin-top:8px">
+        每步 x 必走 +1<br>判斷 y 要不要 +1
       </div>
     </div>
     <div>
-      <p><strong>斜率 > 1（y 是主軸）：</strong></p>
-      <div class="math">
-        <span class="row">每步 y 必走 +1</span>
-        <span class="row">判斷 x 要不要 +1</span>
+      <p><strong>斜率 &gt; 1（y 是主軸）：</strong></p>
+      <div class="box box-q" style="font-size:0.88em;line-height:2;margin-top:8px">
+        每步 y 必走 +1<br>判斷 x 要不要 +1
       </div>
     </div>
   </div>
@@ -376,13 +396,13 @@ hr { border: none; border-top: 1px solid #313244; margin: 32px 0; }
   <p>上面都假設往右往上。如果 x2 &lt; x1 或 y2 &lt; y1 呢？</p>
   <p>只需要改步進方向，誤差邏輯完全不變：</p>
 
-  <div class="math">
-    <span class="row">sx = (x1 &lt; x2) ? +1 : -1   <span class="cmt">// x 走哪個方向</span></span>
-    <span class="row">sy = (y1 &lt; y2) ? +1 : -1   <span class="cmt">// y 走哪個方向</span></span>
-    <span class="row cmt"></span>
-    <span class="row cmt">// 用絕對值 dx, dy 計算誤差（保持正數）</span>
-    <span class="row">dx = |x2 - x1|</span>
-    <span class="row">dy = |y2 - y1|</span>
+  <div class="code">
+sx = (x1 &lt; x2) ? +1 : -1  <span class="cmt">// x 走哪個方向</span><br>
+sy = (y1 &lt; y2) ? +1 : -1  <span class="cmt">// y 走哪個方向</span><br>
+<br>
+<span class="cmt">// 用絕對值 dx, dy 計算誤差（保持正數）</span><br>
+dx = |x2 - x1|<br>
+dy = |y2 - y1|
   </div>
 
   <p>這樣 8 個方向全部統一成同一套邏輯，不用 8 個 if-else。</p>
@@ -404,17 +424,17 @@ hr { border: none; border-top: 1px solid #313244; margin: 32px 0; }
 
   <p>判斷條件變成：</p>
 
-  <div class="math">
-    <span class="row">err = dx − dy   <span class="cmt">// 初始</span></span>
-    <span class="row cmt"></span>
-    <span class="row kw">每步：</span>
-    <span class="row">  e2 = 2 × err  <span class="cmt">// 先快照，避免 err 被改掉後影響第二個判斷</span></span>
-    <span class="row cmt"></span>
-    <span class="row cmt">  // Case A：要不要走 x？</span>
-    <span class="row">  <span class="kw">if</span> e2 &gt; <span class="em">−dy</span> :  x += sx;  err -= dy</span>
-    <span class="row cmt"></span>
-    <span class="row cmt">  // Case B：要不要走 y？</span>
-    <span class="row">  <span class="kw">if</span> e2 &lt;  <span class="ok">dx</span>  :  y += sy;  err += dx</span>
+  <div class="code">
+err = dx − dy  <span class="cmt">// 初始</span><br>
+<br>
+<span class="kw">每步：</span><br>
+&nbsp;&nbsp;e2 = 2 × err  <span class="cmt">// 先快照，避免 err 被改掉後影響第二個判斷</span><br>
+<br>
+&nbsp;&nbsp;<span class="cmt">// Case A：要不要走 x？</span><br>
+&nbsp;&nbsp;<span class="kw">if</span> e2 &gt; <span class="em">−dy</span> :  x += sx;  err -= dy<br>
+<br>
+&nbsp;&nbsp;<span class="cmt">// Case B：要不要走 y？</span><br>
+&nbsp;&nbsp;<span class="kw">if</span> e2 &lt;  <span class="ok">dx</span>  :  y += sy;  err += dx
   </div>
 
   <p>為什麼是 <strong>&gt; −dy</strong> 和 <strong>&lt; dx</strong>？
@@ -426,19 +446,19 @@ hr { border: none; border-top: 1px solid #313244; margin: 32px 0; }
   <p>回到第 3 節的整數化結果（x 是主軸時），每步都走 x，
   所以條件是「err 還沒超過 y 需要走的門檻」，也就是 <em>err 不太負</em>：</p>
 
-  <div class="math">
-    <span class="row cmt">// 等價於：誤差還沒讓 y 走太多，x 可以繼續走</span>
-    <span class="row">e2 = 2·err</span>
-    <span class="row ok">e2 &gt; −dy   ⟺   err &gt; −dy/2</span>
-    <span class="row cmt">// 也就是說，誤差還沒負到讓 y 反過來壓制 x 的程度</span>
-    <span class="row cmt">// 走 x：err -= dy（因為 x 走了一步，y 的「欠債」減少）</span>
+  <div class="box box-q" style="font-size:0.88em;line-height:2.2">
+    <span style="color:#6c7086">// 等價於：誤差還沒讓 y 走太多，x 可以繼續走</span><br>
+    e2 = 2·err<br>
+    <span style="color:#a6e3a1">e2 &gt; −dy &nbsp;&nbsp;⟺&nbsp;&nbsp; err &gt; −dy/2</span><br>
+    <span style="color:#6c7086">// 誤差還沒負到讓 y 反過來壓制 x 的程度</span><br>
+    <span style="color:#6c7086">// 走 x：err −= dy（x 走了一步，y 的「欠債」減少）</span>
   </div>
 
   <p><strong>Case B：走 y 的條件</strong></p>
-  <div class="math">
-    <span class="row cmt">// 等價於：誤差讓 y 已經欠得夠多，該升一格</span>
-    <span class="row ok">e2 &lt; dx   ⟺   err &lt; dx/2</span>
-    <span class="row cmt">// 走 y：err += dx（y 走了一步，還清了 dx 的債）</span>
+  <div class="box box-q" style="font-size:0.88em;line-height:2.2">
+    <span style="color:#6c7086">// 等價於：誤差讓 y 已經欠得夠多，該升一格</span><br>
+    <span style="color:#a6e3a1">e2 &lt; dx &nbsp;&nbsp;⟺&nbsp;&nbsp; err &lt; dx/2</span><br>
+    <span style="color:#6c7086">// 走 y：err += dx（y 走了一步，還清了 dx 的債）</span>
   </div>
 
   <p><strong>注意：兩個條件可以同時成立！</strong></p>
@@ -761,6 +781,15 @@ render();
     <tr><td>6</td><td>合併成 err = dx−dy 通用式</td><td>兩個獨立 if，可同時觸發（對角走）</td></tr>
     <tr><td>7</td><td>數值驗證</td><td>每步 err 的變化和第 2 節浮點版一致</td></tr>
   </table>
+</div>
+
+<div class="next-ch">
+  <div>
+    <div class="next-label">NEXT CHAPTER</div>
+    <div class="next-title">Ch05 — Bresenham：d₁d₂ 距離法推導</div>
+    <div class="next-desc">按原始論文脈絡推導決策參數 P，與白話版的等價關係</div>
+  </div>
+  <a class="next-arrow" href="ch05_bresenham_d1d2.html">→</a>
 </div>
 
 </body>

@@ -195,7 +195,7 @@ body {
   <!-- Overview -->
   <div class="overview">
     <div class="ov-card">
-      <div class="ov-num" style="color:var(--blue)">11</div>
+      <div class="ov-num" style="color:var(--blue)">14</div>
       <div class="ov-label">章節已完成</div>
     </div>
     <div class="ov-card">
@@ -203,7 +203,7 @@ body {
       <div class="ov-label">內嵌互動演示</div>
     </div>
     <div class="ov-card">
-      <div class="ov-num" style="color:var(--yellow)">32</div>
+      <div class="ov-num" style="color:var(--yellow)">34</div>
       <div class="ov-label">章節總計</div>
     </div>
     <div class="ov-card">
@@ -512,52 +512,75 @@ body {
     </div>
     <div class="chapters">
 
-      <a class="ch soon" href="#">
+      <a class="ch done" href="theory/ch13_dot_product.html">
         <div class="ch-num">13</div>
         <div class="ch-body">
           <div class="ch-title">
-            向量幾何：點積與叉積
-            <span class="badge badge-soon">規劃中</span>
+            點積（Dot Product）
+            <span class="badge badge-done">已完成</span>
           </div>
           <div class="ch-desc">
-            點積：投影長度、夾角餘弦、光照計算 N·L 的來源。
-            叉積：法向量、面積計算、繞向判斷——所有 3D 幾何的基礎工具。
+            a·b = |a||b|cosθ 的代數與幾何雙重定義。投影、夾角判斷、正規化。
+            最重要的應用：N·L 漫反射光照公式——所有光照模型的根基。
           </div>
           <div class="ch-tags">
-            <span class="ch-tag">點積</span>
-            <span class="ch-tag">叉積</span>
-            <span class="ch-tag">法向量</span>
+            <span class="ch-tag">dot product</span>
+            <span class="ch-tag">cosθ</span>
+            <span class="ch-tag">N·L 光照</span>
+            <span class="ch-tag">正規化</span>
           </div>
         </div>
         <div class="ch-arrow">→</div>
       </a>
 
-      <a class="ch soon" href="#">
+      <a class="ch done" href="theory/ch14_cross_product_3d.html">
         <div class="ch-num">14</div>
         <div class="ch-body">
           <div class="ch-title">
-            矩陣與線性變換
-            <span class="badge badge-soon">規劃中</span>
+            3D 叉積（Cross Product）
+            <span class="badge badge-done">已完成</span>
           </div>
           <div class="ch-desc">
-            縮放、旋轉、平移矩陣的推導。複合變換為什麼用矩陣乘法？
-            行主序 vs 列主序、左乘 vs 右乘，這些細節如何影響程式碼。
+            行列式展開公式、右手定則、|a×b| = |a||b|sinθ（平行四邊形面積）。
+            從三角形兩條邊計算法向量 N，反交換律，與 Ch08 2D 叉積的關係。
+          </div>
+          <div class="ch-tags">
+            <span class="ch-tag">cross product</span>
+            <span class="ch-tag">法向量</span>
+            <span class="ch-tag">右手定則</span>
+            <span class="ch-tag">sinθ</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch done" href="theory/ch15_matrix.html">
+        <div class="ch-num">15</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            矩陣與線性變換
+            <span class="badge badge-done">已完成</span>
+          </div>
+          <div class="ch-desc">
+            線性變換的幾何意義：矩陣各欄 = 基向量的新位置。縮放矩陣、旋轉矩陣（Rx/Ry/Rz）的推導。
+            複合變換的乘法順序、正交矩陣性質（R⁻¹ = Rᵀ）。
           </div>
           <div class="ch-tags">
             <span class="ch-tag">變換矩陣</span>
             <span class="ch-tag">旋轉</span>
             <span class="ch-tag">複合變換</span>
+            <span class="ch-tag">正交矩陣</span>
           </div>
         </div>
         <div class="ch-arrow">→</div>
       </a>
 
-      <a class="ch soon" href="#">
-        <div class="ch-num">15</div>
+      <a class="ch done" href="theory/ch16_homogeneous.html">
+        <div class="ch-num">16</div>
         <div class="ch-body">
           <div class="ch-title">
             齊次座標
-            <span class="badge badge-soon">規劃中</span>
+            <span class="badge badge-done">已完成</span>
           </div>
           <div class="ch-desc">
             為什麼平移需要 4×4 矩陣？w=1 表示位置，w=0 表示方向——
@@ -572,21 +595,22 @@ body {
         <div class="ch-arrow">→</div>
       </a>
 
-      <a class="ch soon" href="#">
-        <div class="ch-num">16</div>
+      <a class="ch done" href="theory/ch17_model_matrix.html">
+        <div class="ch-num">17</div>
         <div class="ch-body">
           <div class="ch-title">
-            MVP 管線全貌
-            <span class="badge badge-soon">規劃中</span>
+            Model 矩陣
+            <span class="badge badge-done">已完成</span>
           </div>
           <div class="ch-desc">
-            五個座標空間：物件空間 → 世界空間 → 視圖空間 → 裁切空間 → NDC → 螢幕。
-            每次矩陣乘法在做什麼事，對應 GLSL vertex shader 的完整流程。
+            把齊次座標的縮放、旋轉、平移矩陣組合成 Model 矩陣，
+            完成物件空間 → 世界空間的第一個變換。
+            矩陣相乘的順序為何不能交換？TRS 的標準組合順序推導。
           </div>
           <div class="ch-tags">
-            <span class="ch-tag">MVP</span>
-            <span class="ch-tag">座標空間</span>
-            <span class="ch-tag">vertex shader</span>
+            <span class="ch-tag">Model 矩陣</span>
+            <span class="ch-tag">TRS 組合</span>
+            <span class="ch-tag">物件→世界</span>
           </div>
         </div>
         <div class="ch-arrow">→</div>
@@ -600,16 +624,16 @@ body {
     <div class="part-header">
       <span class="part-num">Part 5</span>
       <span class="part-title">投影與相機</span>
-      <span class="part-desc">透視投影 · Look At · 視口變換</span>
+      <span class="part-desc">透視投影 · View 矩陣 · 視口變換 · MVP 串場</span>
     </div>
     <div class="chapters">
 
-      <a class="ch soon" href="#">
-        <div class="ch-num">17</div>
+      <a class="ch done" href="theory/ch18_perspective.html">
+        <div class="ch-num">18</div>
         <div class="ch-body">
           <div class="ch-title">
             透視投影推導
-            <span class="badge badge-soon">規劃中</span>
+            <span class="badge badge-done">已完成</span>
           </div>
           <div class="ch-desc">
             從小孔相機模型出發，推導 frustum 的幾何關係。
@@ -625,12 +649,12 @@ body {
         <div class="ch-arrow">→</div>
       </a>
 
-      <a class="ch soon" href="#">
-        <div class="ch-num">18</div>
+      <a class="ch done" href="theory/ch19_lookat.html">
+        <div class="ch-num">19</div>
         <div class="ch-body">
           <div class="ch-title">
             視圖矩陣（Look At）
-            <span class="badge badge-soon">規劃中</span>
+            <span class="badge badge-done">已完成</span>
           </div>
           <div class="ch-desc">
             相機有三個軸（right, up, forward）。
@@ -646,12 +670,12 @@ body {
         <div class="ch-arrow">→</div>
       </a>
 
-      <a class="ch soon" href="#">
-        <div class="ch-num">19</div>
+      <a class="ch done" href="theory/ch20_viewport.html">
+        <div class="ch-num">20</div>
         <div class="ch-body">
           <div class="ch-title">
             視口變換
-            <span class="badge badge-soon">規劃中</span>
+            <span class="badge badge-done">已完成</span>
           </div>
           <div class="ch-desc">
             NDC 的 [-1,1]³ 如何映射到螢幕像素座標？
@@ -662,6 +686,27 @@ body {
             <span class="ch-tag">NDC</span>
             <span class="ch-tag">視口映射</span>
             <span class="ch-tag">y 軸翻轉</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch done" href="theory/ch21_mvp_pipeline.html">
+        <div class="ch-num">21</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            MVP 管線串場
+            <span class="badge badge-done">已完成</span>
+          </div>
+          <div class="ch-desc">
+            把 Ch15–Ch20 推導的六個矩陣串接成完整管線：
+            Object → World → Camera → Clip → NDC → Screen。
+            逐空間解釋每次乘法的幾何含義，對應 GLSL vertex shader 的完整流程。
+          </div>
+          <div class="ch-tags">
+            <span class="ch-tag">MVP</span>
+            <span class="ch-tag">座標空間</span>
+            <span class="ch-tag">vertex shader</span>
           </div>
         </div>
         <div class="ch-arrow">→</div>
@@ -680,7 +725,7 @@ body {
     <div class="chapters">
 
       <a class="ch soon" href="#">
-        <div class="ch-num">20</div>
+        <div class="ch-num">22</div>
         <div class="ch-body">
           <div class="ch-title">
             TGA 格式解析與實作
@@ -700,7 +745,7 @@ body {
       </a>
 
       <a class="ch soon" href="#">
-        <div class="ch-num">21</div>
+        <div class="ch-num">23</div>
         <div class="ch-body">
           <div class="ch-title">
             OBJ 格式解析與實作
@@ -733,7 +778,7 @@ body {
     <div class="chapters">
 
       <a class="ch soon" href="#">
-        <div class="ch-num">22</div>
+        <div class="ch-num">24</div>
         <div class="ch-body">
           <div class="ch-title">
             OpenGL 管線剖析
@@ -755,7 +800,7 @@ body {
       </a>
 
       <a class="ch soon" href="#">
-        <div class="ch-num">23</div>
+        <div class="ch-num">25</div>
         <div class="ch-body">
           <div class="ch-title">
             IShader 介面設計
@@ -776,7 +821,7 @@ body {
       </a>
 
       <a class="ch soon" href="#">
-        <div class="ch-num">24</div>
+        <div class="ch-num">26</div>
         <div class="ch-body">
           <div class="ch-title">
             DrawTriangle 重構 + 透視正確插值
@@ -809,7 +854,7 @@ body {
     <div class="chapters">
 
       <a class="ch soon" href="#">
-        <div class="ch-num">25</div>
+        <div class="ch-num">27</div>
         <div class="ch-body">
           <div class="ch-title">
             Flat Shader
@@ -829,7 +874,7 @@ body {
       </a>
 
       <a class="ch soon" href="#">
-        <div class="ch-num">26</div>
+        <div class="ch-num">28</div>
         <div class="ch-body">
           <div class="ch-title">
             Gouraud Shader
@@ -849,7 +894,7 @@ body {
       </a>
 
       <a class="ch soon" href="#">
-        <div class="ch-num">27</div>
+        <div class="ch-num">29</div>
         <div class="ch-body">
           <div class="ch-title">
             Texture Shader
@@ -869,7 +914,7 @@ body {
       </a>
 
       <a class="ch soon" href="#">
-        <div class="ch-num">28</div>
+        <div class="ch-num">30</div>
         <div class="ch-body">
           <div class="ch-title">
             Phong Shader
@@ -889,7 +934,7 @@ body {
       </a>
 
       <a class="ch soon" href="#">
-        <div class="ch-num">29</div>
+        <div class="ch-num">31</div>
         <div class="ch-body">
           <div class="ch-title">
             Normal Map Shader
@@ -922,7 +967,7 @@ body {
     <div class="chapters">
 
       <a class="ch soon" href="#">
-        <div class="ch-num">30</div>
+        <div class="ch-num">32</div>
         <div class="ch-body">
           <div class="ch-title">
             裁剪（Clipping）
@@ -943,7 +988,7 @@ body {
       </a>
 
       <a class="ch soon" href="#">
-        <div class="ch-num">31</div>
+        <div class="ch-num">33</div>
         <div class="ch-body">
           <div class="ch-title">
             陰影貼圖（Shadow Mapping）
@@ -963,7 +1008,7 @@ body {
       </a>
 
       <a class="ch soon" href="#">
-        <div class="ch-num">32</div>
+        <div class="ch-num">34</div>
         <div class="ch-body">
           <div class="ch-title">
             抗鋸齒（Anti-Aliasing）

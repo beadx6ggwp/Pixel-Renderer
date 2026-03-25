@@ -116,7 +116,19 @@ ul, ol { margin: 8px 0 14px 26px; line-height: 2.2; }
 
 /* ── Figures ──────────────────────────────────────────── */
 .fig { margin: 24px auto; text-align: center; }
-.fig figcaption { color: var(--muted); font-size: 0.82em; margin-top: 8px; font-style: italic; }
+.fig figcaption { color: var(--muted); font-size: 0.88em; margin-top: 10px; font-style: italic; }
+.katex-display {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 6px;
+  padding: 18px 24px; margin: 14px 0; overflow-x: auto;
+}
+.katex-display > .katex { color: var(--text); }
+.katex { color: var(--text); font-size: 1.0em; }
+.next-ch { margin-top: 56px; padding: 20px 24px; background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 20px; }
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+.next-title { color: var(--blue); font-size: 1em; }
+.next-desc  { color: var(--muted); font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: var(--blue); font-size: 1.6em; text-decoration: none; }
+.next-arrow:hover { color: var(--purple); }
 
 /* ── Two-column ───────────────────────────────────────── */
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
@@ -140,22 +152,19 @@ ul, ol { margin: 8px 0 14px 26px; line-height: 2.2; }
 .step-title { color: var(--yellow); font-size: 0.9em; margin-bottom: 4px; }
 .step-desc  { color: var(--muted); font-size: 0.85em; line-height: 1.7; }
 
-/* ── Chapter nav ──────────────────────────────────────── */
-.chapter-nav {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border);
-  font-family: 'Consolas', monospace; font-size: 0.82em;
-}
-.chapter-nav a {
-  color: var(--muted); text-decoration: none; padding: 8px 14px;
-  border: 1px solid var(--border); border-radius: 6px;
-  transition: color 0.15s, border-color 0.15s;
-}
-.chapter-nav a:hover { color: var(--blue); border-color: var(--blue); }
-.chapter-nav .next { color: var(--text); border-color: var(--blue); }
+/* chapter-nav removed */
 
 hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
 </style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$', right: '$', display: true},
+      {left: '\\(', right: '\\)', display: false}
+    ]
+  });"></script>
 </head>
 <body>
 
@@ -199,21 +208,21 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
   給定三角形頂點 V0、V1、V2，它有三條邊：
 </p>
 
-<div class="math">
-  <span class="r">邊 0：V0 → V1</span>
-  <span class="r">邊 1：V1 → V2</span>
-  <span class="r">邊 2：V2 → V0</span>
-</div>
+$\begin{array}{ll}
+\text{邊 0：} & V_0 \rightarrow V_1 \\[4pt]
+\text{邊 1：} & V_1 \rightarrow V_2 \\[4pt]
+\text{邊 2：} & V_2 \rightarrow V_0
+\end{array}$
 
 <p>
   對每條邊，做一次 Ch08 的 <code>edgeTest()</code>：
 </p>
 
-<div class="math">
-  <span class="r"><span class="hi">E0(P)</span> = cross(V1−V0, P−V0)</span>
-  <span class="r"><span class="hi">E1(P)</span> = cross(V2−V1, P−V1)</span>
-  <span class="r"><span class="hi">E2(P)</span> = cross(V0−V2, P−V2)</span>
-</div>
+$\begin{array}{l}
+E_0(\mathbf{P}) = \text{cross}(\mathbf{V}_1 - \mathbf{V}_0,\; \mathbf{P} - \mathbf{V}_0)\\[6pt]
+E_1(\mathbf{P}) = \text{cross}(\mathbf{V}_2 - \mathbf{V}_1,\; \mathbf{P} - \mathbf{V}_1)\\[6pt]
+E_2(\mathbf{P}) = \text{cross}(\mathbf{V}_0 - \mathbf{V}_2,\; \mathbf{P} - \mathbf{V}_2)
+\end{array}$
 
 <p>
   這三個值就是三角形的 <em>邊緣函數</em>（Edge Function）。
@@ -322,14 +331,9 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
   把 E0 展開：
 </p>
 
-<div class="math">
-  <span class="r"><span class="hi">E0(P)</span> = (V1<sub>x</sub>−V0<sub>x</sub>)(P<sub>y</sub>−V0<sub>y</sub>) − (V1<sub>y</sub>−V0<sub>y</sub>)(P<sub>x</sub>−V0<sub>x</sub>)</span>
-  <span class="r"></span>
-  <span class="r cmt">令 a = (V1y−V0y)，b = −(V1x−V0x)，整理後：</span>
-  <span class="r"></span>
-  <span class="r"><span class="hi">E0(x, y)</span> = <span class="ok">a · x  +  b · y  +  c</span>     ← 一次多項式</span>
-  <span class="r cmt">              a, b, c 都是常數（只依賴頂點位置）</span>
-</div>
+$E_0(\mathbf{P}) = (V_{1x}-V_{0x})(P_y-V_{0y}) - (V_{1y}-V_{0y})(P_x-V_{0x})$
+<p style="color:var(--muted);font-size:0.88em;margin:6px 0">令 \(a = V_{1y}-V_{0y}\)，\(b = -(V_{1x}-V_{0x})\)，整理後：</p>
+$E_0(x,\,y) = \textcolor{#a6e3a1}{a \cdot x + b \cdot y + c} \qquad\text{（一次多項式；a, b, c 為常數，只依賴頂點位置）}$
 
 <p>
   這意味著：<em>當 x 增加 1，E0 增加固定量 a；當 y 增加 1，E0 增加固定量 b。</em>
@@ -484,15 +488,14 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
   你剛才看到的結構，就是現代 GPU 光柵化單元的核心邏輯：
 </p>
 
-<div class="math">
-  <span class="r cmt">GPU 光柵化（簡化版）：</span>
-  <span class="r"></span>
-  <span class="r"><span class="ok">1.</span> 頂點 Shader → 得到三角形頂點的螢幕座標</span>
-  <span class="r"><span class="ok">2.</span> 計算三條邊的 Edge Function 係數（a, b, c）</span>
-  <span class="r"><span class="ok">3.</span> 找包圍盒</span>
-  <span class="r"><span class="ok">4.</span> 以 <span class="tl">2×2 像素 Quad</span> 為單位，同時測試四個像素</span>
-  <span class="r"><span class="ok">5.</span> 通過的像素送入片段 Shader</span>
-  <span class="r"><span class="ok">6.</span> Top-Left Rule 處理共用邊</span>
+<div class="box box-gray" style="font-size:0.9em;line-height:2.2">
+  <span style="color:var(--muted)">GPU 光柵化（簡化版）</span><br>
+  <span style="color:var(--green)">1.</span> 頂點 Shader → 得到三角形頂點的螢幕座標<br>
+  <span style="color:var(--green)">2.</span> 計算三條邊的 Edge Function 係數（a, b, c）<br>
+  <span style="color:var(--green)">3.</span> 找包圍盒<br>
+  <span style="color:var(--green)">4.</span> 以 <strong>2×2 像素 Quad</strong> 為單位，同時測試四個像素<br>
+  <span style="color:var(--green)">5.</span> 通過的像素送入片段 Shader<br>
+  <span style="color:var(--green)">6.</span> Top-Left Rule 處理共用邊
 </div>
 
 <p>
@@ -527,10 +530,13 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
   用來在三角形內插值任何頂點屬性（顏色、UV、法線…）。
 </p>
 
-<!-- ── Chapter nav ─────────────────────────────────────────────── -->
-<div class="chapter-nav">
-  <a href="ch08_cross_product.html">← Ch08 叉積與有向面積</a>
-  <a class="next" href="ch10_barycentric.html">Ch10 重心座標 →</a>
+<div class="next-ch">
+  <div>
+    <div class="next-label">PART 3 · CHAPTER 10</div>
+    <div class="next-title">重心座標（Barycentric Coordinates）</div>
+    <div class="next-desc">Edge Function 值 ÷ 總面積 = w₀ w₁ w₂。幾何意義：子三角形面積比，三係數和為 1。插值公式適用於顏色、UV、法線任何屬性。</div>
+  </div>
+  <a href="ch10_barycentric.html" class="next-arrow">→</a>
 </div>
 
 </body>

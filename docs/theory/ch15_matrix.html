@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Ch15 — 矩陣與線性變換</title>
+
+<!-- KaTeX -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$', right: '$', display: true},
+      {left: '\\(', right: '\\)', display: false}
+    ]
+  });"></script>
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:     #1e1e2e;
+  --bg1:    #181825;
+  --bg2:    #11111b;
+  --border: #313244;
+  --muted:  #6c7086;
+  --text:   #cdd6f4;
+  --blue:   #89b4fa;
+  --green:  #a6e3a1;
+  --yellow: #f9e2af;
+  --orange: #fab387;
+  --red:    #f38ba8;
+  --purple: #cba6f7;
+  --teal:   #94e2d5;
+}
+body {
+  background: var(--bg); color: var(--text);
+  font-family: 'Georgia', serif; font-size: 15px;
+  padding: 0 20px 80px; max-width: 900px; margin: 0 auto;
+  line-height: 1.9;
+}
+nav {
+  font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted);
+  padding: 14px 0; border-bottom: 1px solid var(--border);
+  margin-bottom: 36px; display: flex; align-items: center; gap: 10px;
+}
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--blue); }
+.nav-sep { color: var(--border); }
+.nav-cur { color: var(--text); }
+.nav-right { margin-left: auto; display: flex; gap: 16px; }
+.ch-header { margin-bottom: 40px; }
+.ch-label { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px; }
+.ch-title { color: var(--blue); font-size: 1.7em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub   { color: var(--muted); font-size: 0.88em; margin-bottom: 14px; }
+.ch-tags  { display: flex; gap: 6px; flex-wrap: wrap; }
+.ch-tag   { font-family: 'Consolas', monospace; font-size: 0.75em; padding: 2px 10px; border-radius: 99px; border: 1px solid var(--border); color: var(--muted); }
+h2 {
+  color: var(--purple); font-size: 1em;
+  font-family: 'Consolas', monospace; letter-spacing: 0.05em;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+  margin: 40px 0 20px; display: flex; align-items: center; gap: 12px;
+}
+h2 .n {
+  background: var(--purple); color: var(--bg2); font-weight: bold;
+  border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 0.85em;
+}
+h3 { color: var(--yellow); font-size: 0.95em; margin: 22px 0 10px; }
+p  { margin-bottom: 12px; }
+strong { color: var(--yellow); }
+em { color: var(--orange); font-style: normal; }
+.box { border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 0.9em; line-height: 1.85; }
+.box-blue   { background: var(--bg1); border-left: 4px solid var(--blue); }
+.box-green  { background: var(--bg1); border-left: 4px solid var(--green); }
+.box-yellow { background: var(--bg1); border-left: 4px solid var(--yellow); }
+.box-red    { background: var(--bg1); border-left: 4px solid var(--red); }
+.box-purple { background: var(--bg1); border-left: 4px solid var(--purple); }
+.box-gray   { background: var(--bg1); border: 1px solid var(--border); border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 0.9em; }
+/* KaTeX display blocks */
+.katex-display {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 6px;
+  padding: 18px 24px; margin: 14px 0; overflow-x: auto;
+}
+.katex-display > .katex { color: var(--text); }
+.katex { color: var(--text); font-size: 1.0em; }
+/* Inline KaTeX */
+.katex-inline .katex { font-size: 0.95em; }
+.code {
+  background: #0d0d14; border: 1px solid var(--border); border-radius: 8px;
+  padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em;
+  line-height: 2.0; margin: 14px 0; white-space: pre;
+}
+.code .cmt { color: var(--muted); }
+.code .kw  { color: var(--purple); }
+.code .val { color: var(--orange); }
+.code .fn  { color: var(--blue); }
+.code .ty  { color: var(--teal); }
+.fig { margin: 24px auto; text-align: center; }
+.fig figcaption { color: var(--muted); font-size: 0.88em; margin-top: 10px; font-style: italic; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+.two-col > div { background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; }
+.col-title { font-family: 'Consolas', monospace; font-size: 0.85em; margin-bottom: 10px; color: var(--blue); }
+table { width: 100%; border-collapse: collapse; font-size: 0.87em; margin: 14px 0; }
+th { background: var(--bg1); color: var(--blue); padding: 9px 14px; text-align: left; border-bottom: 2px solid var(--border); font-family: 'Consolas', monospace; }
+td { padding: 8px 14px; border-bottom: 1px solid var(--bg1); vertical-align: top; }
+tr:hover td { background: var(--bg1); }
+.next-ch { margin-top: 56px; padding: 20px 24px; background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 20px; }
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+.next-title { color: var(--blue); font-size: 1em; }
+.next-desc  { color: var(--muted); font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: var(--blue); font-size: 1.6em; text-decoration: none; }
+.next-arrow:hover { color: var(--purple); }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">軟體光柵化</a>
+  <span class="nav-sep">/</span>
+  <span>理論</span>
+  <span class="nav-sep">/</span>
+  <span class="nav-cur">Ch15</span>
+  <div class="nav-right">
+    <a href="ch14_cross_product_3d.html">← Ch14</a>
+    <a href="ch16_homogeneous.html">Ch16 →</a>
+  </div>
+</nav>
+
+<div class="ch-header">
+  <div class="ch-label">PART 4 · CHAPTER 15</div>
+  <div class="ch-title">矩陣與線性變換</div>
+  <div class="ch-sub">縮放與旋轉的統一語言——用一個矩陣描述整個空間的變形方式</div>
+  <div class="ch-tags">
+    <span class="ch-tag">matrix</span>
+    <span class="ch-tag">線性變換</span>
+    <span class="ch-tag">基向量</span>
+    <span class="ch-tag">旋轉矩陣</span>
+    <span class="ch-tag">複合變換</span>
+    <span class="ch-tag">正交矩陣</span>
+  </div>
+</div>
+
+<p>
+  Ch13 和 Ch14 建立了向量的工具：點積衡量方向一致性，叉積計算法向量。
+  但要把一個 3D 物件「縮放」「旋轉」「放到世界裡」，需要一個更系統化的框架——
+  <strong>矩陣（Matrix）</strong>。
+</p>
+<p>
+  矩陣不只是數字排列的表格；它精確描述了一個<em>線性變換（linear transform）</em>，
+  也就是「空間如何被拉伸、旋轉、剪切」。理解矩陣的<strong>幾何意義</strong>，
+  比背公式更重要。
+</p>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">1</div>矩陣乘法：列點積欄</h2>
+
+<p>
+  結果矩陣 \(C = AB\) 中，第 \(i\) 列、第 \(j\) 欄的值，等於 \(A\) 的第 \(i\) 列與 \(B\) 的第 \(j\) 欄的<strong>點積</strong>：
+</p>
+
+$C_{ij} = \sum_{k} A_{ik} \cdot B_{kj}$
+
+<p>具體以 2×2 為例：</p>
+
+$\begin{pmatrix} a & b \\ c & d \end{pmatrix} \begin{pmatrix} e & f \\ g & h \end{pmatrix} = \begin{pmatrix} ae+bg & af+bh \\ ce+dg & cf+dh \end{pmatrix}$
+
+<p>
+  矩陣乘以向量（向量視為 \(n \times 1\) 的行矩陣）：
+</p>
+
+$\begin{pmatrix} a & b \\ c & d \end{pmatrix} \begin{pmatrix} x \\ y \end{pmatrix} = \begin{pmatrix} ax + by \\ cx + dy \end{pmatrix}$
+
+<p>
+  要使 \(AB\) 合法，\(A\) 的<strong>欄數</strong>必須等於 \(B\) 的<strong>列數</strong>。
+  3D 圖形裡最常見的情形是 \(3 \times 3\) 矩陣乘以 \(3 \times 1\) 向量，或 \(3 \times 3\) 乘以 \(3 \times 3\)。
+</p>
+
+<div class="box box-red">
+  <strong>矩陣乘法不滿足交換律：\(AB \neq BA\)（一般情形）</strong><br>
+  這個性質在複合變換中至關重要——先旋轉再縮放，和先縮放再旋轉，結果完全不同。
+  後面的第 5 節會用具體數字示範。
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">2</div>線性變換的幾何意義：基向量去了哪裡</h2>
+
+<p>
+  一個 \(3 \times 3\) 矩陣 \(M\) 的<strong>每一欄</strong>就是三個標準基向量 \(\mathbf{e}_1, \mathbf{e}_2, \mathbf{e}_3\)
+  經過變換後的新位置：
+</p>
+
+$M = \begin{pmatrix} \textcolor{#89b4fa}{m_{00}} & \textcolor{#a6e3a1}{m_{01}} & \textcolor{#94e2d5}{m_{02}} \\ \textcolor{#89b4fa}{m_{10}} & \textcolor{#a6e3a1}{m_{11}} & \textcolor{#94e2d5}{m_{12}} \\ \textcolor{#89b4fa}{m_{20}} & \textcolor{#a6e3a1}{m_{21}} & \textcolor{#94e2d5}{m_{22}} \end{pmatrix}$
+
+<p style="font-size:0.9em; color:var(--muted); margin-top:-6px; margin-bottom:14px;">
+  第一欄（藍）\(= M\mathbf{e}_1\)，第二欄（綠）\(= M\mathbf{e}_2\)，第三欄（青）\(= M\mathbf{e}_3\)
+</p>
+
+<p>
+  因此，任意向量 \(\mathbf{v} = (v_x, v_y, v_z)\) 的變換結果可以理解為：
+</p>
+
+$M\mathbf{v} = v_x \cdot \textcolor{#89b4fa}{\text{（第一欄）}} + v_y \cdot \textcolor{#a6e3a1}{\text{（第二欄）}} + v_z \cdot \textcolor{#94e2d5}{\text{（第三欄）}}$
+
+<figure class="fig">
+<svg width="460" height="210" viewBox="0 0 460 210" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="ah-b15" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#89b4fa"/>
+    </marker>
+    <marker id="ah-g15" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#a6e3a1"/>
+    </marker>
+    <marker id="ah-b15d" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#4a6fa5"/>
+    </marker>
+    <marker id="ah-g15d" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#4a7a4a"/>
+    </marker>
+  </defs>
+  <!-- LEFT: standard basis -->
+  <g stroke="#313244" stroke-width="0.7">
+    <line x1="30" y1="50" x2="30" y2="190"/>
+    <line x1="90" y1="50" x2="90" y2="190"/>
+    <line x1="150" y1="50" x2="150" y2="190"/>
+    <line x1="30" y1="70" x2="160" y2="70"/>
+    <line x1="30" y1="130" x2="160" y2="130"/>
+    <line x1="30" y1="190" x2="160" y2="190"/>
+  </g>
+  <circle cx="30" cy="130" r="4" fill="#cdd6f4"/>
+  <line x1="30" y1="130" x2="84" y2="130" stroke="#89b4fa" stroke-width="2.5" marker-end="url(#ah-b15)"/>
+  <text x="52" y="148" font-size="13" fill="#89b4fa" font-family="Consolas">e₁</text>
+  <line x1="30" y1="130" x2="30" y2="76" stroke="#a6e3a1" stroke-width="2.5" marker-end="url(#ah-g15)"/>
+  <text x="35" y="100" font-size="13" fill="#a6e3a1" font-family="Consolas">e₂</text>
+  <text x="90" y="30" font-size="12" fill="#6c7086" font-family="Consolas" text-anchor="middle">變換前（標準基）</text>
+
+  <text x="225" y="125" font-size="22" fill="#6c7086" font-family="Consolas" text-anchor="middle">→</text>
+  <text x="225" y="145" font-size="11" fill="#6c7086" font-family="Consolas" text-anchor="middle">M ·</text>
+
+  <!-- RIGHT: transformed basis -->
+  <g stroke="#313244" stroke-width="0.7">
+    <line x1="310" y1="130" x2="387" y2="152"/>
+    <line x1="293" y1="64"  x2="370" y2="86"/>
+    <line x1="310" y1="130" x2="293" y2="64"/>
+    <line x1="387" y1="152" x2="370" y2="86"/>
+  </g>
+  <circle cx="310" cy="130" r="4" fill="#cdd6f4"/>
+  <line x1="310" y1="130" x2="382" y2="153" stroke="#89b4fa" stroke-width="2.5" marker-end="url(#ah-b15)"/>
+  <text x="355" y="172" font-size="13" fill="#89b4fa" font-family="Consolas">e₁'</text>
+  <line x1="310" y1="130" x2="296" y2="68" stroke="#a6e3a1" stroke-width="2.5" marker-end="url(#ah-g15)"/>
+  <text x="268" y="93" font-size="13" fill="#a6e3a1" font-family="Consolas">e₂'</text>
+  <text x="350" y="30" font-size="12" fill="#6c7086" font-family="Consolas" text-anchor="middle">變換後（新基）</text>
+  <text x="350" y="46" font-size="11" fill="#cba6f7" font-family="Consolas" text-anchor="middle">M 的各欄 = e₁', e₂' 的新位置</text>
+</svg>
+<figcaption>矩陣的每一欄對應一個基向量的新位置。整個空間跟著基向量一起被「重新映射」——這就是線性變換的幾何本質。</figcaption>
+</figure>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">3</div>縮放矩陣</h2>
+
+<p>
+  縮放只改變各基向量的<strong>長度</strong>而不改變方向，因此縮放矩陣是<em>對角矩陣</em>：
+</p>
+
+$S(s_x, s_y, s_z) = \begin{pmatrix} s_x & 0 & 0 \\ 0 & s_y & 0 \\ 0 & 0 & s_z \end{pmatrix}$
+
+<p>驗證——把標準基向量代入：</p>
+
+$S\,\mathbf{e}_1 = (s_x,\, 0,\, 0), \quad S\,\mathbf{e}_2 = (0,\, s_y,\, 0), \quad S\,\mathbf{e}_3 = (0,\, 0,\, s_z)$
+
+<p>
+  均勻縮放（uniform scale，\(s_x = s_y = s_z = k\)）等價於 \(k\mathbf{I}\)，其中 \(\mathbf{I}\) 是單位矩陣。
+  縮放的逆矩陣只需取各分量倒數：\(S(s_x, s_y, s_z)^{-1} = S(1/s_x, 1/s_y, 1/s_z)\)。
+</p>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">4</div>旋轉矩陣推導</h2>
+
+<h3>從 2D 出發</h3>
+<p>
+  在 2D 平面中，逆時針旋轉角度 \(\theta\) 的矩陣，直接從旋轉後的基向量讀出：
+  \(\mathbf{e}_1 = (1,0)\) 旋轉後到 \((\cos\theta,\, \sin\theta)\)，
+  \(\mathbf{e}_2 = (0,1)\) 旋轉後到 \((-\sin\theta,\, \cos\theta)\)。
+  把這兩個向量排成矩陣的各欄：
+</p>
+
+$R(\theta) = \begin{pmatrix} \cos\theta & -\sin\theta \\ \sin\theta & \cos\theta \end{pmatrix}$
+
+<figure class="fig">
+<svg width="320" height="240" viewBox="0 0 320 240" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="ah-w15" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#6c7086"/>
+    </marker>
+    <marker id="ah-bl15" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#89b4fa"/>
+    </marker>
+    <marker id="ah-gl15" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#a6e3a1"/>
+    </marker>
+    <marker id="ah-bl15d" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#3a4f72"/>
+    </marker>
+    <marker id="ah-gl15d" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#3a5a3a"/>
+    </marker>
+  </defs>
+  <!-- Axes -->
+  <line x1="160" y1="220" x2="160" y2="20" stroke="#6c7086" stroke-width="1" marker-end="url(#ah-w15)"/>
+  <line x1="20" y1="130" x2="300" y2="130" stroke="#6c7086" stroke-width="1" marker-end="url(#ah-w15)"/>
+  <text x="292" y="147" font-size="12" fill="#6c7086" font-family="Consolas">x</text>
+  <text x="165" y="18"  font-size="12" fill="#6c7086" font-family="Consolas">y</text>
+  <!-- Unit circle -->
+  <circle cx="160" cy="130" r="80" fill="none" stroke="#313244" stroke-width="1.5"/>
+  <!-- Original e1, e2 (faded) -->
+  <line x1="160" y1="130" x2="234" y2="130" stroke="#3a4f72" stroke-width="2" marker-end="url(#ah-bl15d)" stroke-dasharray="5,3"/>
+  <text x="206" y="148" font-size="12" fill="#3a4f72" font-family="Consolas">e₁</text>
+  <line x1="160" y1="130" x2="160" y2="56"  stroke="#3a5a3a" stroke-width="2" marker-end="url(#ah-gl15d)" stroke-dasharray="5,3"/>
+  <text x="165" y="75"  font-size="12" fill="#3a5a3a" font-family="Consolas">e₂</text>
+  <!-- Rotated e1': θ=40°, cos40°≈0.766, sin40°≈0.643 → screen (160+61,130-51)=(221,79) -->
+  <line x1="160" y1="130" x2="217" y2="79" stroke="#89b4fa" stroke-width="2.5" marker-end="url(#ah-bl15)"/>
+  <text x="218" y="72" font-size="12" fill="#89b4fa" font-family="Consolas">e₁' = (cosθ, sinθ)</text>
+  <!-- Rotated e2': -sin40°≈-0.643, cos40°≈0.766 → screen (160-51,130-61)=(109,69) -->
+  <line x1="160" y1="130" x2="109" y2="69" stroke="#a6e3a1" stroke-width="2.5" marker-end="url(#ah-gl15)"/>
+  <text x="10" y="65" font-size="12" fill="#a6e3a1" font-family="Consolas">e₂' = (−sinθ, cosθ)</text>
+  <!-- θ arc -->
+  <path d="M 230,130 A 70,70 0 0,0 213.6,85.1" fill="none" stroke="#f9e2af" stroke-width="1.5"/>
+  <text x="218" y="121" font-size="13" fill="#f9e2af" font-family="Georgia" font-style="italic">θ</text>
+  <!-- Origin -->
+  <circle cx="160" cy="130" r="3.5" fill="#cdd6f4"/>
+</svg>
+<figcaption>\(\theta = 40°\) 示例。旋轉後 \(\mathbf{e}_1 \to (\cos\theta, \sin\theta)\)，\(\mathbf{e}_2 \to (-\sin\theta, \cos\theta)\)。
+把這兩個向量排成矩陣各欄，即得 \(R(\theta)\)。</figcaption>
+</figure>
+
+<h3>3D 旋轉矩陣</h3>
+<p>
+  3D 旋轉繞固定軸進行，旋轉時該軸方向的分量不變，另外兩個分量按 2D \(R(\theta)\) 旋轉。
+  三個軸的旋轉矩陣（逆時針，右手定則）：
+</p>
+
+$R_x(\theta) = \begin{pmatrix} 1 & 0 & 0 \\ 0 & \cos\theta & -\sin\theta \\ 0 & \sin\theta & \cos\theta \end{pmatrix}, \quad R_x \text{ 讓 } x \text{ 軸固定不動}$
+
+$R_y(\theta) = \begin{pmatrix} \cos\theta & 0 & \sin\theta \\ 0 & 1 & 0 \\ -\sin\theta & 0 & \cos\theta \end{pmatrix}, \quad R_y \text{ 讓 } y \text{ 軸固定不動}$
+
+$R_z(\theta) = \begin{pmatrix} \cos\theta & -\sin\theta & 0 \\ \sin\theta & \cos\theta & 0 \\ 0 & 0 & 1 \end{pmatrix}, \quad R_z \text{ 讓 } z \text{ 軸固定不動}$
+
+<div class="box box-yellow">
+  <strong>\(R_y\) 的符號為何和 \(R_x\)、\(R_z\) 不同？</strong><br>
+  繞 \(y\) 軸旋轉時，另外兩個作用軸是 \(z\) 和 \(x\)（循環 \(x \to z\)，方向相反於 \(x \to y\)）。
+  右手定則下，\(R_y\) 中 \(\sin\theta\) 的位置相對 \(R_x\)、\(R_z\) 而言是「翻轉」的。
+  最可靠的推導方式：<em>永遠從「旋轉後的基向量位置」讀出矩陣各欄</em>，不要靠記憶符號。
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">5</div>複合變換：乘法順序的幾何意義</h2>
+
+<p>
+  要對一個向量<strong>先做旋轉 \(R\)，再做縮放 \(S\)</strong>：
+</p>
+
+$\mathbf{v}' = S\,(R\,\mathbf{v}) = (SR)\,\mathbf{v}$
+
+<p>
+  因為矩陣乘法滿足結合律，可以先把 \(SR\) 算成一個矩陣，再乘以 \(\mathbf{v}\)。
+  這就是 GPU 能把整個 MVP 矩陣預先算好、每個頂點只做一次乘法的原因。
+</p>
+
+<div class="box box-red">
+  <strong>\(SR \neq RS\)（一般情形）</strong>——矩陣<em>右邊</em>的先作用，左邊的後作用。<br>
+  寫 \(M = SR\) 意思是「先 \(R\) 後 \(S\)」。先縮放再旋轉 vs 先旋轉再縮放，對不均勻縮放（如 \(s_x \neq s_y\)）結果截然不同。
+</div>
+
+<p>具體數字示範，\(S =\) 沿 \(x\) 縮放 2 倍，\(R =\) 旋轉 90°：</p>
+
+$SR = \begin{pmatrix}2&0\\0&1\end{pmatrix}\begin{pmatrix}0&-1\\1&0\end{pmatrix} = \begin{pmatrix}0&-2\\1&0\end{pmatrix}$
+
+$RS = \begin{pmatrix}0&-1\\1&0\end{pmatrix}\begin{pmatrix}2&0\\0&1\end{pmatrix} = \begin{pmatrix}0&-1\\2&0\end{pmatrix}$
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">6</div>正交矩陣：旋轉矩陣的特殊性質</h2>
+
+<p>
+  旋轉不改變向量的長度和夾角，只改變方向。
+  這讓旋轉矩陣成為<em>正交矩陣（orthogonal matrix）</em>，具備一個極重要的性質：
+</p>
+
+$\boxed{M^{-1} = M^\top} \quad \Longleftrightarrow \quad MM^\top = I$
+
+<p>
+  對 2D \(R(\theta)\) 直接驗證：
+</p>
+
+$R(\theta)\,R(\theta)^\top = \begin{pmatrix}\cos\theta & -\sin\theta\\\sin\theta & \cos\theta\end{pmatrix} \begin{pmatrix}\cos\theta & \sin\theta\\-\sin\theta & \cos\theta\end{pmatrix} = \begin{pmatrix}1&0\\0&1\end{pmatrix} = I \checkmark$
+
+<div class="box box-green">
+  <strong>法向量變換的陷阱：</strong>在 3D 渲染中，法向量從物件空間變換到世界空間時，
+  不能直接乘以 Model 矩陣 \(M\)——必須乘以 \((M^{-1})^\top\)（逆轉置矩陣）。<br><br>
+  若 \(M\) 只包含旋轉（正交矩陣），則 \((M^{-1})^\top = (M^\top)^\top = M\)，
+  法向量和位置用同一個矩陣即可。<br>
+  若 \(M\) 包含<em>不均勻縮放</em>（\(s_x \neq s_y \neq s_z\)），
+  逆轉置與 \(M\) 不同，必須分開計算。
+</div>
+
+<table>
+  <tr><th>矩陣類型</th><th>逆矩陣</th><th>計算成本</th></tr>
+  <tr>
+    <td><strong>旋轉矩陣</strong>（正交，\(\det = 1\)）</td>
+    <td>\(R^{-1} = R^\top\)</td>
+    <td>\(O(n^2)\) 轉置</td>
+  </tr>
+  <tr>
+    <td><strong>縮放矩陣</strong>（對角）</td>
+    <td>\(S(s_x,s_y,s_z)^{-1} = S(1/s_x, 1/s_y, 1/s_z)\)</td>
+    <td>\(O(n)\) 取倒數</td>
+  </tr>
+  <tr>
+    <td><strong>一般可逆矩陣</strong></td>
+    <td>Gauss-Jordan 消去</td>
+    <td>\(O(n^3)\)</td>
+  </tr>
+  <tr>
+    <td><strong>奇異矩陣</strong>（\(\det = 0\)）</td>
+    <td>不可逆（空間被壓扁到更低維度）</td>
+    <td>—</td>
+  </tr>
+</table>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">7</div>C++ 實作</h2>
+
+<div class="code"><span class="cmt">// 3×3 矩陣，row-major 儲存：m[row][col]</span>
+<span class="kw">struct</span> <span class="ty">Mat3</span> {
+    <span class="kw">float</span> m[3][3];
+
+    <span class="cmt">// 預設建構：單位矩陣</span>
+    <span class="ty">Mat3</span>() {
+        <span class="kw">for</span> (<span class="kw">int</span> i = 0; i &lt; 3; i++)
+            <span class="kw">for</span> (<span class="kw">int</span> j = 0; j &lt; 3; j++)
+                m[i][j] = (i == j) ? 1.f : 0.f;
+    }
+
+    <span class="cmt">// 矩陣 × 矩陣：C_ij = Σ_k A_ik * B_kj</span>
+    <span class="ty">Mat3</span> <span class="kw">operator</span>*(<span class="kw">const</span> <span class="ty">Mat3</span>&amp; b) <span class="kw">const</span> {
+        <span class="ty">Mat3</span> r;
+        <span class="kw">for</span> (<span class="kw">int</span> i = 0; i &lt; 3; i++)
+            <span class="kw">for</span> (<span class="kw">int</span> j = 0; j &lt; 3; j++) {
+                r.m[i][j] = 0;
+                <span class="kw">for</span> (<span class="kw">int</span> k = 0; k &lt; 3; k++)
+                    r.m[i][j] += m[i][k] * b.m[k][j];
+            }
+        <span class="kw">return</span> r;
+    }
+
+    <span class="cmt">// 矩陣 × 向量（v 視為 3×1 行向量）</span>
+    <span class="ty">Vec3</span> <span class="kw">operator</span>*(<span class="ty">Vec3</span> v) <span class="kw">const</span> {
+        <span class="kw">return</span> {
+            m[0][0]*v.x + m[0][1]*v.y + m[0][2]*v.z,
+            m[1][0]*v.x + m[1][1]*v.y + m[1][2]*v.z,
+            m[2][0]*v.x + m[2][1]*v.y + m[2][2]*v.z
+        };
+    }
+
+    <span class="cmt">// 轉置（對正交矩陣即逆矩陣）</span>
+    <span class="ty">Mat3</span> <span class="fn">transpose</span>() <span class="kw">const</span> {
+        <span class="ty">Mat3</span> r;
+        <span class="kw">for</span> (<span class="kw">int</span> i = 0; i &lt; 3; i++)
+            <span class="kw">for</span> (<span class="kw">int</span> j = 0; j &lt; 3; j++)
+                r.m[i][j] = m[j][i];
+        <span class="kw">return</span> r;
+    }
+};
+
+<span class="cmt">// 縮放矩陣</span>
+<span class="ty">Mat3</span> <span class="fn">scale3</span>(<span class="kw">float</span> sx, <span class="kw">float</span> sy, <span class="kw">float</span> sz) {
+    <span class="ty">Mat3</span> m;
+    m.m[0][0] = sx;  m.m[1][1] = sy;  m.m[2][2] = sz;
+    <span class="kw">return</span> m;
+}
+
+<span class="cmt">// 繞 Z 軸旋轉（弧度，逆時針）</span>
+<span class="ty">Mat3</span> <span class="fn">rotateZ</span>(<span class="kw">float</span> theta) {
+    <span class="kw">float</span> c = std::cosf(theta), s = std::sinf(theta);
+    <span class="ty">Mat3</span> m;
+    m.m[0][0]=c;  m.m[0][1]=-s;
+    m.m[1][0]=s;  m.m[1][1]= c;
+    <span class="kw">return</span> m;
+}
+
+<span class="cmt">// 繞 Y 軸旋轉（注意符號：sin 在 [0][2] 而非 [2][0]）</span>
+<span class="ty">Mat3</span> <span class="fn">rotateY</span>(<span class="kw">float</span> theta) {
+    <span class="kw">float</span> c = std::cosf(theta), s = std::sinf(theta);
+    <span class="ty">Mat3</span> m;
+    m.m[0][0]= c;  m.m[0][2]= s;
+    m.m[2][0]=-s;  m.m[2][2]= c;
+    <span class="kw">return</span> m;
+}
+
+<span class="cmt">// 先旋轉再縮放（S·R）：rotateY 先作用，scale3 後作用</span>
+<span class="ty">Mat3</span> M = <span class="fn">scale3</span>(2, 1, 1) * <span class="fn">rotateY</span>(0.5f);</div>
+
+<div class="box box-gray">
+  <strong>Row-major vs Column-major：</strong>本章 Mat3 採 row-major 儲存（<code>m[row][col]</code>），
+  乘法寫作 <code>M * v</code>（矩陣在左、列向量在右）。<br>
+  OpenGL GLSL 使用 column-major，同樣的變換在 GLSL 中記憶體排列不同，但數學結果相同。
+  實務上切換時只需注意：column-major 矩陣的 C++ 記憶體排列等同於 row-major 的轉置。
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">8</div>小結</h2>
+
+<div class="two-col">
+  <div>
+    <div class="col-title" style="color:var(--green)">✓ 本章掌握的概念</div>
+    <ul style="font-size:0.88em;line-height:2.2;margin-left:16px;color:var(--text)">
+      <li>矩陣乘法：\(C_{ij} = \sum_k A_{ik} B_{kj}\)，不交換</li>
+      <li>線性變換：矩陣各欄 = 基向量的新位置</li>
+      <li>縮放矩陣：對角矩陣，逆為取倒數</li>
+      <li>旋轉矩陣：從旋轉後基向量位置推導</li>
+      <li>複合變換：\(SR\mathbf{v}\)，右邊先作用</li>
+      <li>正交矩陣：\(R^{-1} = R^\top\)</li>
+    </ul>
+  </div>
+  <div>
+    <div class="col-title" style="color:var(--blue)">→ 下一章預備</div>
+    <ul style="font-size:0.88em;line-height:2.2;margin-left:16px;color:var(--text)">
+      <li>平移不是線性變換——\(3\times3\) 矩陣做不到</li>
+      <li>齊次座標：升到 4D，讓平移也能寫成矩陣乘法</li>
+      <li>\(w=1\) 表示位置點，\(w=0\) 表示方向向量</li>
+      <li>\(4\times4\) 矩陣統一所有仿射變換（縮放＋旋轉＋平移）</li>
+    </ul>
+  </div>
+</div>
+
+<div class="next-ch">
+  <div>
+    <div class="next-label">PART 4 · CHAPTER 16</div>
+    <div class="next-title">齊次座標（Homogeneous Coordinates）</div>
+    <div class="next-desc">平移不是線性變換，\(3\times3\) 矩陣做不到。升到 4D 加上 \(w\) 分量之後，
+    所有仿射變換都能用一個 \(4\times4\) 矩陣統一處理。</div>
+  </div>
+  <a href="ch16_homogeneous.html" class="next-arrow">→</a>
+</div>
+
+</body>
+</html>

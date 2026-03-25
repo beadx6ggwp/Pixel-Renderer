@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Ch21 — MVP 管線串場</title>
+
+<!-- KaTeX -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$', right: '$', display: true},
+      {left: '\\(', right: '\\)', display: false}
+    ]
+  });"></script>
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:     #1e1e2e;
+  --bg1:    #181825;
+  --bg2:    #11111b;
+  --border: #313244;
+  --muted:  #6c7086;
+  --text:   #cdd6f4;
+  --blue:   #89b4fa;
+  --green:  #a6e3a1;
+  --yellow: #f9e2af;
+  --orange: #fab387;
+  --red:    #f38ba8;
+  --purple: #cba6f7;
+  --teal:   #94e2d5;
+}
+body {
+  background: var(--bg); color: var(--text);
+  font-family: 'Georgia', serif; font-size: 15px;
+  padding: 0 20px 80px; max-width: 900px; margin: 0 auto;
+  line-height: 1.9;
+}
+nav {
+  font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted);
+  padding: 14px 0; border-bottom: 1px solid var(--border);
+  margin-bottom: 36px; display: flex; align-items: center; gap: 10px;
+}
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--blue); }
+.nav-sep { color: var(--border); }
+.nav-cur { color: var(--text); }
+.nav-right { margin-left: auto; display: flex; gap: 16px; }
+.ch-header { margin-bottom: 40px; }
+.ch-label { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px; }
+.ch-title { color: var(--blue); font-size: 1.7em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub   { color: var(--muted); font-size: 0.88em; margin-bottom: 14px; }
+.ch-tags  { display: flex; gap: 6px; flex-wrap: wrap; }
+.ch-tag   { font-family: 'Consolas', monospace; font-size: 0.75em; padding: 2px 10px; border-radius: 99px; border: 1px solid var(--border); color: var(--muted); }
+h2 {
+  color: var(--purple); font-size: 1em;
+  font-family: 'Consolas', monospace; letter-spacing: 0.05em;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+  margin: 40px 0 20px; display: flex; align-items: center; gap: 12px;
+}
+h2 .n {
+  background: var(--purple); color: var(--bg2); font-weight: bold;
+  border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 0.85em;
+}
+h3 { color: var(--yellow); font-size: 0.95em; margin: 22px 0 10px; }
+p  { margin-bottom: 12px; }
+strong { color: var(--yellow); }
+em { color: var(--orange); font-style: normal; }
+.box { border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 0.9em; line-height: 1.85; }
+.box-blue   { background: var(--bg1); border-left: 4px solid var(--blue); }
+.box-green  { background: var(--bg1); border-left: 4px solid var(--green); }
+.box-yellow { background: var(--bg1); border-left: 4px solid var(--yellow); }
+.box-red    { background: var(--bg1); border-left: 4px solid var(--red); }
+.box-purple { background: var(--bg1); border-left: 4px solid var(--purple); }
+.katex-display {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 6px;
+  padding: 18px 24px; margin: 14px 0; overflow-x: auto;
+}
+.katex-display > .katex { color: var(--text); }
+.katex { color: var(--text); font-size: 1.0em; }
+.code {
+  background: #0d0d14; border: 1px solid var(--border); border-radius: 8px;
+  padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em;
+  line-height: 2.0; margin: 14px 0; white-space: pre;
+}
+.code .cmt { color: var(--muted); }
+.code .kw  { color: var(--purple); }
+.code .val { color: var(--orange); }
+.code .fn  { color: var(--blue); }
+.code .ty  { color: var(--teal); }
+.fig { margin: 24px auto; text-align: center; }
+.fig figcaption { color: var(--muted); font-size: 0.88em; margin-top: 10px; font-style: italic; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+.two-col > div { background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; }
+.col-title { font-family: 'Consolas', monospace; font-size: 0.85em; margin-bottom: 10px; color: var(--blue); }
+table { width: 100%; border-collapse: collapse; font-size: 0.87em; margin: 14px 0; }
+th { background: var(--bg1); color: var(--blue); padding: 9px 14px; text-align: left; border-bottom: 2px solid var(--border); font-family: 'Consolas', monospace; }
+td { padding: 8px 14px; border-bottom: 1px solid var(--bg1); vertical-align: top; }
+tr:hover td { background: var(--bg1); }
+.pipeline-row {
+  display: flex; align-items: stretch; gap: 0; margin: 24px 0;
+  overflow-x: auto;
+}
+.pipe-box {
+  flex: 1; min-width: 100px; background: var(--bg1); border: 1px solid var(--border);
+  border-radius: 6px; padding: 12px 10px; text-align: center; font-size: 0.82em;
+}
+.pipe-box .space-name { font-family: 'Consolas', monospace; font-size: 0.95em; margin-bottom: 4px; }
+.pipe-box .space-desc { color: var(--muted); font-size: 0.8em; line-height: 1.5; }
+.pipe-arrow {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 0 6px; color: var(--muted); font-size: 0.75em; text-align: center;
+  flex-shrink: 0; min-width: 55px;
+}
+.pipe-arrow .arrow-label { color: var(--muted); font-family: 'Consolas', monospace; font-size: 0.9em; }
+.pipe-arrow .arrow-sym { color: var(--border); font-size: 1.2em; }
+.next-ch { margin-top: 56px; padding: 20px 24px; background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 20px; }
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+.next-title { color: var(--blue); font-size: 1em; }
+.next-desc  { color: var(--muted); font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: var(--blue); font-size: 1.6em; text-decoration: none; }
+.next-arrow:hover { color: var(--purple); }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">軟體光柵化</a>
+  <span class="nav-sep">/</span>
+  <span>理論</span>
+  <span class="nav-sep">/</span>
+  <span class="nav-cur">Ch21</span>
+  <div class="nav-right">
+    <a href="ch20_viewport.html">← Ch20</a>
+    <a href="../index.html">首頁</a>
+  </div>
+</nav>
+
+<div class="ch-header">
+  <div class="ch-label">PART 5 · CHAPTER 21</div>
+  <div class="ch-title">MVP 管線串場</div>
+  <div class="ch-sub">Object → World → Camera → Clip → NDC → Screen——六個座標空間、每次變換的幾何含義與 vertex shader 的完整流程</div>
+  <div class="ch-tags">
+    <span class="ch-tag">MVP</span>
+    <span class="ch-tag">座標空間</span>
+    <span class="ch-tag">vertex shader</span>
+    <span class="ch-tag">管線</span>
+    <span class="ch-tag">透視除法</span>
+  </div>
+</div>
+
+<p>
+  Ch15–Ch20 分別推導了各個矩陣的數學基礎：
+  縮放與旋轉（Ch15）、齊次座標（Ch16）、Model 矩陣（Ch17）、透視投影（Ch18）、View 矩陣（Ch19）、視口變換（Ch20）。
+  本章把這些積木拼起來，看清楚一個頂點從「美術師建模時的座標」到「螢幕上的像素」走了哪幾步。
+</p>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">1</div>六個座標空間</h2>
+
+<div class="pipeline-row">
+  <div class="pipe-box">
+    <div class="space-name" style="color:#cba6f7">Object Space</div>
+    <div class="space-desc">頂點在模型<br>自己的座標系<br>原點在模型中心</div>
+  </div>
+  <div class="pipe-arrow">
+    <div class="arrow-label">M</div>
+    <div class="arrow-sym">→</div>
+    <div class="arrow-label">Model</div>
+  </div>
+  <div class="pipe-box">
+    <div class="space-name" style="color:#89b4fa">World Space</div>
+    <div class="space-desc">所有物件<br>共用同一個<br>世界座標系</div>
+  </div>
+  <div class="pipe-arrow">
+    <div class="arrow-label">V</div>
+    <div class="arrow-sym">→</div>
+    <div class="arrow-label">View</div>
+  </div>
+  <div class="pipe-box">
+    <div class="space-name" style="color:#a6e3a1">Camera Space</div>
+    <div class="space-desc">相機位於原點<br>看向 −Z<br>Y 朝上</div>
+  </div>
+  <div class="pipe-arrow">
+    <div class="arrow-label">P</div>
+    <div class="arrow-sym">→</div>
+    <div class="arrow-label">Projection</div>
+  </div>
+  <div class="pipe-box">
+    <div class="space-name" style="color:#f9e2af">Clip Space</div>
+    <div class="space-desc">齊次座標<br>(x,y,z,w)<br>frustum 裁剪</div>
+  </div>
+  <div class="pipe-arrow">
+    <div class="arrow-label">÷w</div>
+    <div class="arrow-sym">→</div>
+    <div class="arrow-label">透視除法</div>
+  </div>
+  <div class="pipe-box">
+    <div class="space-name" style="color:#fab387">NDC</div>
+    <div class="space-desc">[-1,1]³<br>與解析度<br>無關</div>
+  </div>
+  <div class="pipe-arrow">
+    <div class="arrow-label">Vp</div>
+    <div class="arrow-sym">→</div>
+    <div class="arrow-label">Viewport</div>
+  </div>
+  <div class="pipe-box">
+    <div class="space-name" style="color:#94e2d5">Screen</div>
+    <div class="space-desc">像素座標<br>[0,W]×[0,H]<br>z → depth buf</div>
+  </div>
+</div>
+
+<table>
+  <thead><tr><th>空間</th><th>矩陣</th><th>這一步在做什麼</th><th>章節</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>Object → World</td>
+      <td><strong>M</strong>（Model）</td>
+      <td>縮放、旋轉、平移模型，放到世界中</td>
+      <td>Ch17</td>
+    </tr>
+    <tr>
+      <td>World → Camera</td>
+      <td><strong>V</strong>（View）</td>
+      <td>把世界轉到相機視角，相機在原點看 −Z</td>
+      <td>Ch19</td>
+    </tr>
+    <tr>
+      <td>Camera → Clip</td>
+      <td><strong>P</strong>（Projection）</td>
+      <td>透視壓縮，把 frustum 壓進 \([-1,1]^3\)，w 保存深度</td>
+      <td>Ch18</td>
+    </tr>
+    <tr>
+      <td>Clip → NDC</td>
+      <td>÷w（透視除法）</td>
+      <td>除以 w 實現透視收縮；GPU 自動執行</td>
+      <td>Ch18</td>
+    </tr>
+    <tr>
+      <td>NDC → Screen</td>
+      <td><strong>Vp</strong>（Viewport）</td>
+      <td>對應到像素座標，y 軸翻轉，z 存入深度緩衝</td>
+      <td>Ch20</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">2</div>完整矩陣公式</h2>
+
+<p>
+  從 Object Space 到 Clip Space，三個矩陣<strong>右乘</strong>頂點（列向量乘在右邊）：
+</p>
+
+$\mathbf{v}_{\text{clip}} = P \cdot V \cdot M \cdot \mathbf{v}_{\text{object}}$
+
+<p>
+  讀法是<strong>從右往左</strong>：先 M（物件→世界），再 V（世界→相機），再 P（相機→Clip）。
+  矩陣本身可以預先合併成 MVP：
+</p>
+
+$\text{MVP} = P \cdot V \cdot M$
+
+<div class="box box-yellow">
+  <strong>為什麼從右往左？</strong>
+  列向量在右邊：\(M \cdot \mathbf{v}\) 先作用 M，\(V \cdot (M \mathbf{v})\) 再作用 V。
+  右乘的順序決定了「先做誰」。
+  矩陣乘法不可交換，\(V \cdot M \neq M \cdot V\)，順序非常重要。
+</div>
+
+<p>
+  透視除法（÷w）之後進入 NDC，視口變換不是一個完整的「齊次矩陣乘法」（因為 w=1 且不需要）；
+  在軟體光柵化中通常直接以公式計算：
+</p>
+
+$x_s = \frac{x_{\text{ndc}} + 1}{2} W, \quad y_s = \frac{1 - y_{\text{ndc}}}{2} H, \quad z_s = \frac{z_{\text{ndc}} + 1}{2}$
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">3</div>逐空間幾何含義</h2>
+
+<h3>Object Space → World Space（Model 矩陣 M）</h3>
+
+<p>
+  M = T × R × S（先縮放、再旋轉、再平移，Ch17）。
+  美術師在 Blender 建模時以模型中心為原點——M 把這些頂點「擺放」到世界中的正確位置、朝向、大小。
+  若場景有 100 個相同的樹，每棵樹有不同的 M，但共用同一套頂點資料。
+</p>
+
+<h3>World Space → Camera Space（View 矩陣 V）</h3>
+
+<p>
+  V = R_view × T（先平移讓 eye 到原點、再旋轉讓相機軸對齊 xyz，Ch19）。
+  所有頂點在相機視角下重新描述：「這個點在我正前方幾公尺、右邊幾公尺、上方幾公尺？」
+  之後的計算（投影、光照）都假設相機在原點看向 −Z，相當簡單。
+</p>
+
+<h3>Camera Space → Clip Space（Projection 矩陣 P）</h3>
+
+<p>
+  P（Ch18）把 frustum（四稜錐台）壓縮成 \([-1,1]^3\) 的立方體。
+  關鍵：P 不真的除以 \(z\)——它把 \(-z\) 存進第四分量 \(w\)，
+  讓後面的硬體自動執行 ÷w（透視除法）。
+  這樣 GPU 可以在裁剪（clip against NDC cube）之前不破壞齊次座標。
+</p>
+
+<h3>Clip Space → NDC（透視除法 ÷w）</h3>
+
+<p>
+  每個頂點的 \((x, y, z)\) 除以 \(w\)，得到 NDC 座標。
+  這一步「真正實現」透視收縮：距離越遠的點，\(|w|\) 越大，\(x/w\) 和 \(y/w\) 越小，
+  投影到螢幕上的位置越靠近中心（近大遠小）。
+</p>
+
+<h3>NDC → Screen（視口變換 Vp）</h3>
+
+<p>
+  把 \([-1,1]^2\) 對應到像素座標 \([0,W] \times [0,H]\)，含 y 翻轉（Ch20）。
+  z 重映射到 \([0,1]\) 寫入深度緩衝，供 Z-buffer（Ch12）使用。
+</p>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">4</div>GLSL vertex shader 對照</h2>
+
+<div class="code"><span class="cmt">// OpenGL vertex shader（標準 MVP 寫法）</span>
+<span class="kw">layout</span>(location = <span class="val">0</span>) <span class="kw">in</span> <span class="ty">vec3</span> aPosition;
+
+<span class="kw">uniform</span> <span class="ty">mat4</span> uModel;       <span class="cmt">// M：Ch17 TRS 矩陣</span>
+<span class="kw">uniform</span> <span class="ty">mat4</span> uView;        <span class="cmt">// V：Ch19 lookAt()</span>
+<span class="kw">uniform</span> <span class="ty">mat4</span> uProjection;  <span class="cmt">// P：Ch18 perspective()</span>
+
+<span class="kw">void</span> <span class="fn">main</span>() {
+    gl_Position = uProjection * uView * uModel * <span class="ty">vec4</span>(aPosition, <span class="val">1.0</span>);
+    <span class="cmt">// ↑ 這一行把頂點從 Object Space 送到 Clip Space</span>
+    <span class="cmt">// GPU 之後自動做透視除法（÷w）進入 NDC</span>
+    <span class="cmt">// 再由硬體的視口變換映射到螢幕像素</span>
+}</div>
+
+<p>
+  在軟體光柵化管線中，這三步都要自己實作：
+</p>
+
+<div class="code"><span class="cmt">// 軟體光柵化：完整頂點處理</span>
+<span class="ty">Mat4</span> MVP = projection * view * model;
+
+<span class="kw">for</span> (<span class="ty">Triangle</span>&amp; tri : scene) {
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="val">0</span>; i &lt; <span class="val">3</span>; ++i) {
+        <span class="cmt">// 1. Object → Clip Space</span>
+        <span class="ty">Vec4</span> clip = MVP * <span class="ty">Vec4</span>(tri.v[i].pos, <span class="val">1.0f</span>);
+
+        <span class="cmt">// 2. 透視除法 → NDC</span>
+        <span class="ty">float</span> inv_w = <span class="val">1.0f</span> / clip.w;
+        <span class="ty">Vec3</span>  ndc   = { clip.x * inv_w, clip.y * inv_w, clip.z * inv_w };
+
+        <span class="cmt">// 3. 視口變換 → 螢幕像素座標</span>
+        tri.v[i].sx = (<span class="val">1.0f</span> + ndc.x) * <span class="val">0.5f</span> * width;
+        tri.v[i].sy = (<span class="val">1.0f</span> - ndc.y) * <span class="val">0.5f</span> * height;  <span class="cmt">// y 翻轉</span>
+        tri.v[i].sz = (<span class="val">1.0f</span> + ndc.z) * <span class="val">0.5f</span>;
+    }
+    <span class="cmt">// 4. 光柵化（Ch09–Ch12）</span>
+    <span class="fn">DrawTriangle</span>(framebuffer, zbuffer, tri);
+}</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">5</div>常見疑問彙整</h2>
+
+<table>
+  <thead><tr><th>疑問</th><th>解答</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>為什麼要分三個矩陣，不直接合成一個？</td>
+      <td>分開的好處：V 可以每幀更新（相機移動），M 可以每物件不同，P 只要視野改變才更新。
+          分開儲存讓你在 shader 中靈活取用各階段的座標（例如光照計算需要 World Space 座標）。</td>
+    </tr>
+    <tr>
+      <td>\(w\) 是什麼？為什麼需要它？</td>
+      <td>齊次座標的第四分量（Ch16）。投影矩陣把 \(-z_{\text{cam}}\) 存入 \(w\)；
+          透視除法後 \(x/w\) 和 \(y/w\) 產生透視收縮效果。無 \(w\) 就無法在矩陣中表達平移和透視。</td>
+    </tr>
+    <tr>
+      <td>裁剪（Clipping）在哪一步？</td>
+      <td>在 Clip Space（÷w 之前）進行，此時可以對 \(-w \leq x \leq w\) 等條件做數值判斷，
+          避免在 NDC 中除以極小 \(w\) 造成數值爆炸。軟體光柵化通常用 guard-band 或簡化裁剪。</td>
+    </tr>
+    <tr>
+      <td>法向量（Normal）也要乘 MVP 嗎？</td>
+      <td>不能直接乘 MVP——若模型有非均勻縮放，法向量需乘 <strong>Model 矩陣的逆轉置</strong> \((M^{-T})\) 才能保持垂直關係。</td>
+    </tr>
+    <tr>
+      <td>為什麼是 \(P \cdot V \cdot M \cdot \mathbf{v}\) 而不是 \(M \cdot V \cdot P \cdot \mathbf{v}\)？</td>
+      <td>矩陣乘法從右到左作用：\(\mathbf{v}\) 先被 M 變換，結果再被 V 變換，最後被 P 變換。
+          如果寫成 \(M \cdot V \cdot P \cdot \mathbf{v}\)，順序就反過來了。</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">6</div>一個數值範例走完整管線</h2>
+
+<p>
+  設定簡單場景：
+</p>
+
+<div class="box box-gray">
+  <ul style="margin-left:18px;line-height:2.0">
+    <li>頂點（Object Space）：\(\mathbf{v} = (1, 0, 0)\)</li>
+    <li>Model：單位矩陣（模型在世界原點，無縮放旋轉）</li>
+    <li>相機：eye = (0, 0, 5)，看向原點，world_up = (0, 1, 0)</li>
+    <li>投影：fov = 90°，aspect = 1，near = 1，far = 10</li>
+    <li>螢幕：800×800</li>
+  </ul>
+</div>
+
+<h3>Step 1：Object → World（M = I）</h3>
+
+$\mathbf{v}_{\text{world}} = I \cdot (1, 0, 0, 1)^T = (1, 0, 0, 1)^T$
+
+<h3>Step 2：World → Camera（View）</h3>
+
+<p>
+  eye = (0,0,5)，center = (0,0,0)，forward \(\mathbf{f}\) = normalize(eye−center) = (0,0,1)，
+  right \(\mathbf{r}\) = (1,0,0)，up \(\mathbf{u}\) = (0,1,0)。
+</p>
+
+$V = \begin{bmatrix} 1&0&0&0 \\ 0&1&0&0 \\ 0&0&1&-5 \\ 0&0&0&1 \end{bmatrix}
+\quad \Rightarrow \quad
+\mathbf{v}_{\text{cam}} = (1, 0, -5, 1)^T$
+
+<p>
+  頂點在相機空間：x=1（右邊 1 單位），z=−5（前方 5 單位）。
+</p>
+
+<h3>Step 3：Camera → Clip（Projection）</h3>
+
+<p>
+  fov=90°，\(\tan(45°)=1\)，near=1，far=10，aspect=1。
+  \(t = n \tan(\text{fov}/2) = 1\)，因此 \(P_{00} = n/t = 1\)，\(P_{11} = n/t = 1\)，\(A = -(f+n)/(f-n) = -11/9\)，\(B = -2fn/(f-n) = -20/9\)。
+</p>
+
+$\mathbf{v}_{\text{clip}} = P \cdot (1, 0, -5, 1)^T$
+
+$= \begin{bmatrix}1&0&0&0\\0&1&0&0\\0&0&-\frac{11}{9}&-\frac{20}{9}\\0&0&-1&0\end{bmatrix}
+\begin{bmatrix}1\\0\\-5\\1\end{bmatrix}
+= \begin{bmatrix}1\\0\\\frac{55}{9}-\frac{20}{9}\\5\end{bmatrix}
+= \begin{bmatrix}1\\0\\\frac{35}{9}\\5\end{bmatrix}$
+
+<h3>Step 4：Clip → NDC（÷w=5）</h3>
+
+$x_{\text{ndc}} = \frac{1}{5} = 0.2,\quad y_{\text{ndc}} = 0,\quad z_{\text{ndc}} = \frac{35}{45} \approx 0.778$
+
+<h3>Step 5：NDC → Screen（800×800）</h3>
+
+$x_s = (0.2 + 1) / 2 \times 800 = 0.6 \times 800 = 480 \text{ px}$
+$y_s = (1 - 0) / 2 \times 800 = 400 \text{ px}$
+$z_s = (0.778 + 1) / 2 \approx 0.889$
+
+<p>
+  頂點最終落在螢幕像素 \((480, 400)\)，在畫面中心稍微偏右——符合直覺：
+  頂點在 x=1、相機在 z=5 看向原點，透視投影後向右偏 \(1/5 = 20\%\) 的半寬。
+</p>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="box box-purple">
+  <strong>Part 5 總結——從矩陣到管線</strong>
+  <ul style="margin-top:8px;margin-left:16px;line-height:2.0;font-size:0.9em">
+    <li><strong>Ch15</strong>：矩陣乘法是線性變換的語言；縮放、旋轉皆可矩陣化</li>
+    <li><strong>Ch16</strong>：齊次座標讓平移也能用 4×4 矩陣統一表示</li>
+    <li><strong>Ch17</strong>：Model 矩陣 M = T × R × S 把物件放進世界空間</li>
+    <li><strong>Ch18</strong>：透視投影矩陣把 frustum 壓成 NDC 立方體；w 保存深度以供透視除法</li>
+    <li><strong>Ch19</strong>：View 矩陣用 Gram-Schmidt 建構相機座標系，旋轉＋平移世界到相機視角</li>
+    <li><strong>Ch20</strong>：視口矩陣把 NDC 映射到像素座標，y 軸翻轉、z 送深度緩衝</li>
+    <li><strong>Ch21（本章）</strong>：完整管線 \(P \cdot V \cdot M \cdot \mathbf{v}\) → ÷w → viewport → 光柵化</li>
+  </ul>
+</div>
+
+<div class="next-ch">
+  <div>
+    <div class="next-label">PART 6</div>
+    <div class="next-title">資源載入</div>
+    <div class="next-desc">TGA 格式解析、OBJ 模型載入——完全自製 I/O，不依賴第三方庫，讓光柵化管線能讀取真實的美術資源。</div>
+  </div>
+  <a href="../index.html" class="next-arrow">→</a>
+</div>
+
+</body>
+</html>

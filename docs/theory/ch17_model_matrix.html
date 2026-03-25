@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Ch17 — Model 矩陣</title>
+
+<!-- KaTeX -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$', right: '$', display: true},
+      {left: '\\(', right: '\\)', display: false}
+    ]
+  });"></script>
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:     #1e1e2e;
+  --bg1:    #181825;
+  --bg2:    #11111b;
+  --border: #313244;
+  --muted:  #6c7086;
+  --text:   #cdd6f4;
+  --blue:   #89b4fa;
+  --green:  #a6e3a1;
+  --yellow: #f9e2af;
+  --orange: #fab387;
+  --red:    #f38ba8;
+  --purple: #cba6f7;
+  --teal:   #94e2d5;
+}
+body {
+  background: var(--bg); color: var(--text);
+  font-family: 'Georgia', serif; font-size: 15px;
+  padding: 0 20px 80px; max-width: 900px; margin: 0 auto;
+  line-height: 1.9;
+}
+nav {
+  font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted);
+  padding: 14px 0; border-bottom: 1px solid var(--border);
+  margin-bottom: 36px; display: flex; align-items: center; gap: 10px;
+}
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--blue); }
+.nav-sep { color: var(--border); }
+.nav-cur { color: var(--text); }
+.nav-right { margin-left: auto; display: flex; gap: 16px; }
+.ch-header { margin-bottom: 40px; }
+.ch-label { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px; }
+.ch-title { color: var(--blue); font-size: 1.7em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub   { color: var(--muted); font-size: 0.88em; margin-bottom: 14px; }
+.ch-tags  { display: flex; gap: 6px; flex-wrap: wrap; }
+.ch-tag   { font-family: 'Consolas', monospace; font-size: 0.75em; padding: 2px 10px; border-radius: 99px; border: 1px solid var(--border); color: var(--muted); }
+h2 {
+  color: var(--purple); font-size: 1em;
+  font-family: 'Consolas', monospace; letter-spacing: 0.05em;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+  margin: 40px 0 20px; display: flex; align-items: center; gap: 12px;
+}
+h2 .n {
+  background: var(--purple); color: var(--bg2); font-weight: bold;
+  border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 0.85em;
+}
+h3 { color: var(--yellow); font-size: 0.95em; margin: 22px 0 10px; }
+p  { margin-bottom: 12px; }
+strong { color: var(--yellow); }
+em { color: var(--orange); font-style: normal; }
+.box { border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 0.9em; line-height: 1.85; }
+.box-blue   { background: var(--bg1); border-left: 4px solid var(--blue); }
+.box-green  { background: var(--bg1); border-left: 4px solid var(--green); }
+.box-yellow { background: var(--bg1); border-left: 4px solid var(--yellow); }
+.box-red    { background: var(--bg1); border-left: 4px solid var(--red); }
+.box-purple { background: var(--bg1); border-left: 4px solid var(--purple); }
+.box-gray   { background: var(--bg1); border: 1px solid var(--border); border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 0.9em; }
+.katex-display {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 6px;
+  padding: 18px 24px; margin: 14px 0; overflow-x: auto;
+}
+.katex-display > .katex { color: var(--text); }
+.katex { color: var(--text); font-size: 1.0em; }
+.code {
+  background: #0d0d14; border: 1px solid var(--border); border-radius: 8px;
+  padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em;
+  line-height: 2.0; margin: 14px 0; white-space: pre;
+}
+.code .cmt { color: var(--muted); }
+.code .kw  { color: var(--purple); }
+.code .val { color: var(--orange); }
+.code .fn  { color: var(--blue); }
+.code .ty  { color: var(--teal); }
+.fig { margin: 24px auto; text-align: center; }
+.fig figcaption { color: var(--muted); font-size: 0.88em; margin-top: 10px; font-style: italic; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+.two-col > div { background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; }
+.col-title { font-family: 'Consolas', monospace; font-size: 0.85em; margin-bottom: 10px; color: var(--blue); }
+table { width: 100%; border-collapse: collapse; font-size: 0.87em; margin: 14px 0; }
+th { background: var(--bg1); color: var(--blue); padding: 9px 14px; text-align: left; border-bottom: 2px solid var(--border); font-family: 'Consolas', monospace; }
+td { padding: 8px 14px; border-bottom: 1px solid var(--bg1); vertical-align: top; }
+tr:hover td { background: var(--bg1); }
+.next-ch { margin-top: 56px; padding: 20px 24px; background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 20px; }
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+.next-title { color: var(--blue); font-size: 1em; }
+.next-desc  { color: var(--muted); font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: var(--blue); font-size: 1.6em; text-decoration: none; }
+.next-arrow:hover { color: var(--purple); }
+/* step diagram */
+.steps { display: flex; align-items: stretch; gap: 0; margin: 24px 0; }
+.step { flex: 1; background: var(--bg1); border: 1px solid var(--border); padding: 14px 16px; text-align: center; }
+.step:first-child { border-radius: 8px 0 0 8px; }
+.step:last-child  { border-radius: 0 8px 8px 0; }
+.step-num { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+.step-op  { font-size: 1.15em; font-weight: bold; margin-bottom: 4px; }
+.step-desc{ font-size: 0.8em; color: var(--muted); }
+.step-arr { display: flex; align-items: center; color: var(--border); font-size: 1.4em; padding: 0 4px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">軟體光柵化</a>
+  <span class="nav-sep">/</span>
+  <span>理論</span>
+  <span class="nav-sep">/</span>
+  <span class="nav-cur">Ch17</span>
+  <div class="nav-right">
+    <a href="ch16_homogeneous.html">← Ch16</a>
+    <a href="ch18_perspective.html">Ch18 →</a>
+  </div>
+</nav>
+
+<div class="ch-header">
+  <div class="ch-label">PART 4 · CHAPTER 17</div>
+  <div class="ch-title">Model 矩陣（TRS 組合）</div>
+  <div class="ch-sub">把縮放、旋轉、平移組合成一個矩陣，把物件從物件空間送進世界空間</div>
+  <div class="ch-tags">
+    <span class="ch-tag">Model 矩陣</span>
+    <span class="ch-tag">TRS 組合</span>
+    <span class="ch-tag">物件→世界</span>
+    <span class="ch-tag">非可換性</span>
+    <span class="ch-tag">法向量矩陣</span>
+  </div>
+</div>
+
+<p>
+  Ch16 說明了 T、R、S 都可以寫成 \(4\times4\) 矩陣。
+  現在要把它們<strong>組合</strong>成 <em>Model 矩陣 M</em>，
+  完成渲染管線的第一步：把物件從自身的座標系放進世界。
+</p>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">1</div>物件空間與世界空間</h2>
+
+<p>
+  建模時，藝術家在以<strong>物件原點為中心</strong>的座標系裡工作——這叫<em>物件空間（Object Space）</em>。
+  一個球的頂點可能都在原點附近，X 範圍 \([-1,1]\)。
+</p>
+
+<p>
+  場景裡的多個物件需要放進同一個<strong>世界座標系（World Space）</strong>。
+  每個物件有自己的位置、朝向、大小：
+</p>
+
+<table>
+  <tr>
+    <th>物件</th>
+    <th>縮放</th>
+    <th>旋轉</th>
+    <th>平移（世界位置）</th>
+  </tr>
+  <tr>
+    <td>角色 A</td>
+    <td>均勻 ×2</td>
+    <td>Y 軸 45°</td>
+    <td>(10, 0, 5)</td>
+  </tr>
+  <tr>
+    <td>角色 B</td>
+    <td>均勻 ×1</td>
+    <td>Y 軸 −90°</td>
+    <td>(−3, 0, 2)</td>
+  </tr>
+  <tr>
+    <td>地板</td>
+    <td>(100, 1, 100)</td>
+    <td>無</td>
+    <td>(0, −1, 0)</td>
+  </tr>
+</table>
+
+<p>
+  每個物件有自己的 Model 矩陣 \(M\)，頂點乘上 \(M\) 就從物件空間移到世界空間：
+</p>
+
+$\mathbf{v}_{\text{world}} = M \cdot \mathbf{v}_{\text{object}}$
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">2</div>TRS 標準順序</h2>
+
+<p>
+  Model 矩陣通常由三個基本變換組合而成，標準順序稱為 <strong>TRS</strong>：
+</p>
+
+$M = T \cdot R \cdot S$
+
+<div class="steps">
+  <div class="step">
+    <div class="step-num">第 1 步（最先執行）</div>
+    <div class="step-op" style="color:var(--teal)">S</div>
+    <div class="step-op" style="font-size:0.9em">縮放</div>
+    <div class="step-desc">調整物件大小</div>
+  </div>
+  <div class="step-arr">→</div>
+  <div class="step">
+    <div class="step-num">第 2 步</div>
+    <div class="step-op" style="color:var(--green)">R</div>
+    <div class="step-op" style="font-size:0.9em">旋轉</div>
+    <div class="step-desc">繞物件自身軸旋轉</div>
+  </div>
+  <div class="step-arr">→</div>
+  <div class="step">
+    <div class="step-num">第 3 步（最後執行）</div>
+    <div class="step-op" style="color:var(--orange)">T</div>
+    <div class="step-op" style="font-size:0.9em">平移</div>
+    <div class="step-desc">移到世界位置</div>
+  </div>
+</div>
+
+<div class="box box-blue">
+  <strong>矩陣乘法是從右往左執行的。</strong><br>
+  \(M\mathbf{v} = (T \cdot R \cdot S)\,\mathbf{v} = T\bigl(R\bigl(S\,\mathbf{v}\bigr)\bigr)\)<br>
+  寫成 \(M = T \cdot R \cdot S\)，執行順序仍然是先 S，再 R，最後 T。
+</div>
+
+<h3>為什麼是這個順序？</h3>
+
+<p>
+  直觀理由：物件要先「整形」再「定位」。
+  旋轉應該繞<em>物件自身的軸</em>旋轉，而不是世界原點。
+  如果先平移再旋轉，物件會繞世界原點旋轉——通常不是想要的。
+</p>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">3</div>順序不可交換：具體反例</h2>
+
+<p>
+  設平移 \(t_x = 3\)，繞 Z 軸旋轉 \(90°\)，對頂點 \(\mathbf{p} = (1, 0, 0, 1)^T\) 計算兩種順序：
+</p>
+
+<div class="two-col">
+  <div>
+    <div class="col-title" style="color:var(--green)">✓ 正確：先 S·R，後 T（TRS 順序）</div>
+    <p style="font-size:0.88em">先旋轉，讓物件朝向正確方向：</p>
+    $R_{90°}\begin{pmatrix}1\\0\\0\\1\end{pmatrix} = \begin{pmatrix}0\\1\\0\\1\end{pmatrix}$
+    <p style="font-size:0.88em;margin-top:8px">再平移到世界位置：</p>
+    $T\begin{pmatrix}0\\1\\0\\1\end{pmatrix} = \begin{pmatrix}3\\1\\0\\1\end{pmatrix}$
+    <p style="font-size:0.88em;margin-top:8px;color:var(--green)">結果：(3, 1, 0)——物件在 (3,0,0) 並且已旋轉</p>
+  </div>
+  <div>
+    <div class="col-title" style="color:var(--red)">✗ 錯誤：先 T，後 R（反序）</div>
+    <p style="font-size:0.88em">先平移：</p>
+    $T\begin{pmatrix}1\\0\\0\\1\end{pmatrix} = \begin{pmatrix}4\\0\\0\\1\end{pmatrix}$
+    <p style="font-size:0.88em;margin-top:8px">再旋轉——但這是繞世界原點旋轉：</p>
+    $R_{90°}\begin{pmatrix}4\\0\\0\\1\end{pmatrix} = \begin{pmatrix}0\\4\\0\\1\end{pmatrix}$
+    <p style="font-size:0.88em;margin-top:8px;color:var(--red)">結果：(0, 4, 0)——物件跑到完全不同的位置</p>
+  </div>
+</div>
+
+<div class="box box-yellow">
+  <strong>結論：矩陣乘法不可交換，\(T \cdot R \neq R \cdot T\)。</strong><br>
+  先旋轉後平移（TRS 順序）：旋轉繞物件自身原點，平移才把它送到世界位置。<br>
+  先平移後旋轉：旋轉中心變成世界原點，物件會「公轉」而非「自轉」。
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">4</div>完整 Model 矩陣展開</h2>
+
+<p>
+  把 \(T(t_x,t_y,t_z)\)、\(R_y(\theta)\)、\(S(s_x,s_y,s_z)\) 相乘得到一個 \(4\times4\) 矩陣：
+</p>
+
+$M = T \cdot R_y(\theta) \cdot S = \begin{pmatrix} s_x\cos\theta & 0 & s_z\sin\theta & t_x \\ 0 & s_y & 0 & t_y \\ -s_x\sin\theta & 0 & s_z\cos\theta & t_z \\ 0 & 0 & 0 & 1 \end{pmatrix}$
+
+<p>
+  幾個觀察：
+</p>
+<ul style="margin-left:16px;line-height:2.0;font-size:0.9em">
+  <li>左上 \(3\times3\) 子矩陣包含了縮放與旋轉的資訊（<em>線性部分</em>）</li>
+  <li>最右欄的前三行是平移向量 \((t_x,t_y,t_z)\)（<em>仿射部分</em>）</li>
+  <li>最下列永遠是 \((0,0,0,1)\)（齊次座標的不變式）</li>
+</ul>
+
+<h3>在程式中建立 Model 矩陣</h3>
+
+<div class="code"><span class="cmt">// 建立各分量</span>
+<span class="ty">mat4</span> S = <span class="fn">scale</span>(<span class="val">sx</span>, <span class="val">sy</span>, <span class="val">sz</span>);
+<span class="ty">mat4</span> R = <span class="fn">rotate_y</span>(<span class="val">theta</span>);
+<span class="ty">mat4</span> T = <span class="fn">translate</span>(<span class="val">tx</span>, <span class="val">ty</span>, <span class="val">tz</span>);
+
+<span class="cmt">// 組合（TRS 順序：從左到右寫，執行時從右往左）</span>
+<span class="ty">mat4</span> M = T * R * S;
+
+<span class="cmt">// 送進 shader（uniform 變數）</span>
+<span class="fn">glUniformMatrix4fv</span>(model_loc, <span class="val">1</span>, GL_FALSE, &M[<span class="val">0</span>][<span class="val">0</span>]);</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">5</div>法向量的特殊情況</h2>
+
+<p>
+  頂點乘上 Model 矩陣 \(M\) 就能正確變換位置。
+  但<strong>法向量不能直接乘 \(M\)</strong>——非均勻縮放（sx≠sy）會使法向量不再垂直於表面。
+</p>
+
+<div class="fig">
+  <svg width="480" height="180" viewBox="0 0 480 180">
+    <!-- Before: uniform scaling -->
+    <g transform="translate(40,20)">
+      <text x="60" y="12" fill="#6c7086" font-size="10" font-family="Consolas" text-anchor="middle">縮放前</text>
+      <!-- surface line -->
+      <line x1="10" y1="100" x2="110" y2="100" stroke="#a6e3a1" stroke-width="2"/>
+      <!-- normal -->
+      <line x1="60" y1="100" x2="60" y2="40" stroke="#89b4fa" stroke-width="2"/>
+      <polygon points="60,35 55,48 65,48" fill="#89b4fa"/>
+      <text x="66" y="72" fill="#89b4fa" font-size="10" font-family="Consolas">N</text>
+      <!-- right angle mark -->
+      <polyline points="68,100 68,92 60,92" fill="none" stroke="#6c7086" stroke-width="1"/>
+    </g>
+    <!-- Arrow -->
+    <text x="158" y="100" fill="#6c7086" font-size="20" text-anchor="middle">→</text>
+    <text x="158" y="118" fill="#6c7086" font-size="9" font-family="Consolas" text-anchor="middle">×M（非均勻縮放）</text>
+    <!-- After wrong: non-uniform scale breaks normal -->
+    <g transform="translate(175,20)">
+      <text x="70" y="12" fill="#6c7086" font-size="10" font-family="Consolas" text-anchor="middle">直接乘 M（錯誤）</text>
+      <!-- surface line (stretched in X) -->
+      <line x1="10" y1="100" x2="130" y2="100" stroke="#a6e3a1" stroke-width="2"/>
+      <!-- wrong normal (tilted by non-uniform scale) -->
+      <line x1="70" y1="100" x2="100" y2="42" stroke="#f38ba8" stroke-width="2" stroke-dasharray="4,3"/>
+      <polygon points="102,37 93,47 105,52" fill="#f38ba8"/>
+      <text x="108" y="60" fill="#f38ba8" font-size="10" font-family="Consolas">M·N</text>
+      <text x="60" y="125" fill="#f38ba8" font-size="9" font-family="Consolas" text-anchor="middle">法向量不再垂直！</text>
+    </g>
+    <!-- Arrow 2 -->
+    <text x="322" y="100" fill="#6c7086" font-size="20" text-anchor="middle">→</text>
+    <text x="322" y="118" fill="#6c7086" font-size="9" font-family="Consolas" text-anchor="middle">×(M⁻¹)ᵀ（正確）</text>
+    <!-- After correct: using normal matrix -->
+    <g transform="translate(342,20)">
+      <text x="60" y="12" fill="#6c7086" font-size="10" font-family="Consolas" text-anchor="middle">乘 (M⁻¹)ᵀ（正確）</text>
+      <!-- surface line (stretched in X) -->
+      <line x1="10" y1="100" x2="110" y2="100" stroke="#a6e3a1" stroke-width="2"/>
+      <!-- correct normal -->
+      <line x1="60" y1="100" x2="60" y2="40" stroke="#a6e3a1" stroke-width="2"/>
+      <polygon points="60,35 55,48 65,48" fill="#a6e3a1"/>
+      <text x="66" y="72" fill="#a6e3a1" font-size="10" font-family="Consolas">N'</text>
+      <polyline points="68,100 68,92 60,92" fill="none" stroke="#6c7086" stroke-width="1"/>
+    </g>
+  </svg>
+  <figcaption>非均勻縮放讓法向量傾斜（紅色），需要用 Normal Matrix 修正（綠色）</figcaption>
+</div>
+
+<h3>法向量矩陣（Normal Matrix）</h3>
+
+<p>
+  正確的法向量變換矩陣是 \(M\) 的<strong>逆矩陣的轉置</strong>，稱為 Normal Matrix：
+</p>
+
+$\mathbf{N}' = \left(M^{-1}\right)^T \mathbf{N}$
+
+<div class="box box-gray">
+  <strong>推導直覺：</strong>法向量 \(\mathbf{N}\) 與切線 \(\mathbf{T}\) 垂直，
+  即 \(\mathbf{N} \cdot \mathbf{T} = 0\)。
+  切線用 \(M\) 變換後變成 \(M\mathbf{T}\)。
+  要讓新法向量 \(\mathbf{N}'\) 仍垂直於 \(M\mathbf{T}\)，
+  需要 \(\mathbf{N}' \cdot M\mathbf{T} = 0\)，
+  展開可得 \(\mathbf{N}' = (M^{-1})^T\mathbf{N}\)。
+</div>
+
+<h3>特殊情況：可以直接用 M 的旋轉部分</h3>
+
+<div class="box box-green">
+  如果 Model 矩陣只包含<strong>均勻縮放</strong>（sx=sy=sz=s）和旋轉，
+  則 \((M^{-1})^T\) 的旋轉部分等於 \(R\) 本身（因為旋轉矩陣是正交的，\(R^{-1}=R^T\)）。
+  此時法向量可以直接乘旋轉矩陣，不需要計算逆矩陣。<br><br>
+  只有包含<em>非均勻縮放</em>或<em>切變</em>時，才必須用完整的 Normal Matrix。
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">6</div>Model 矩陣在 Shader 中</h2>
+
+<p>
+  在 OpenGL/WebGL 的 vertex shader 裡，Model 矩陣作為 uniform 傳入，
+  每個頂點都做相同的矩陣乘法：
+</p>
+
+<div class="code"><span class="cmt">// Vertex Shader (GLSL)</span>
+<span class="kw">uniform</span> <span class="ty">mat4</span> uModel;         <span class="cmt">// Model 矩陣</span>
+<span class="kw">uniform</span> <span class="ty">mat3</span> uNormalMatrix;   <span class="cmt">// (M⁻¹)ᵀ 的左上 3×3</span>
+
+<span class="kw">in</span> <span class="ty">vec3</span> aPosition;            <span class="cmt">// 物件空間頂點</span>
+<span class="kw">in</span> <span class="ty">vec3</span> aNormal;              <span class="cmt">// 物件空間法向量</span>
+
+<span class="kw">void</span> <span class="fn">main</span>() {
+    <span class="cmt">// 頂點：物件空間 → 世界空間</span>
+    <span class="ty">vec4</span> worldPos = uModel * <span class="ty">vec4</span>(aPosition, <span class="val">1.0</span>);
+
+    <span class="cmt">// 法向量：用 Normal Matrix 修正（方向向量 w=0）</span>
+    <span class="ty">vec3</span> worldNormal = <span class="fn">normalize</span>(uNormalMatrix * aNormal);
+}</div>
+
+<div class="box box-purple">
+  <strong>本章重點總結</strong>
+  <ul style="margin-top:8px;margin-left:16px;line-height:2.0;font-size:0.9em">
+    <li>Model 矩陣 \(M = T \cdot R \cdot S\) 把頂點從物件空間變換到世界空間</li>
+    <li>執行順序：先 S（縮放），再 R（旋轉），最後 T（平移）——矩陣從右往左</li>
+    <li>矩陣乘法不可交換；先旋轉後平移是繞物件自身軸旋轉，反之是繞世界原點</li>
+    <li>每個物件有自己的 Model 矩陣，CPU 算一次，GPU 並行套用到所有頂點</li>
+    <li>法向量不能直接乘 M；非均勻縮放需要 Normal Matrix \((M^{-1})^T\)</li>
+  </ul>
+</div>
+
+<div class="next-ch">
+  <div>
+    <div class="next-label">PART 5 · CHAPTER 18</div>
+    <div class="next-title">透視投影推導</div>
+    <div class="next-desc">從小孔相機出發，推導 frustum 的幾何關係，最終得到 \(4\times4\) 投影矩陣的每個元素。</div>
+  </div>
+  <a href="ch18_perspective.html" class="next-arrow">→</a>
+</div>
+
+</body>
+</html>

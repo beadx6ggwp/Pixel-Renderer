@@ -84,20 +84,6 @@ ul, ol { margin: 8px 0 14px 26px; line-height: 2.2; }
 .box-red    { background: var(--bg); border-left: 4px solid var(--red); }
 .box-purple { background: var(--bg); border-left: 4px solid var(--purple); }
 
-/* ── Math ─────────────────────────────────────────────── */
-.math {
-  background: var(--bg1); border: 1px solid var(--border); border-radius: 6px;
-  padding: 16px 22px; margin: 14px 0;
-  font-family: 'Consolas', monospace; font-size: 0.87em; line-height: 2.4;
-}
-.math .r   { display: block; }
-.math .cmt { color: var(--muted); }
-.math .hi  { color: var(--yellow); font-weight: bold; }
-.math .ok  { color: var(--green); }
-.math .em  { color: var(--red); }
-.math .kw  { color: var(--purple); }
-.math .or  { color: var(--orange); }
-
 /* ── Code ─────────────────────────────────────────────── */
 .code {
   background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
@@ -113,7 +99,7 @@ ul, ol { margin: 8px 0 14px 26px; line-height: 2.2; }
 
 /* ── Figures ──────────────────────────────────────────── */
 .fig { margin: 24px auto; text-align: center; }
-.fig figcaption { color: var(--muted); font-size: 0.82em; margin-top: 8px; font-style: italic; }
+.fig figcaption { color: var(--muted); font-size: 0.88em; margin-top: 8px; font-style: italic; }
 
 /* ── Two-column ───────────────────────────────────────── */
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
@@ -123,22 +109,30 @@ ul, ol { margin: 8px 0 14px 26px; line-height: 2.2; }
 }
 .col-title { font-family: 'Consolas', monospace; font-size: 0.85em; margin-bottom: 10px; color: var(--muted); }
 
-/* ── Chapter nav ──────────────────────────────────────── */
-.chapter-nav {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border);
-  font-family: 'Consolas', monospace; font-size: 0.82em;
-}
-.chapter-nav a {
-  color: var(--muted); text-decoration: none; padding: 8px 14px;
-  border: 1px solid var(--border); border-radius: 6px;
-  transition: color 0.15s, border-color 0.15s;
-}
-.chapter-nav a:hover { color: var(--blue); border-color: var(--blue); }
-.chapter-nav .next { color: var(--text); border-color: var(--blue); }
-
 hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+
+.katex-display {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 6px;
+  padding: 18px 24px; margin: 14px 0; overflow-x: auto;
+}
+.katex-display > .katex { color: var(--text); }
+.katex { color: var(--text); font-size: 1.0em; }
+.next-ch { margin-top: 56px; padding: 20px 24px; background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 20px; }
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+.next-title { color: var(--blue); font-size: 1em; }
+.next-desc  { color: var(--muted); font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: var(--blue); font-size: 1.6em; text-decoration: none; }
+.next-arrow:hover { color: var(--purple); }
 </style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$', right: '$', display: true},
+      {left: '\\(', right: '\\)', display: false}
+    ]
+  });"></script>
 </head>
 <body>
 
@@ -258,29 +252,25 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
   先回顧一下 3D 叉積。兩個 3D 向量 <strong>u</strong> 和 <strong>v</strong> 的叉積是：
 </p>
 
-<div class="math">
-  <span class="r"><span class="hi">u × v</span> = (u<sub>y</sub>v<sub>z</sub> − u<sub>z</sub>v<sub>y</sub>,  u<sub>z</sub>v<sub>x</sub> − u<sub>x</sub>v<sub>z</sub>,  u<sub>x</sub>v<sub>y</sub> − u<sub>y</sub>v<sub>x</sub>)</span>
-</div>
+$\mathbf{u} \times \mathbf{v} = (u_y v_z - u_z v_y,\; u_z v_x - u_x v_z,\; \textcolor{#f9e2af}{u_x v_y - u_y v_x})$
 
 <p>
   現在把場景壓平到 2D，令 z = 0：
 </p>
 
-<div class="math">
-  <span class="r"><span class="kw">u</span> = (u<sub>x</sub>, u<sub>y</sub>, 0)</span>
-  <span class="r"><span class="kw">v</span> = (v<sub>x</sub>, v<sub>y</sub>, 0)</span>
-  <span class="r"></span>
-  <span class="r"><span class="kw">u</span> × <span class="kw">v</span> = (0, 0, <span class="hi">u<sub>x</sub>v<sub>y</sub> − u<sub>y</sub>v<sub>x</sub></span>)</span>
-  <span class="r cmt">          ↑ 只剩 z 分量不為零</span>
-</div>
+$\begin{array}{rll}
+\mathbf{u} &= (u_x,\, u_y,\, 0) \\
+\mathbf{v} &= (v_x,\, v_y,\, 0) \\[6pt]
+\mathbf{u} \times \mathbf{v} &= (0,\; 0,\; \textcolor{#f9e2af}{u_x v_y - u_y v_x})
+\end{array}$
+
+<p style="color:var(--muted);font-size:0.88em;margin:6px 0">z 分量以外全為零，叉積退化成純量。</p>
 
 <p>
   在 2D 中，叉積退化成一個<strong>純量</strong>（scalar）——只有 z 分量：
 </p>
 
-<div class="math">
-  <span class="r"><span class="hi">cross(u, v)</span> = u<sub>x</sub> · v<sub>y</sub> − u<sub>y</sub> · v<sub>x</sub></span>
-</div>
+$\textcolor{#f9e2af}{\text{cross}(\mathbf{u}, \mathbf{v})} = u_x \cdot v_y - u_y \cdot v_x$
 
 <p>
   這個數值就是 2D 叉積。兩行，一個減法，就夠了。
@@ -292,21 +282,19 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
   給定線段 AB 和點 P，令：
 </p>
 
-<div class="math">
-  <span class="r"><span class="kw">AB</span> = B − A = (B<sub>x</sub>−A<sub>x</sub>,  B<sub>y</sub>−A<sub>y</sub>)</span>
-  <span class="r"><span class="kw">AP</span> = P − A = (P<sub>x</sub>−A<sub>x</sub>,  P<sub>y</sub>−A<sub>y</sub>)</span>
-</div>
+$\begin{array}{rll}
+\overrightarrow{AB} &= B - A = (B_x - A_x,\; B_y - A_y) \\
+\overrightarrow{AP} &= P - A = (P_x - A_x,\; P_y - A_y)
+\end{array}$
 
 <p>
   則：
 </p>
 
-<div class="math">
-  <span class="r"><span class="hi">cross(AB, AP)</span> = AB<sub>x</sub> · AP<sub>y</sub> − AB<sub>y</sub> · AP<sub>x</sub></span>
-  <span class="r"></span>
-  <span class="r cmt">展開：</span>
-  <span class="r">= (B<sub>x</sub>−A<sub>x</sub>)(P<sub>y</sub>−A<sub>y</sub>) − (B<sub>y</sub>−A<sub>y</sub>)(P<sub>x</sub>−A<sub>x</sub>)</span>
-</div>
+$\begin{array}{rll}
+\textcolor{#f9e2af}{\text{cross}(\overrightarrow{AB}, \overrightarrow{AP})} &= AB_x \cdot AP_y - AB_y \cdot AP_x \\[6pt]
+&= (B_x - A_x)(P_y - A_y) - (B_y - A_y)(P_x - A_x)
+\end{array}$
 
 <p>
   結果是一個數字，正的或負的（或零，代表 P 剛好在直線上）。
@@ -364,12 +352,9 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
   更精確地說：
 </p>
 
-<div class="math">
-  <span class="r"><span class="hi">cross(u, v)</span> = |u| · |v| · sin(θ)</span>
-  <span class="r cmt">                  θ = 從 u 到 v 的有向角</span>
-  <span class="r"></span>
-  <span class="r cmt">|cross(u, v)| = 底 × 高 = 平行四邊形面積</span>
-</div>
+$\textcolor{#f9e2af}{\text{cross}(\mathbf{u}, \mathbf{v})} = |\mathbf{u}| \cdot |\mathbf{v}| \cdot \sin\theta$
+
+<p style="color:var(--muted);font-size:0.88em;margin:6px 0">θ 為從 u 到 v 的有向角；|cross(u, v)| = 底 × 高 = 平行四邊形面積。</p>
 
 <p>
   <strong>「有向」的意思</strong>是：面積帶有正負號，取決於 v 是在 u 的逆時針方向還是順時針方向：
@@ -404,12 +389,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
   叉積有一個很常見的等價寫法——<strong>2×2 行列式</strong>：
 </p>
 
-<div class="math">
-  <span class="r"><span class="hi">cross(u, v)</span> = det ⎡ u<sub>x</sub>  v<sub>x</sub> ⎤</span>
-  <span class="r">               ⎣ u<sub>y</sub>  v<sub>y</sub> ⎦</span>
-  <span class="r"></span>
-  <span class="r">             = u<sub>x</sub> · v<sub>y</sub> − u<sub>y</sub> · v<sub>x</sub></span>
-</div>
+$\textcolor{#f9e2af}{\text{cross}(\mathbf{u}, \mathbf{v})} = \begin{vmatrix} u_x & v_x \\ u_y & v_y \end{vmatrix} = u_x v_y - u_y v_x$
 
 <p>
   展開後和前面的定義完全相同。行列式形式讓你更容易記住——
@@ -423,12 +403,11 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
   可以直接把它們代入：
 </p>
 
-<div class="math">
-  <span class="r"><span class="kw">AB</span> = (B<sub>x</sub>−A<sub>x</sub>, B<sub>y</sub>−A<sub>y</sub>)</span>
-  <span class="r"><span class="kw">AP</span> = (P<sub>x</sub>−A<sub>x</sub>, P<sub>y</sub>−A<sub>y</sub>)</span>
-  <span class="r"></span>
-  <span class="r"><span class="hi">cross(AB, AP)</span> = (B<sub>x</sub>−A<sub>x</sub>)(P<sub>y</sub>−A<sub>y</sub>) − (B<sub>y</sub>−A<sub>y</sub>)(P<sub>x</sub>−A<sub>x</sub>)</span>
-</div>
+$\begin{array}{rll}
+\overrightarrow{AB} &= (B_x - A_x,\; B_y - A_y) \\
+\overrightarrow{AP} &= (P_x - A_x,\; P_y - A_y) \\[6pt]
+\textcolor{#f9e2af}{\text{cross}(\overrightarrow{AB}, \overrightarrow{AP})} &= (B_x - A_x)(P_y - A_y) - (B_y - A_y)(P_x - A_x)
+\end{array}$
 
 <p>
   這六個數字（A<sub>x</sub>、A<sub>y</sub>、B<sub>x</sub>、B<sub>y</sub>、P<sub>x</sub>、P<sub>y</sub>）全部是整數座標，
@@ -447,25 +426,19 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
   三角形面積 = 一半：
 </p>
 
-<div class="math">
-  <span class="r"><span class="hi">Area(△ABC)</span> = <span class="ok">½</span> · |cross(AB, AC)|</span>
-  <span class="r"></span>
-  <span class="r cmt">展開：</span>
-  <span class="r">= <span class="ok">½</span> · |(B<sub>x</sub>−A<sub>x</sub>)(C<sub>y</sub>−A<sub>y</sub>) − (B<sub>y</sub>−A<sub>y</sub>)(C<sub>x</sub>−A<sub>x</sub>)|</span>
-</div>
+$\textcolor{#f9e2af}{A(\triangle ABC)} = \dfrac{1}{2} \left|(B_x - A_x)(C_y - A_y) - (B_y - A_y)(C_x - A_x)\right|$
 
 <p>
   去掉絕對值（允許負值），就得到<strong>有向面積</strong>。
   它的正負號告訴你：三個頂點是逆時針排列（正）還是順時針排列（負）：
 </p>
 
-<div class="math">
-  <span class="r"><span class="hi">SignedArea(△ABC)</span> = ½ · cross(AB, AC)</span>
-  <span class="r"></span>
-  <span class="r ok">> 0 : A→B→C 逆時針（數學座標系）</span>
-  <span class="r em">&lt; 0 : A→B→C 順時針</span>
-  <span class="r cmt">= 0 : 三點共線（退化三角形）</span>
-</div>
+$\begin{array}{rll}
+\textcolor{#f9e2af}{\text{SignedArea}(\triangle ABC)} &= \dfrac{1}{2} \cdot \text{cross}(\overrightarrow{AB}, \overrightarrow{AC}) \\[10pt]
+\textcolor{#a6e3a1}{> 0} &: A \to B \to C \text{ 逆時針（數學座標系）} \\
+\textcolor{#f38ba8}{< 0} &: A \to B \to C \text{ 順時針} \\
+= 0 &: \text{三點共線（退化三角形）}
+\end{array}$
 
 <div class="box box-purple">
   <strong>為什麼有向面積很重要？</strong><br>
@@ -524,10 +497,13 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
   把「點在三角形內嗎？」這個問題完整解決。
 </p>
 
-<!-- ── Chapter nav ─────────────────────────────────────────────── -->
-<div class="chapter-nav">
-  <a href="ch07_bresenham_theory.html">← Ch07 Bresenham 理論比較</a>
-  <a class="next" href="ch09_edge_function.html">Ch09 邊緣函數 →</a>
+<div class="next-ch">
+  <div>
+    <div class="next-label">PART 3 · CHAPTER 09</div>
+    <div class="next-title">邊緣函數（Edge Function）</div>
+    <div class="next-desc">三條邊各做一次叉積測試，三值同號 → 點在三角形內。Edge Function 的線性性質與增量更新，以及 Top-Left Rule 解決共用邊歸屬問題。</div>
+  </div>
+  <a href="ch09_edge_function.html" class="next-arrow">→</a>
 </div>
 
 </body>

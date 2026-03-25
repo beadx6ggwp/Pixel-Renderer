@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Ch16 — 齊次座標</title>
+
+<!-- KaTeX -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$', right: '$', display: true},
+      {left: '\\(', right: '\\)', display: false}
+    ]
+  });"></script>
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:     #1e1e2e;
+  --bg1:    #181825;
+  --bg2:    #11111b;
+  --border: #313244;
+  --muted:  #6c7086;
+  --text:   #cdd6f4;
+  --blue:   #89b4fa;
+  --green:  #a6e3a1;
+  --yellow: #f9e2af;
+  --orange: #fab387;
+  --red:    #f38ba8;
+  --purple: #cba6f7;
+  --teal:   #94e2d5;
+}
+body {
+  background: var(--bg); color: var(--text);
+  font-family: 'Georgia', serif; font-size: 15px;
+  padding: 0 20px 80px; max-width: 900px; margin: 0 auto;
+  line-height: 1.9;
+}
+nav {
+  font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted);
+  padding: 14px 0; border-bottom: 1px solid var(--border);
+  margin-bottom: 36px; display: flex; align-items: center; gap: 10px;
+}
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--blue); }
+.nav-sep { color: var(--border); }
+.nav-cur { color: var(--text); }
+.nav-right { margin-left: auto; display: flex; gap: 16px; }
+.ch-header { margin-bottom: 40px; }
+.ch-label { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px; }
+.ch-title { color: var(--blue); font-size: 1.7em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub   { color: var(--muted); font-size: 0.88em; margin-bottom: 14px; }
+.ch-tags  { display: flex; gap: 6px; flex-wrap: wrap; }
+.ch-tag   { font-family: 'Consolas', monospace; font-size: 0.75em; padding: 2px 10px; border-radius: 99px; border: 1px solid var(--border); color: var(--muted); }
+h2 {
+  color: var(--purple); font-size: 1em;
+  font-family: 'Consolas', monospace; letter-spacing: 0.05em;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+  margin: 40px 0 20px; display: flex; align-items: center; gap: 12px;
+}
+h2 .n {
+  background: var(--purple); color: var(--bg2); font-weight: bold;
+  border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 0.85em;
+}
+h3 { color: var(--yellow); font-size: 0.95em; margin: 22px 0 10px; }
+p  { margin-bottom: 12px; }
+strong { color: var(--yellow); }
+em { color: var(--orange); font-style: normal; }
+.box { border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 0.9em; line-height: 1.85; }
+.box-blue   { background: var(--bg1); border-left: 4px solid var(--blue); }
+.box-green  { background: var(--bg1); border-left: 4px solid var(--green); }
+.box-yellow { background: var(--bg1); border-left: 4px solid var(--yellow); }
+.box-red    { background: var(--bg1); border-left: 4px solid var(--red); }
+.box-purple { background: var(--bg1); border-left: 4px solid var(--purple); }
+.box-gray   { background: var(--bg1); border: 1px solid var(--border); border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 0.9em; }
+.katex-display {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 6px;
+  padding: 18px 24px; margin: 14px 0; overflow-x: auto;
+}
+.katex-display > .katex { color: var(--text); }
+.katex { color: var(--text); font-size: 1.0em; }
+.code {
+  background: #0d0d14; border: 1px solid var(--border); border-radius: 8px;
+  padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em;
+  line-height: 2.0; margin: 14px 0; white-space: pre;
+}
+.code .cmt { color: var(--muted); }
+.code .kw  { color: var(--purple); }
+.code .val { color: var(--orange); }
+.code .fn  { color: var(--blue); }
+.code .ty  { color: var(--teal); }
+.fig { margin: 24px auto; text-align: center; }
+.fig figcaption { color: var(--muted); font-size: 0.88em; margin-top: 10px; font-style: italic; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+.two-col > div { background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; }
+.col-title { font-family: 'Consolas', monospace; font-size: 0.85em; margin-bottom: 10px; color: var(--blue); }
+table { width: 100%; border-collapse: collapse; font-size: 0.87em; margin: 14px 0; }
+th { background: var(--bg1); color: var(--blue); padding: 9px 14px; text-align: left; border-bottom: 2px solid var(--border); font-family: 'Consolas', monospace; }
+td { padding: 8px 14px; border-bottom: 1px solid var(--bg1); vertical-align: top; }
+tr:hover td { background: var(--bg1); }
+.next-ch { margin-top: 56px; padding: 20px 24px; background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 20px; }
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+.next-title { color: var(--blue); font-size: 1em; }
+.next-desc  { color: var(--muted); font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: var(--blue); font-size: 1.6em; text-decoration: none; }
+.next-arrow:hover { color: var(--purple); }
+/* flow diagram */
+.flow { display: flex; align-items: center; gap: 0; flex-wrap: wrap; margin: 20px 0; justify-content: center; }
+.flow-box { background: var(--bg1); border: 1px solid var(--border); border-radius: 6px; padding: 8px 14px; font-family: 'Consolas', monospace; font-size: 0.82em; text-align: center; }
+.flow-box.hi { border-color: var(--blue); color: var(--blue); }
+.flow-arr { color: var(--muted); padding: 0 8px; font-size: 1.1em; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">軟體光柵化</a>
+  <span class="nav-sep">/</span>
+  <span>理論</span>
+  <span class="nav-sep">/</span>
+  <span class="nav-cur">Ch16</span>
+  <div class="nav-right">
+    <a href="ch15_matrix.html">← Ch15</a>
+    <a href="ch17_model_matrix.html">Ch17 →</a>
+  </div>
+</nav>
+
+<div class="ch-header">
+  <div class="ch-label">PART 4 · CHAPTER 16</div>
+  <div class="ch-title">齊次座標（Homogeneous Coordinates）</div>
+  <div class="ch-sub">平移不是線性變換——升到 4D 加上 w 分量，讓所有仿射變換都能統一用矩陣乘法表達</div>
+  <div class="ch-tags">
+    <span class="ch-tag">齊次座標</span>
+    <span class="ch-tag">仿射變換</span>
+    <span class="ch-tag">w 分量</span>
+    <span class="ch-tag">4×4 矩陣</span>
+    <span class="ch-tag">平移矩陣</span>
+  </div>
+</div>
+
+<p>
+  Ch15 介紹了矩陣可以表達縮放與旋轉。但 3D 渲染管線還需要<strong>平移</strong>——
+  把物件從原點移到世界空間的某個位置。
+  問題來了：<em>平移無法用 3×3 矩陣表達</em>。
+  齊次座標（Homogeneous Coordinates）透過一個優雅的 4D 技巧解決了這個問題。
+</p>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">1</div>平移為什麼不是線性變換？</h2>
+
+<p>
+  Ch15 定義了線性變換的兩個條件：<strong>加法性</strong>與<strong>齊次性</strong>。
+  設平移操作 \(T\) 把每個點移動一個固定偏移 \(\mathbf{t}\)：
+</p>
+
+$T(\mathbf{p}) = \mathbf{p} + \mathbf{t}$
+
+<p>檢驗加法性：</p>
+
+$T(\mathbf{p} + \mathbf{q}) = \mathbf{p} + \mathbf{q} + \mathbf{t}$
+
+$T(\mathbf{p}) + T(\mathbf{q}) = (\mathbf{p} + \mathbf{t}) + (\mathbf{q} + \mathbf{t}) = \mathbf{p} + \mathbf{q} + 2\mathbf{t}$
+
+<div class="box box-red">
+  <strong>結論：\(T(\mathbf{p}+\mathbf{q}) \neq T(\mathbf{p})+T(\mathbf{q})\)（只要 \(\mathbf{t} \neq \mathbf{0}\)）</strong><br>
+  平移不滿足線性變換的加法性，因此<em>不存在</em>任何 \(3\times3\) 矩陣 \(M\) 使得 \(M\mathbf{p} = \mathbf{p}+\mathbf{t}\)。
+</div>
+
+<p>
+  這是一個根本問題：如果平移不能寫成矩陣，就無法和旋轉、縮放一起用矩陣乘法組合。
+  渲染管線就必須用兩套機制——非常麻煩。
+</p>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">2</div>齊次座標：升到 4D</h2>
+
+<p>
+  解法是把所有 3D 向量加一個額外的第四個分量 <strong>\(w\)</strong>，升到 4D：
+</p>
+
+$\begin{pmatrix}x \\ y \\ z\end{pmatrix} \longrightarrow \begin{pmatrix}x \\ y \\ z \\ w\end{pmatrix}$
+
+<p>約定 \(w\) 的值代表這個向量的「種類」：</p>
+
+<div class="two-col">
+  <div>
+    <div class="col-title" style="color:var(--green)">w = 1 → 位置點（Point）</div>
+    <p style="font-size:0.88em">點 \((x,y,z)\) 在 4D 中表示為 \((x,y,z,1)\)。<br>
+    平移<strong>會</strong>影響位置點——物件要移動。</p>
+    $\begin{pmatrix}x \\ y \\ z \\ 1\end{pmatrix}$
+  </div>
+  <div>
+    <div class="col-title" style="color:var(--blue)">w = 0 → 方向向量（Direction）</div>
+    <p style="font-size:0.88em">向量 \((x,y,z)\) 在 4D 中表示為 \((x,y,z,0)\)。<br>
+    平移<strong>不應</strong>影響方向——法向量不應隨位移改變。</p>
+    $\begin{pmatrix}x \\ y \\ z \\ 0\end{pmatrix}$
+  </div>
+</div>
+
+<div class="box box-blue">
+  <strong>為什麼 w=0 能自動排除平移？</strong><br>
+  後面會看到，平移矩陣的最後一欄是 \((t_x,\,t_y,\,t_z,\,1)^T\)。
+  當 \(w=0\) 時，這一欄的貢獻是 \(0\cdot(t_x,t_y,t_z,1)^T = \mathbf{0}\)，
+  平移量被自動消掉。這正是我們想要的行為：法向量、光照方向等不隨物件位移而改變。
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">3</div>平移矩陣 T</h2>
+
+<p>
+  有了 4D 齊次座標，平移就能寫成 \(4\times4\) 矩陣。
+  設平移量為 \((t_x,\,t_y,\,t_z)\)：
+</p>
+
+$T(t_x,t_y,t_z) = \begin{pmatrix} 1 & 0 & 0 & t_x \\ 0 & 1 & 0 & t_y \\ 0 & 0 & 1 & t_z \\ 0 & 0 & 0 & 1 \end{pmatrix}$
+
+<p>驗證對<strong>位置點</strong>（w=1）的效果：</p>
+
+$\begin{pmatrix} 1 & 0 & 0 & t_x \\ 0 & 1 & 0 & t_y \\ 0 & 0 & 1 & t_z \\ 0 & 0 & 0 & 1 \end{pmatrix} \begin{pmatrix}x \\ y \\ z \\ 1\end{pmatrix} = \begin{pmatrix}x+t_x \\ y+t_y \\ z+t_z \\ 1\end{pmatrix} \checkmark$
+
+<p>驗證對<strong>方向向量</strong>（w=0）的效果：</p>
+
+$\begin{pmatrix} 1 & 0 & 0 & t_x \\ 0 & 1 & 0 & t_y \\ 0 & 0 & 1 & t_z \\ 0 & 0 & 0 & 1 \end{pmatrix} \begin{pmatrix}x \\ y \\ z \\ 0\end{pmatrix} = \begin{pmatrix}x \\ y \\ z \\ 0\end{pmatrix} \checkmark$
+
+<div class="box box-green">
+  方向向量完全不受平移影響，而位置點正確地移動了 \(\mathbf{t}\)。
+  一個矩陣，兩種行為，靠 \(w\) 分量自動區分。
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">4</div>縮放與旋轉的 4×4 形式</h2>
+
+<p>
+  Ch15 的縮放與旋轉矩陣本來是 \(3\times3\)，
+  嵌入 \(4\times4\) 非常直覺——右下角補 1，其餘新增行列補 0：
+</p>
+
+<h3>縮放矩陣 S</h3>
+
+$S(s_x,s_y,s_z) = \begin{pmatrix} s_x & 0 & 0 & 0 \\ 0 & s_y & 0 & 0 \\ 0 & 0 & s_z & 0 \\ 0 & 0 & 0 & 1 \end{pmatrix}$
+
+<h3>繞 Z 軸旋轉矩陣 R<sub>z</sub></h3>
+
+$R_z(\theta) = \begin{pmatrix} \cos\theta & -\sin\theta & 0 & 0 \\ \sin\theta & \cos\theta & 0 & 0 \\ 0 & 0 & 1 & 0 \\ 0 & 0 & 0 & 1 \end{pmatrix}$
+
+<p>
+  Rx 和 Ry 形式類似，只是旋轉的那個 \(2\times2\) 區塊位於不同的兩列兩欄。
+  全部變換都是 \(4\times4\)，可以直接相乘組合。
+</p>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">5</div>仿射變換的統一組合</h2>
+
+<p>
+  <strong>仿射變換（Affine Transform）</strong>是保持直線與平行性的變換，
+  包含平移、旋轉、縮放、切變。
+  在齊次座標下，它們全部是 \(4\times4\) 矩陣，可以任意組合：
+</p>
+
+$M = T \cdot R \cdot S$
+
+<div class="box box-yellow">
+  <strong>矩陣相乘的意義：</strong><br>
+  \(M\mathbf{v}\) 的計算順序是「先做 S，再做 R，最後做 T」。
+  這是因為矩陣乘法從右往左結合：\(M\mathbf{v} = T(R(S\mathbf{v}))\)。<br><br>
+  <strong>順序不可交換：</strong>先平移後旋轉，與先旋轉後平移，結果通常不同。
+  標準的物件變換順序是 <em>Scale → Rotate → Translate</em>（TRS）。
+</div>
+
+<p>
+  把多個 \(4\times4\) 矩陣預先相乘成一個 \(M\)，
+  再對所有頂點套用 \(M\mathbf{v}\)——這就是 GPU 的工作方式。
+  CPU 計算一次 \(M\)，GPU 並行對百萬個頂點做相同的矩陣乘法。
+</p>
+
+<h3>範例：先縮小一半，再繞 Y 旋轉 45°，再往 X 平移 3</h3>
+
+<div class="code"><span class="cmt">// 建立各個矩陣</span>
+S = scale(0.5, 0.5, 0.5)
+R = rotate_y(45°)
+T = translate(3, 0, 0)
+
+<span class="cmt">// 組合（從右往左執行）</span>
+M = T * R * S
+
+<span class="cmt">// 對每個頂點套用（GPU 並行）</span>
+<span class="kw">for</span> v <span class="kw">in</span> vertices:
+    v_world = M * v</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">6</div>w ≠ 1 的情況：透視除法預告</h2>
+
+<p>
+  目前我們只看到 \(w=1\)（位置點）和 \(w=0\)（方向向量）。
+  但在渲染管線中，<strong>透視投影矩陣</strong>會讓 \(w\) 變成其他值。
+</p>
+
+<p>
+  當 \(w \neq 1\) 時，要還原到 3D 座標，需要除以 \(w\)：
+</p>
+
+$\begin{pmatrix}x \\ y \\ z \\ w\end{pmatrix} \xrightarrow{\text{透視除法}} \begin{pmatrix}x/w \\ y/w \\ z/w\end{pmatrix}$
+
+<div class="box box-gray">
+  <strong>為什麼這能產生透視效果？</strong><br>
+  透視投影讓遠處的點有更大的 \(w\)，除以 \(w\) 後 \(x/w\) 和 \(y/w\) 變小——
+  遠的物件在螢幕上看起來更小，這正是透視收縮（Foreshortening）。<br>
+  透視投影矩陣的推導在 Part 5（Ch18）詳細介紹。
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2><div class="n">7</div>齊次座標在管線中的位置</h2>
+
+<p>
+  整條 3D 渲染管線可以用矩陣串接表達。
+  Part 4 和 Part 5 的任務就是推導每一步的矩陣：
+</p>
+
+<div class="flow" style="gap:0;margin:28px 0">
+  <div class="flow-box">物件空間<br><span style="color:var(--muted);font-size:0.85em">Object</span></div>
+  <div class="flow-arr">→ <span style="color:var(--yellow);font-size:0.78em">Model M</span> →</div>
+  <div class="flow-box">世界空間<br><span style="color:var(--muted);font-size:0.85em">World</span></div>
+  <div class="flow-arr">→ <span style="color:var(--green);font-size:0.78em">View V</span> →</div>
+  <div class="flow-box">相機空間<br><span style="color:var(--muted);font-size:0.85em">Camera</span></div>
+  <div class="flow-arr">→ <span style="color:var(--blue);font-size:0.78em">Proj P</span> →</div>
+  <div class="flow-box hi">裁剪空間<br><span style="color:var(--muted);font-size:0.85em">Clip (w≠1)</span></div>
+  <div class="flow-arr">→ <span style="color:var(--orange);font-size:0.78em">÷w</span> →</div>
+  <div class="flow-box">NDC<br><span style="color:var(--muted);font-size:0.85em">±1</span></div>
+  <div class="flow-arr">→ <span style="color:var(--purple);font-size:0.78em">Viewport</span> →</div>
+  <div class="flow-box">螢幕座標<br><span style="color:var(--muted);font-size:0.85em">Screen</span></div>
+</div>
+
+<table>
+  <tr>
+    <th>矩陣</th>
+    <th>作用</th>
+    <th>章節</th>
+  </tr>
+  <tr>
+    <td style="color:var(--yellow)">Model (M)</td>
+    <td>縮放、旋轉、平移 → 物件放入世界</td>
+    <td>Ch17</td>
+  </tr>
+  <tr>
+    <td style="color:var(--green)">View (V)</td>
+    <td>把世界轉到以攝影機為原點的座標系</td>
+    <td>Part 5</td>
+  </tr>
+  <tr>
+    <td style="color:var(--blue)">Projection (P)</td>
+    <td>透視投影，產生 w≠1 的裁剪座標</td>
+    <td>Ch18</td>
+  </tr>
+  <tr>
+    <td style="color:var(--orange)">透視除法 ÷w</td>
+    <td>轉換到 NDC（Normalized Device Coordinates）</td>
+    <td>Ch18</td>
+  </tr>
+  <tr>
+    <td style="color:var(--purple)">Viewport</td>
+    <td>NDC \([\!-1,1]\) → 螢幕像素座標</td>
+    <td>Part 5</td>
+  </tr>
+</table>
+
+<div class="box box-purple">
+  <strong>本章重點總結</strong>
+  <ul style="margin-top:8px;margin-left:16px;line-height:2.0;font-size:0.9em">
+    <li>平移不是線性變換，無法用 \(3\times3\) 矩陣表達</li>
+    <li>齊次座標在 3D 向量加上 \(w\) 分量，升到 \(\mathbb{R}^4\)</li>
+    <li>\(w=1\) → 位置點（受平移影響）；\(w=0\) → 方向向量（不受平移影響）</li>
+    <li>T、R、S 全部寫成 \(4\times4\) 矩陣，可以任意組合：\(M = T \cdot R \cdot S\)</li>
+    <li>\(w \neq 1\) 時除以 \(w\) 得到 3D 座標，這個「透視除法」是透視效果的來源</li>
+  </ul>
+</div>
+
+<div class="next-ch">
+  <div>
+    <div class="next-label">PART 4 · CHAPTER 17</div>
+    <div class="next-title">Model 矩陣（TRS 組合）</div>
+    <div class="next-desc">把縮放、旋轉、平移組合成 Model 矩陣，完成物件空間→世界空間的第一個變換。TRS 順序為什麼不能任意調換？</div>
+  </div>
+  <a href="ch17_model_matrix.html" class="next-arrow">→</a>
+</div>
+
+</body>
+</html>

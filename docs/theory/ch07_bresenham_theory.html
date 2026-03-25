@@ -96,7 +96,18 @@ tr:hover td { background: #1e1e2e; }
 .col-title { font-family: 'Consolas', monospace; font-size: 0.85em; margin-bottom: 10px; }
 
 .fig { margin: 20px auto; text-align: center; }
-.fig figcaption { color: #6c7086; font-size: 0.82em; margin-top: 8px; font-style: italic; }
+.fig figcaption { color: #6c7086; font-size: 0.88em; margin-top: 8px; font-style: italic; }
+
+.katex-display { background: #181825; border: 1px solid #313244; border-radius: 6px; padding: 18px 24px; margin: 14px 0; overflow-x: auto; }
+.katex-display > .katex { color: #cdd6f4; }
+.katex { color: #cdd6f4; font-size: 1.0em; }
+
+.next-ch { margin-top: 56px; padding: 20px 24px; background: #181825; border: 1px solid #313244; border-radius: 8px; display: flex; align-items: center; gap: 20px; }
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: #6c7086; margin-bottom: 4px; }
+.next-title { color: #89b4fa; font-size: 1em; }
+.next-desc  { color: #6c7086; font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: #89b4fa; font-size: 1.6em; text-decoration: none; }
+.next-arrow:hover { color: #cba6f7; }
 
 hr { border: none; border-top: 1px solid #313244; margin: 32px 0; }
 
@@ -138,6 +149,7 @@ hr { border: none; border-top: 1px solid #313244; margin: 32px 0; }
   font-family: 'Consolas', monospace; font-size: 0.8em;
 }
 </style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 </head>
 <body>
 
@@ -147,7 +159,7 @@ hr { border: none; border-top: 1px solid #313244; margin: 32px 0; }
   <span style="color:#cdd6f4">Ch07 — 兩種推導的理論比較</span>
   <span style="margin-left:auto;display:flex;gap:16px;">
     <a href="ch06_bresenham_octants.html" style="color:#6c7086;text-decoration:none;">← Ch06</a>
-    <a href="../index.html" style="color:#6c7086;text-decoration:none;">首頁</a>
+    <a href="ch08_cross_product.html" style="color:#6c7086;text-decoration:none;">Ch08 →</a>
   </span>
 </nav>
 
@@ -199,17 +211,17 @@ hr { border: none; border-top: 1px solid #313244; margin: 32px 0; }
 <p>用具體數字說明。(0,0) → (7,3)，dx=7，dy=3。</p>
 
 <h3>誤差累積法的 err</h3>
-<div class="math">
-  <span class="r">初始：err = 0</span>
-  <span class="r">每步 x：err += 2dy = 6</span>
-  <span class="r">當 err ≥ dx（= 7）：y++, err -= 2dx = 14</span>
+<div class="box box-gray" style="font-size:0.88em;line-height:2.2">
+  初始：err = 0<br>
+  每步 x：err += 2dy = 6<br>
+  當 err ≥ dx（= 7）：y++, err −= 2dx = 14
 </div>
 
 <h3>d₁d₂ 法的 P</h3>
-<div class="math">
-  <span class="r">初始：P₀ = 2dy − dx = 6 − 7 = −1</span>
-  <span class="r">P &lt; 0：P += 2dy = 6</span>
-  <span class="r">P ≥ 0：y++, P += 2dy − 2dx = 6 − 14 = −8</span>
+<div class="box box-gray" style="font-size:0.88em;line-height:2.2">
+  初始：\(P_0 = 2\Delta y - \Delta x = 6 - 7 = -1\)<br>
+  <span style="color:#f38ba8">P &lt; 0</span>：P += 2Δy = 6<br>
+  <span style="color:#a6e3a1">P ≥ 0</span>：y++, P += 2Δy − 2Δx = 6 − 14 = −8
 </div>
 
 <h3>兩者對照</h3>
@@ -228,12 +240,11 @@ hr { border: none; border-top: 1px solid #313244; margin: 32px 0; }
   <tr><td>7</td><td>(7,3)</td><td class="td-a">0</td><td class="td-b">−1</td></tr>
 </table>
 
-<div class="math">
-  <span class="r cmt">// 兩者的精確關係</span>
-  <span class="r hi">P = err − dx</span>
-  <span class="r cmt">// 等價性：</span>
-  <span class="r">err ≥ dx  ⟺  err − dx ≥ 0  ⟺  P ≥ 0   （升 y 的條件）</span>
-  <span class="r">err &lt;  dx  ⟺  P &lt; 0              （不升 y 的條件）</span>
+$\textcolor{#f9e2af}{P = \text{err} - \Delta x}$
+<div class="box box-gray" style="font-size:0.88em;line-height:2.2">
+  等價性：<br>
+  err ≥ Δx &nbsp;⟺&nbsp; err − Δx ≥ 0 &nbsp;⟺&nbsp; <span style="color:#a6e3a1">P ≥ 0</span>（升 y）<br>
+  err &lt; Δx &nbsp;⟺&nbsp; <span style="color:#f38ba8">P &lt; 0</span>（不升 y）
 </div>
 
 <div class="box box-yellow">
@@ -256,32 +267,28 @@ hr { border: none; border-top: 1px solid #313244; margin: 32px 0; }
 
 <h3>直線的中點測試</h3>
 <p>直線：F(x, y) = dy·x − dx·y + C = 0</p>
-<div class="math">
-  <span class="r">候選像素：(x+1, Yᵢ) 和 (x+1, Yᵢ+1)</span>
-  <span class="r">中點 M = (x+1, Yᵢ + 0.5)</span>
-  <span class="r cmt"></span>
-  <span class="r">F(M) = dy·(x+1) − dx·(Yᵢ+0.5) + C</span>
-  <span class="r ok">F(M) &gt; 0  →  曲線在中點下方  →  選上方像素 Yᵢ+1</span>
-  <span class="r em">F(M) &lt; 0  →  曲線在中點上方  →  選下方像素 Yᵢ</span>
-  <span class="r cmt"></span>
-  <span class="r cmt">// F(M) × 2（消掉 0.5）= d₁d₂ 法的 P！</span>
+<div class="box box-gray" style="font-size:0.88em;line-height:2.2">
+  候選像素：(x+1, Y<sub>i</sub>) 和 (x+1, Y<sub>i</sub>+1)<br>
+  中點 M = (x+1, Y<sub>i</sub> + 0.5)<br><br>
+  \(F(M) = \Delta y \cdot (x+1) - \Delta x \cdot (Y_i + 0.5) + C\)<br>
+  <span style="color:#a6e3a1">F(M) &gt; 0</span> → 曲線在中點下方 → 選上方像素 Y<sub>i</sub>+1<br>
+  <span style="color:#f38ba8">F(M) &lt; 0</span> → 曲線在中點上方 → 選下方像素 Y<sub>i</sub><br><br>
+  <span style="color:#6c7086">// F(M) × 2（消掉 0.5）= d₁d₂ 法的 P！</span>
 </div>
 
 <h3>圓的中點測試（推廣）</h3>
 <p>圓：F(x, y) = x² + y² − r² = 0</p>
-<div class="math">
-  <span class="r cmt">// 畫圓的第一象限，y 從 r 往下，x 從 0 往右</span>
-  <span class="r">候選像素：E = (x+1, y) 或 SE = (x+1, y-1)</span>
-  <span class="r">中點 M = (x+1, y − 0.5)</span>
-  <span class="r cmt"></span>
-  <span class="r">F(M) = (x+1)² + (y−0.5)² − r²</span>
-  <span class="r ok">F(M) &gt; 0  →  M 在圓外  →  選 SE（往內走）</span>
-  <span class="r em">F(M) ≤ 0  →  M 在圓內  →  選 E（保持高度）</span>
-  <span class="r cmt"></span>
-  <span class="r cmt">// 增量更新（同樣的技巧）：</span>
-  <span class="r">P₀ = 1 − r</span>
-  <span class="r em">P ≤ 0: P += 2x + 3              （選 E）</span>
-  <span class="r ok">P &gt; 0: P += 2x − 2y + 5; y−−   （選 SE）</span>
+<div class="box box-gray" style="font-size:0.88em;line-height:2.2">
+  <span style="color:#6c7086">// 畫圓的第一象限，y 從 r 往下，x 從 0 往右</span><br>
+  候選像素：E = (x+1, y) 或 SE = (x+1, y−1)<br>
+  中點 M = (x+1, y − 0.5)<br><br>
+  \(F(M) = (x+1)^2 + (y - 0.5)^2 - r^2\)<br>
+  <span style="color:#a6e3a1">F(M) &gt; 0</span> → M 在圓外 → 選 SE（往內走）<br>
+  <span style="color:#f38ba8">F(M) ≤ 0</span> → M 在圓內 → 選 E（保持高度）<br><br>
+  <span style="color:#6c7086">// 增量更新（同樣的技巧）：</span><br>
+  \(P_0 = 1 - r\)<br>
+  <span style="color:#f38ba8">P ≤ 0</span>：P += 2x + 3 （選 E）<br>
+  <span style="color:#a6e3a1">P &gt; 0</span>：P += 2x − 2y + 5; y−− （選 SE）
 </div>
 
 <div class="fig">
@@ -361,16 +368,16 @@ hr { border: none; border-top: 1px solid #313244; margin: 32px 0; }
 <h3>關係一：符號判斷（Bisection Method 的本質）</h3>
 
 <p>數值分析找根的二分法：</p>
-<div class="math">
-  <span class="r cmt">// f(a) 和 f(b) 符號相反 → 根在 [a,b] 之間</span>
-  <span class="r">f(a) · f(b) &lt; 0   →   根在 [a, b]</span>
-  <span class="r">取中點 m = (a+b)/2，判斷 f(m) 符號，縮小區間</span>
+<div class="box box-gray" style="font-size:0.88em;line-height:2.2">
+  <span style="color:#6c7086">// f(a) 和 f(b) 符號相反 → 根在 [a,b] 之間</span><br>
+  \(f(a) \cdot f(b) < 0 \;\Rightarrow\; \text{根在 } [a,\, b]\)<br>
+  取中點 m = (a+b)/2，判斷 f(m) 符號，縮小區間
 </div>
 
 <p>Bresenham 的中點測試：</p>
-<div class="math">
-  <span class="r cmt">// 兩個候選格點之間的中點 M</span>
-  <span class="r">F(M) &gt; 0   →   曲線在 M 的這一側   →   選那一側的格點</span>
+<div class="box box-gray" style="font-size:0.88em;line-height:2.2">
+  <span style="color:#6c7086">// 兩個候選格點之間的中點 M</span><br>
+  F(M) &gt; 0 → 曲線在 M 的這一側 → 選那一側的格點
 </div>
 
 <p>同樣的概念：<strong>用函數在中間點的符號，判斷目標在哪一側</strong>。
@@ -383,13 +390,12 @@ hr { border: none; border-top: 1px solid #313244; margin: 32px 0; }
 <p>Bresenham 的前身是 <strong>DDA（Digital Differential Analyzer）</strong>，
 1950 年代的硬體，直接計算微分方程：</p>
 
-<div class="math">
-  <span class="r cmt">// DDA：把微分方程數值積分</span>
-  <span class="r dim">// 直線 dy/dx = m 的數值解：</span>
-  <span class="r">y(x + Δx) = y(x) + m · Δx</span>
-  <span class="r cmt"></span>
-  <span class="r dim">// 在像素上：Δx = 1，所以</span>
-  <span class="r">y_next = y + m          // 浮點加法，每步一次</span>
+<div class="box box-gray" style="font-size:0.88em;line-height:2.2">
+  <span style="color:#6c7086">// DDA：把微分方程數值積分</span><br>
+  <span style="color:#6c7086">// 直線 dy/dx = m 的數值解：</span><br>
+  \(y(x + \Delta x) = y(x) + m \cdot \Delta x\)<br><br>
+  <span style="color:#45475a">// 在像素上：Δx = 1，所以</span><br>
+  y_next = y + m &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#6c7086">// 浮點加法，每步一次</span>
 </div>
 
 <p>這就是數值分析的 <strong>Euler 方法</strong>：用差分近似微分。</p>
@@ -397,9 +403,9 @@ hr { border: none; border-top: 1px solid #313244; margin: 32px 0; }
 <p>Bresenham（1965）的貢獻：把 DDA 的浮點累積替換成整數決策，
 本質上是把「連續的 y 值追蹤」轉成「離散的格點選擇」：</p>
 
-<div class="math">
-  <span class="r hi">DDA：追蹤 y（連續）      → Bresenham：追蹤 err（離散決策）</span>
-  <span class="r">y += m             → err += dy（整數），判斷是否 ≥ dx</span>
+<div class="box box-gray" style="font-size:0.88em;line-height:2.2">
+  <span style="color:#f9e2af;font-weight:bold">DDA：追蹤 y（連續）&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ Bresenham：追蹤 err（離散決策）</span><br>
+  y += m &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ err += Δy（整數），判斷是否 ≥ Δx
 </div>
 
 <hr>
@@ -407,24 +413,22 @@ hr { border: none; border-top: 1px solid #313244; margin: 32px 0; }
 <h3>關係三：增量計算（Incremental Computation）</h3>
 
 <p>兩種方法共用的核心優化技巧：</p>
-<div class="math">
-  <span class="r cmt">// 笨方法：每步重算</span>
-  <span class="r dim">P_i = 2dy·xᵢ − 2dx·Yᵢ + C   // 需要乘法</span>
-  <span class="r cmt"></span>
-  <span class="r cmt">// 聰明方法：只算增量</span>
-  <span class="r">P_{i+1} − P_i = 2dy − 2dx·(Yᵢ₊₁ − Yᵢ)</span>
-  <span class="r hi">P_{i+1} = P_i + 常數           // 只需要加法</span>
+<div class="box box-gray" style="font-size:0.88em;line-height:2.2">
+  <span style="color:#6c7086">// 笨方法：每步重算</span><br>
+  <span style="color:#45475a">\(P_i = 2\Delta y \cdot x_i - 2\Delta x \cdot Y_i + C\) &nbsp;&nbsp;// 需要乘法</span><br><br>
+  <span style="color:#6c7086">// 聰明方法：只算增量</span><br>
+  \(P_{i+1} - P_i = 2\Delta y - 2\Delta x \cdot (Y_{i+1} - Y_i)\)<br>
+  <span style="color:#f9e2af;font-weight:bold">\(P_{i+1} = P_i + \text{常數}\)</span> &nbsp;&nbsp;<span style="color:#6c7086">// 只需要加法</span>
 </div>
 
 <p>這個技巧在數值分析叫 <strong>差分法（Method of Differences）</strong>，
 17 世紀 Newton、Gregory 就在用：計算多項式值時，用逐階差分取代重新代入。</p>
 
-<div class="math">
-  <span class="r cmt">// Newton Forward Difference 計算 f(x+h)</span>
-  <span class="r">f(x+h) = f(x) + Δf(x) + Δ²f(x)/2! + ...</span>
-  <span class="r cmt"></span>
-  <span class="r cmt">// Bresenham 的增量更新就是一階差分</span>
-  <span class="r hi">P_{i+1} = P_i + ΔP   （ΔP 是常數，因為 P 是 x 的一次函數）</span>
+<div class="box box-gray" style="font-size:0.88em;line-height:2.2">
+  <span style="color:#6c7086">// Newton Forward Difference 計算 f(x+h)</span><br>
+  \(f(x+h) = f(x) + \Delta f(x) + \dfrac{\Delta^2 f(x)}{2!} + \cdots\)<br><br>
+  <span style="color:#6c7086">// Bresenham 的增量更新就是一階差分</span><br>
+  <span style="color:#f9e2af;font-weight:bold">\(P_{i+1} = P_i + \Delta P\)</span> &nbsp;&nbsp;<span style="color:#6c7086">（ΔP 是常數，因為 P 是 x 的一次函數）</span>
 </div>
 
 <hr>
@@ -620,5 +624,22 @@ Bresenham 把它做成了 O(1) 每像素的演算法。</p>
   這個遷移能力，才是學 d₁d₂ 法的真正收穫。
 </div>
 
+<div class="next-ch">
+  <div>
+    <div class="next-label">NEXT CHAPTER</div>
+    <div class="next-title">Ch08 — 叉積與三角形面積</div>
+    <div class="next-desc">從 2D 叉積到三角形有向面積，光柵化的數學基礎</div>
+  </div>
+  <a class="next-arrow" href="ch08_cross_product.html">→</a>
+</div>
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '\\(', right: '\\)', display: false}
+    ]
+  });"></script>
 </body>
 </html>

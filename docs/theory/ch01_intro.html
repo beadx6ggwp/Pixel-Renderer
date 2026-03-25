@@ -106,7 +106,7 @@ tr:hover td { background: var(--bg1); }
 
 /* ── Figures ─────────────────────────────────────────────────── */
 .fig { margin: 22px auto; text-align: center; }
-.fig figcaption { color: var(--muted); font-size: 0.82em; margin-top: 8px; font-style: italic; }
+.fig figcaption { color: var(--muted); font-size: 0.88em; margin-top: 8px; font-style: italic; }
 
 /* ── Two col ─────────────────────────────────────────────────── */
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
@@ -130,7 +130,29 @@ tr:hover td { background: var(--bg1); }
 
 hr { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
 ul, ol { margin: 8px 0 12px 24px; line-height: 2.2; }
+
+.katex-display {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 6px;
+  padding: 18px 24px; margin: 14px 0; overflow-x: auto;
+}
+.katex-display > .katex { color: var(--text); }
+.katex { color: var(--text); font-size: 1.0em; }
+.next-ch { margin-top: 56px; padding: 20px 24px; background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 20px; }
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+.next-title { color: var(--blue); font-size: 1em; }
+.next-desc  { color: var(--muted); font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: var(--blue); font-size: 1.6em; text-decoration: none; }
+.next-arrow:hover { color: var(--purple); }
 </style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$', right: '$', display: true},
+      {left: '\\(', right: '\\)', display: false}
+    ]
+  });"></script>
 </head>
 <body>
 
@@ -282,12 +304,12 @@ ul, ol { margin: 8px 0 12px 24px; line-height: 2.2; }
 <p>在程式碼裡，Framebuffer 是一個 <code>unsigned char*</code>，
 第 (x, y) 個像素的位置是：</p>
 
-<div class="math">
-  <span class="r cmt">// 第 (x, y) 個像素的記憶體位址</span>
-  <span class="r hi">address = frame_buffer + y * pitch + x * 4</span>
-  <span class="r cmt"></span>
-  <span class="r cmt">// pitch = 每一行的 byte 數（可能 > width * 4，因為對齊）</span>
-  <span class="r">pitch ≥ width * 4</span>
+<div class="code">
+<span class="cmt">// 第 (x, y) 個像素的記憶體位址</span><br>
+address = frame_buffer + y * pitch + x * 4<br>
+<br>
+<span class="cmt">// pitch = 每一行的 byte 數（可能 > width * 4，因為對齊）</span><br>
+pitch ≥ width * 4
 </div>
 
 <div class="box box-yellow">
@@ -389,18 +411,18 @@ ul, ol { margin: 8px 0 12px 24px; line-height: 2.2; }
 </ol>
 
 <h3>顏色格式：ARGB</h3>
-<div class="math">
-  <span class="r cmt">// uint32_t color = 0xAARRGGBB</span>
-  <span class="r">A = Alpha（透明度）  bits 31-24</span>
-  <span class="r">R = Red             bits 23-16</span>
-  <span class="r">G = Green           bits 15-8</span>
-  <span class="r">B = Blue            bits  7-0</span>
-  <span class="r cmt"></span>
-  <span class="r cmt">// 常用顏色</span>
-  <span class="r ok">0xFFFFFFFF  // 白色</span>
-  <span class="r ok">0xFF000000  // 黑色</span>
-  <span class="r ok">0xFFFF0000  // 紅色</span>
-  <span class="r ok">0xFF0000FF  // 藍色</span>
+<div class="code">
+<span class="cmt">// uint32_t color = 0xAARRGGBB</span><br>
+A = Alpha（透明度）  bits 31-24<br>
+R = Red             bits 23-16<br>
+G = Green           bits 15-8<br>
+B = Blue            bits  7-0<br>
+<br>
+<span class="cmt">// 常用顏色</span><br>
+<span class="ok">0xFFFFFFFF  // 白色</span><br>
+<span class="ok">0xFF000000  // 黑色</span><br>
+<span class="ok">0xFFFF0000  // 紅色</span><br>
+<span class="ok">0xFF0000FF  // 藍色</span>
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════ -->
@@ -408,12 +430,12 @@ ul, ol { margin: 8px 0 12px 24px; line-height: 2.2; }
 
 <p>既然有了 SetPixel，畫一條從 (0,0) 到 (7,3) 的線，最直覺的方法是：</p>
 
-<div class="math">
-  <span class="r cmt">// 笨方法：逐 x 計算對應的 y</span>
-  <span class="r"><span class="kw">for</span> (x = 0; x &lt;= 7; x++) {</span>
-  <span class="r">    y = round(x * 3.0 / 7.0);</span>
-  <span class="r">    SetPixel(x, y, color);</span>
-  <span class="r">}</span>
+<div class="code">
+<span class="cmt">// 笨方法：逐 x 計算對應的 y</span><br>
+<span class="kw">for</span> (x = 0; x &lt;= 7; x++) {<br>
+&nbsp;&nbsp;y = round(x * 3.0 / 7.0);<br>
+&nbsp;&nbsp;SetPixel(x, y, color);<br>
+}
 </div>
 
 <p>這個方法有什麼問題？</p>
@@ -516,10 +538,13 @@ ul, ol { margin: 8px 0 12px 24px; line-height: 2.2; }
   軟體光柵化的核心就是這三個問題。GPU 做的事情在本質上相同，只是並行化了幾千倍。
 </div>
 
-<!-- ── Chapter nav ────────────────────────────────────────────── -->
-<div class="chapter-nav">
-  <a href="../index.html">← 系列首頁</a>
-  <a class="next" href="ch02_dda.html">Ch02 — DDA 直線演算法 →</a>
+<div class="next-ch">
+  <div>
+    <div class="next-label">PART 1 · CHAPTER 02</div>
+    <div class="next-title">DDA 直線演算法</div>
+    <div class="next-desc">從微分方程 dy/dx = m 出發，Euler 方法的直接應用。最直覺的直線演算法，以及它的問題：浮點誤差與效能。</div>
+  </div>
+  <a href="ch02_dda.html" class="next-arrow">→</a>
 </div>
 
 </body>

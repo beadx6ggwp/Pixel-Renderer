@@ -61,7 +61,18 @@ strong { color: #f9e2af; }
 .box-yellow{ background: #1e1e2e; border-left: 4px solid #f9e2af; }
 
 .fig { margin: 20px auto; text-align: center; }
-.fig figcaption { color: #6c7086; font-size: 0.82em; margin-top: 8px; }
+.fig figcaption { color: #6c7086; font-size: 0.88em; margin-top: 8px; }
+
+.katex-display { background: #181825; border: 1px solid #313244; border-radius: 6px; padding: 18px 24px; margin: 14px 0; overflow-x: auto; }
+.katex-display > .katex { color: #cdd6f4; }
+.katex { color: #cdd6f4; font-size: 1.0em; }
+
+.next-ch { margin-top: 56px; padding: 20px 24px; background: #181825; border: 1px solid #313244; border-radius: 8px; display: flex; align-items: center; gap: 20px; }
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: #6c7086; margin-bottom: 4px; }
+.next-title { color: #89b4fa; font-size: 1em; }
+.next-desc  { color: #6c7086; font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: #89b4fa; font-size: 1.6em; text-decoration: none; }
+.next-arrow:hover { color: #cba6f7; }
 
 table { width: 100%; border-collapse: collapse;
   font-family: 'Consolas', monospace; font-size: 0.83em; margin: 14px 0; }
@@ -85,6 +96,7 @@ hr { border: none; border-top: 1px solid #313244; margin: 30px 0; }
 .code .em  { color: #f38ba8; }
 .code .hi  { color: #f9e2af; }
 </style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 </head>
 <body>
 
@@ -184,14 +196,11 @@ hr { border: none; border-top: 1px solid #313244; margin: 30px 0; }
 
   <p>設 x<sub>i+1</sub> 位置的理想 y 值 = m(x<sub>i+1</sub>) + b，寫出 d₁ 和 d₂：</p>
 
-  <div class="math">
-    <span class="row cmt">// d₁：理想 y 到「下方候選像素」的距離</span>
-    <span class="row">d₁ = [m(xᵢ₊₁) + b] − Yᵢ</span>
-    <span class="row cmt"></span>
-    <span class="row cmt">// d₂：「上方候選像素」到理想 y 的距離</span>
-    <span class="row">d₂ = Yᵢ₊₁ − [m(xᵢ₊₁) + b]</span>
-    <span class="row dim">    = (Yᵢ + 1) − [m(xᵢ₊₁) + b]   // 因為 Yᵢ₊₁ = Yᵢ + 1</span>
-  </div>
+$\begin{array}{ll}
+d_1 = [m(x_{i+1}) + b] - Y_i & \textcolor{#6c7086}{\text{// 下方候選像素到理想 y 的距離}} \\[8pt]
+d_2 = Y_{i+1} - [m(x_{i+1}) + b] & \\
+\quad = (Y_i + 1) - [m(x_{i+1}) + b] & \textcolor{#6c7086}{\text{// } Y_{i+1} = Y_i + 1}
+\end{array}$
 
   <div class="box-note box-blue">
     <strong>決策規則很直接：</strong><br>
@@ -205,21 +214,18 @@ hr { border: none; border-top: 1px solid #313244; margin: 30px 0; }
 <div class="sec">
   <div class="sec-title"><div class="sec-num">3</div>計算 d₁ − d₂（還有浮點數）</div>
 
-  <div class="math">
-    <span class="row">d₁ − d₂ = [m(xᵢ₊₁) + b − Yᵢ] − [(Yᵢ+1) − m(xᵢ₊₁) − b]</span>
-    <span class="row">        = 2m(xᵢ₊₁) + 2b − 2Yᵢ − 1</span>
-    <span class="row dim">        // 代入 xᵢ₊₁ = xᵢ + 1</span>
-    <span class="row">        = 2m(xᵢ+1) + 2b − 2Yᵢ − 1</span>
-    <span class="row">        = 2mxᵢ + 2m + 2b − 2Yᵢ − 1</span>
-  </div>
+$\begin{array}{rl}
+d_1 - d_2 &= [m(x_{i+1}) + b - Y_i] - [(Y_i+1) - m(x_{i+1}) - b] \\[4pt]
+&= 2m(x_{i+1}) + 2b - 2Y_i - 1 \\[4pt]
+&\textcolor{#6c7086}{(\text{代入 } x_{i+1} = x_i + 1)} \\[4pt]
+&= 2mx_i + 2m + 2b - 2Y_i - 1
+\end{array}$
 
   <p>代入 m = dy/dx：</p>
 
-  <div class="math">
-    <span class="row">d₁ − d₂ = 2·(dy/dx)·xᵢ + 2·(dy/dx) + 2b − 2Yᵢ − 1</span>
-    <span class="row dim">         // 兩側 × dx（dx > 0，不改變正負）</span>
-    <span class="row hi">dx(d₁ − d₂) = 2dy·xᵢ − 2dx·Yᵢ + 2dy + dx(2b − 1) ← ④式</span>
-  </div>
+$d_1 - d_2 = 2\cdot\frac{\Delta y}{\Delta x}\cdot x_i + 2\cdot\frac{\Delta y}{\Delta x} + 2b - 2Y_i - 1$
+<p style="color:#6c7086;font-size:0.88em;margin:4px 0 8px">兩側 × Δx（Δx &gt; 0，不改變正負）：</p>
+$\textcolor{#f9e2af}{\Delta x(d_1 - d_2) = 2\Delta y \cdot x_i - 2\Delta x \cdot Y_i + 2\Delta y + \Delta x(2b-1)} \quad \text{← ④式}$
 
   <p>現在右側全是整數（dx, dy, xᵢ, Yᵢ 都是整數；b 還有問題，後面處理）。</p>
 </div>
@@ -230,15 +236,13 @@ hr { border: none; border-top: 1px solid #313244; margin: 30px 0; }
 
   <p>把 ④式右側拆成「隨 i 變動的部分」和「常數 C」：</p>
 
-  <div class="math">
-    <span class="row">令 C = 2dy + dx(2b − 1)  <span class="cmt">// 常數，整個迴圈不變</span></span>
-    <span class="row cmt"></span>
-    <span class="row hi">Pᵢ = dx(d₁ − d₂) = 2dy·xᵢ − 2dx·Yᵢ + C</span>
-    <span class="row cmt"></span>
-    <span class="row cmt">// 決策規則換成：</span>
-    <span class="row em">Pᵢ &lt; 0  →  d₁ &lt; d₂  →  選 Yᵢ（不升 y）</span>
-    <span class="row ok">Pᵢ &gt; 0  →  d₁ &gt; d₂  →  選 Yᵢ₊₁（升 y）</span>
-  </div>
+$C = 2\Delta y + \Delta x(2b-1) \qquad \textcolor{#6c7086}{\text{（常數，整個迴圈不變）}}$
+$\textcolor{#f9e2af}{P_i = \Delta x(d_1 - d_2) = 2\Delta y \cdot x_i - 2\Delta x \cdot Y_i + C}$
+<div class="box-note box-blue" style="font-size:0.9em;line-height:2;margin-top:8px">
+  決策規則換成：<br>
+  <span style="color:#f38ba8">P<sub>i</sub> &lt; 0</span> → d₁ &lt; d₂ → 選 Y<sub>i</sub>（不升 y）<br>
+  <span style="color:#a6e3a1">P<sub>i</sub> &gt; 0</span> → d₁ &gt; d₂ → 選 Y<sub>i+1</sub>（升 y）
+</div>
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════════════ -->
@@ -248,13 +252,12 @@ hr { border: none; border-top: 1px solid #313244; margin: 30px 0; }
   <p>Pᵢ 的計算需要 xᵢ 和 Yᵢ，每步重算太浪費。
   用 Pᵢ₊₁ − Pᵢ 推出增量，只做一次加法。</p>
 
-  <div class="math">
-    <span class="row">Pᵢ₊₁ = 2dy·xᵢ₊₁ − 2dx·Yᵢ₊₁ + C</span>
-    <span class="row cmt"></span>
-    <span class="row">Pᵢ₊₁ − Pᵢ = 2dy·[xᵢ₊₁ − xᵢ] − 2dx·[Yᵢ₊₁ − Yᵢ]</span>
-    <span class="row dim">           // xᵢ₊₁ − xᵢ = 1（每步 x 必走）</span>
-    <span class="row hi">Pᵢ₊₁ − Pᵢ = 2dy − 2dx·(Yᵢ₊₁ − Yᵢ)</span>
-  </div>
+$\begin{array}{rl}
+P_{i+1} &= 2\Delta y \cdot x_{i+1} - 2\Delta x \cdot Y_{i+1} + C \\[6pt]
+P_{i+1} - P_i &= 2\Delta y \cdot [x_{i+1} - x_i] - 2\Delta x \cdot [Y_{i+1} - Y_i] \\[4pt]
+&\textcolor{#6c7086}{(x_{i+1} - x_i = 1 \text{，每步 x 必走})} \\[6pt]
+\textcolor{#f9e2af}{P_{i+1} - P_i} &\textcolor{#f9e2af}{= 2\Delta y - 2\Delta x \cdot (Y_{i+1} - Y_i)}
+\end{array}$
 
   <p><strong>Yᵢ₊₁ − Yᵢ</strong> 就是「y 有沒有升格」，只有兩種值：</p>
 
@@ -262,17 +265,11 @@ hr { border: none; border-top: 1px solid #313244; margin: 30px 0; }
 
   <p><strong>Case 1：Pᵢ &lt; 0，選 Yᵢ（y 不動）</strong><br>
   Yᵢ₊₁ = Yᵢ，所以 Yᵢ₊₁ − Yᵢ = 0</p>
-  <div class="math">
-    <span class="row em">Pᵢ₊₁ = Pᵢ + 2dy − 2dx·0</span>
-    <span class="row em box">Pᵢ₊₁ = Pᵢ + 2dy</span>
-  </div>
+  $\textcolor{#f38ba8}{P_{i+1} = P_i + 2\Delta y}$
 
   <p><strong>Case 2：Pᵢ &gt; 0，選 Yᵢ₊₁（y 升一格）</strong><br>
   Yᵢ₊₁ = Yᵢ + 1，所以 Yᵢ₊₁ − Yᵢ = 1</p>
-  <div class="math">
-    <span class="row ok">Pᵢ₊₁ = Pᵢ + 2dy − 2dx·1</span>
-    <span class="row ok box">Pᵢ₊₁ = Pᵢ + 2dy − 2dx</span>
-  </div>
+  $\textcolor{#a6e3a1}{P_{i+1} = P_i + 2\Delta y - 2\Delta x}$
 
   <div class="box-note box-green">
     每步只需要一次加法。沒有乘法，沒有浮點數，沒有除法。
@@ -286,15 +283,14 @@ hr { border: none; border-top: 1px solid #313244; margin: 30px 0; }
   <p>起點 (x₀, y₀) 在直線上，所以 b = y₀ − m·x₀ = y₀ − (dy/dx)·x₀。</p>
   <p>代入 P₀（i = 0 時的值，在第一步畫完 (x₀, y₀) 後，用來判斷下一步）：</p>
 
-  <div class="math">
-    <span class="row">P₀ = 2dy·x₀ − 2dx·y₀ + C</span>
-    <span class="row dim">   // 展開 C = 2dy + dx(2b − 1)</span>
-    <span class="row">   = 2dy·x₀ − 2dx·y₀ + 2dy + 2dx·b − dx</span>
-    <span class="row dim">   // 代入 b = y₀ − (dy/dx)·x₀，所以 2dx·b = 2dx·y₀ − 2dy·x₀</span>
-    <span class="row">   = 2dy·x₀ − 2dx·y₀ + 2dy + (2dx·y₀ − 2dy·x₀) − dx</span>
-    <span class="row dim">   // 消掉 2dy·x₀ 和 2dx·y₀</span>
-    <span class="row hi">P₀ = 2dy − dx</span>
-  </div>
+$\begin{array}{rl}
+P_0 &= 2\Delta y \cdot x_0 - 2\Delta x \cdot y_0 + C \\[4pt]
+&\textcolor{#6c7086}{(\text{展開 } C = 2\Delta y + \Delta x(2b-1))} \\[4pt]
+&= 2\Delta y \cdot x_0 - 2\Delta x \cdot y_0 + 2\Delta y + 2\Delta x \cdot b - \Delta x \\[4pt]
+&\textcolor{#6c7086}{(\text{代入 } b = y_0 - \tfrac{\Delta y}{\Delta x} x_0 \;\Rightarrow\; 2\Delta x \cdot b = 2\Delta x \cdot y_0 - 2\Delta y \cdot x_0)} \\[4pt]
+&= 2\Delta y \cdot x_0 - 2\Delta x \cdot y_0 + 2\Delta y + (2\Delta x \cdot y_0 - 2\Delta y \cdot x_0) - \Delta x \\[6pt]
+\textcolor{#f9e2af}{P_0} &\textcolor{#f9e2af}{= 2\Delta y - \Delta x}
+\end{array}$
 
   <div class="box-note box-yellow">
     <strong>P₀ = 2dy − dx</strong><br>
@@ -307,19 +303,19 @@ hr { border: none; border-top: 1px solid #313244; margin: 30px 0; }
 <div class="sec">
   <div class="sec-title"><div class="sec-num">7</div>完整演算法（slope 0~1 版）</div>
 
-  <div class="math">
-    <span class="row cmt">// 初始化</span>
-    <span class="row">P = 2dy − dx     <span class="cmt">// P₀</span></span>
-    <span class="row cmt"></span>
-    <span class="row kw">loop（x 從 x₀ 走到 x₁）：</span>
-    <span class="row">  畫 (x, y)</span>
-    <span class="row">  x += 1         <span class="cmt">// x 每步必走</span></span>
-    <span class="row cmt"></span>
-    <span class="row em">  if P &lt; 0:      <span class="cmt">// d₁ &lt; d₂，靠近下方，y 不動</span></span>
-    <span class="row em">    P += 2dy</span>
-    <span class="row ok">  else:          <span class="cmt">// d₁ &gt; d₂，靠近上方，y 升一格</span></span>
-    <span class="row ok">    y += 1</span>
-    <span class="row ok">    P += 2dy − 2dx</span>
+  <div class="code">
+<span class="cmt">// 初始化</span><br>
+P = 2Δy − Δx  <span class="cmt">// P₀</span><br>
+<br>
+<span class="kw">loop</span>（x 從 x₀ 走到 x₁）：<br>
+&nbsp;&nbsp;畫 (x, y)<br>
+&nbsp;&nbsp;x += 1  <span class="cmt">// x 每步必走</span><br>
+<br>
+&nbsp;&nbsp;<span class="em">if P &lt; 0:  <span class="cmt">// d₁ &lt; d₂，靠近下方，y 不動</span></span><br>
+&nbsp;&nbsp;<span class="em">&nbsp;&nbsp;P += 2Δy</span><br>
+&nbsp;&nbsp;<span class="ok">else:  <span class="cmt">// d₁ &gt; d₂，靠近上方，y 升一格</span></span><br>
+&nbsp;&nbsp;<span class="ok">&nbsp;&nbsp;y += 1</span><br>
+&nbsp;&nbsp;<span class="ok">&nbsp;&nbsp;P += 2Δy − 2Δx</span>
   </div>
 </div>
 
@@ -383,18 +379,18 @@ hr { border: none; border-top: 1px solid #313244; margin: 30px 0; }
 
   <p>程式碼用的是通用版（任意斜率、任意方向），把上面的 P 做了一個等價變換：</p>
 
-  <div class="math">
-    <span class="row cmt">// 程式碼的 err 和 P 的關係</span>
-    <span class="row">err = −P / 2 + (dx − dy) / 2   <span class="cmt">// 等比例縮放 + 移位</span></span>
-    <span class="row dim">// 等價，只是換個基準點讓兩軸對稱</span>
-    <span class="row cmt"></span>
-    <span class="row cmt">// 程式碼的初始值</span>
-    <span class="row">err = dx − dy   <span class="cmt">// 對應 P₀ = 2dy − dx（符號相反）</span></span>
-    <span class="row cmt"></span>
-    <span class="row cmt">// 程式碼的判斷</span>
-    <span class="row">e2 = 2 × err</span>
-    <span class="row em">if e2 &gt; −dy → x 走   <span class="cmt">// 對稱地處理 x 軸</span></span>
-    <span class="row ok">if e2 &lt; dx  → y 走   <span class="cmt">// 對應 P &lt; 0 的條件</span></span>
+  <div class="code">
+<span class="cmt">// 程式碼的 err 和 P 的關係</span><br>
+err = −P / 2 + (Δx − Δy) / 2  <span class="cmt">// 等比例縮放 + 移位</span><br>
+<span class="cmt">// 等價，只是換個基準點讓兩軸對稱</span><br>
+<br>
+<span class="cmt">// 程式碼的初始值</span><br>
+err = Δx − Δy  <span class="cmt">// 對應 P₀ = 2Δy − Δx（符號相反）</span><br>
+<br>
+<span class="cmt">// 程式碼的判斷</span><br>
+e2 = 2 × err<br>
+<span class="em">if e2 &gt; −Δy → x 走  <span class="cmt">// 對稱地處理 x 軸</span></span><br>
+<span class="ok">if e2 &lt; Δx  → y 走  <span class="cmt">// 對應 P &lt; 0 的條件</span></span>
   </div>
 
   <div class="box-note box-blue">
@@ -610,5 +606,22 @@ render();
   </table>
 </div>
 
+<div class="next-ch">
+  <div>
+    <div class="next-label">NEXT CHAPTER</div>
+    <div class="next-title">Ch06 — 八個象限的對稱性</div>
+    <div class="next-desc">用 sx/sy 和 dx/dy 對稱，讓一套公式涵蓋全部方向</div>
+  </div>
+  <a class="next-arrow" href="ch06_bresenham_octants.html">→</a>
+</div>
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '\\(', right: '\\)', display: false}
+    ]
+  });"></script>
 </body>
 </html>

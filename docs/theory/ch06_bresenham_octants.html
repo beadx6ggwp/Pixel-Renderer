@@ -50,7 +50,7 @@ strong { color: #f9e2af; }
 .box-purple{ background: #1e1e2e; border-left: 4px solid #cba6f7; }
 
 .fig { margin: 20px auto; text-align: center; }
-.fig figcaption { color: #6c7086; font-size: 0.82em; margin-top: 8px; }
+.fig figcaption { color: #6c7086; font-size: 0.88em; margin-top: 8px; }
 
 table { width: 100%; border-collapse: collapse;
   font-family: 'Consolas', monospace; font-size: 0.83em; margin: 14px 0; }
@@ -90,7 +90,29 @@ hr { border: none; border-top: 1px solid #313244; margin: 28px 0; }
 /* Two col */
 .two-col { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
 .two-col > * { flex: 1; min-width: 280px; }
+
+.katex-display {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 6px;
+  padding: 18px 24px; margin: 14px 0; overflow-x: auto;
+}
+.katex-display > .katex { color: var(--text); }
+.katex { color: var(--text); font-size: 1.0em; }
+.next-ch { margin-top: 56px; padding: 20px 24px; background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 20px; }
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+.next-title { color: var(--blue); font-size: 1em; }
+.next-desc  { color: var(--muted); font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: var(--blue); font-size: 1.6em; text-decoration: none; }
+.next-arrow:hover { color: var(--purple); }
 </style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$', right: '$', display: true},
+      {left: '\\(', right: '\\)', display: false}
+    ]
+  });"></script>
 </head>
 <body>
 
@@ -260,18 +282,17 @@ hr { border: none; border-top: 1px solid #313244; margin: 28px 0; }
   </div>
 
   <p>d₁, d₂ 定義跟著翻轉：</p>
-  <div class="math">
-    <span class="row cmt">// 緩坡右下（sy = −1）</span>
-    <span class="row">d₁ = Yᵢ − [m(xᵢ₊₁) + b]          <span class="cmt">// 理想 y 到上方候選（不動那個）</span></span>
-    <span class="row">d₂ = [m(xᵢ₊₁) + b] − Yᵢ₋₁        <span class="cmt">// 理想 y 到下方候選（下降那個）</span></span>
-  </div>
+  <p style="color:var(--muted);font-size:0.88em;margin:6px 0">// 緩坡右下（sy = −1）</p>
+$\begin{array}{rll}
+d_1 &= Y_i - [m(x_{i+1}) + b] &\quad \text{理想 } y \text{ 到上方候選（不動那個）} \\[4pt]
+d_2 &= [m(x_{i+1}) + b] - Y_{i-1} &\quad \text{理想 } y \text{ 到下方候選（下降那個）}
+\end{array}$
 
-  <p>展開 d₁ − d₂，過程完全一樣（只是 Yᵢ₊₁ 換成 Yᵢ₋₁ = Yᵢ−1）：</p>
-  <div class="math">
-    <span class="row">d₁ − d₂ = 2Yᵢ − 2m(xᵢ₊₁) − 2b − 1</span>
-    <span class="row dim">         // × dx</span>
-    <span class="row hi">dx(d₁−d₂) = −2dy·xᵢ + 2dx·Yᵢ + (常數)</span>
-  </div>
+  <p>展開 \(d_1 - d_2\)，過程完全一樣（只是 \(Y_{i+1}\) 換成 \(Y_{i-1} = Y_i - 1\)）：</p>
+$\begin{array}{rl}
+d_1 - d_2 &= 2Y_i - 2m(x_{i+1}) - 2b - 1 \\[4pt]
+\times\, dx \Rightarrow\quad \textcolor{#f9e2af}{dx(d_1 - d_2)} &= \textcolor{#f9e2af}{-2\Delta y \cdot x_i + 2\Delta x \cdot Y_i + \text{（常數）}}
+\end{array}$
 
   <div class="box-note box-yellow">
     結論：d₁−d₂ 的符號和 ① 完全一樣，<strong>只是 dy 的符號翻轉</strong>了。<br>
@@ -300,24 +321,20 @@ hr { border: none; border-top: 1px solid #313244; margin: 28px 0; }
   <div class="two-col">
     <div>
       <p><strong>① 緩坡右上（dx ≥ dy）</strong></p>
-      <div class="math">
-        <span class="row">x 每步必走 +1</span>
-        <span class="row">y 在 Yᵢ 或 Yᵢ+1 選一個</span>
-        <span class="row cmt"></span>
-        <span class="row">P₀ = 2dy − dx</span>
-        <span class="row ok">P &lt; 0: P += 2dy        <span class="cmt">y 不動</span></span>
-        <span class="row em">P ≥ 0: y++; P += 2dy−2dx <span class="cmt">y 升</span></span>
+      <div class="box box-gray" style="font-size:0.88em;line-height:2.2;margin-top:8px">
+        x 每步必走 +1；y 在 Y<sub>i</sub> 或 Y<sub>i+1</sub> 選一個<br>
+        \(P_0 = 2\Delta y - \Delta x\)<br>
+        <span style="color:#a6e3a1">P &lt; 0</span>：P += 2Δy <span style="color:#6c7086">（y 不動）</span><br>
+        <span style="color:#f38ba8">P ≥ 0</span>：y++；P += 2Δy − 2Δx <span style="color:#6c7086">（y 升）</span>
       </div>
     </div>
     <div>
       <p><strong>② 陡坡右上（dy &gt; dx）</strong></p>
-      <div class="math">
-        <span class="row">y 每步必走 +1</span>
-        <span class="row">x 在 Xᵢ 或 Xᵢ+1 選一個</span>
-        <span class="row cmt"></span>
-        <span class="row">P₀ = 2dx − dy</span>
-        <span class="row ok">P &lt; 0: P += 2dx        <span class="cmt">x 不動</span></span>
-        <span class="row em">P ≥ 0: x++; P += 2dx−2dy <span class="cmt">x 走</span></span>
+      <div class="box box-gray" style="font-size:0.88em;line-height:2.2;margin-top:8px">
+        y 每步必走 +1；x 在 X<sub>i</sub> 或 X<sub>i+1</sub> 選一個<br>
+        \(P_0 = 2\Delta x - \Delta y\)<br>
+        <span style="color:#a6e3a1">P &lt; 0</span>：P += 2Δx <span style="color:#6c7086">（x 不動）</span><br>
+        <span style="color:#f38ba8">P ≥ 0</span>：x++；P += 2Δx − 2Δy <span style="color:#6c7086">（x 走）</span>
       </div>
     </div>
   </div>
@@ -378,17 +395,15 @@ hr { border: none; border-top: 1px solid #313244; margin: 28px 0; }
   </div>
 
   <p>再推一遍陡坡的 d₁, d₂（以 ② 陡坡右上為例）：</p>
-  <div class="math">
-    <span class="row cmt">// y 是主軸，每步 y+1；x 在 Xᵢ 或 Xᵢ+1 選一個</span>
-    <span class="row cmt">// 直線方程改用 x = (1/m)·y + b'，斜率換成 dx/dy</span>
-    <span class="row cmt"></span>
-    <span class="row">d₁ = [x_理想 at yᵢ₊₁] − Xᵢ       <span class="cmt">// 理想 x 到左方候選（不動）的距離</span></span>
-    <span class="row">d₂ = Xᵢ₊₁ − [x_理想 at yᵢ₊₁]    <span class="cmt">// 右方候選（前進）到理想 x 的距離</span></span>
-    <span class="row cmt"></span>
-    <span class="row cmt">// 展開 d₁−d₂，兩側 × dy：</span>
-    <span class="row hi">P₀ = 2dx − dy</span>
-    <span class="row ok">P &lt; 0: x 不動, P += 2dx</span>
-    <span class="row em">P ≥ 0: x++,    P += 2dx − 2dy</span>
+  <div class="box box-gray" style="font-size:0.88em;line-height:2.2">
+    <span style="color:#6c7086">// y 是主軸，每步 y+1；x 在 X<sub>i</sub> 或 X<sub>i+1</sub> 選一個</span><br>
+    <span style="color:#6c7086">// 直線方程改用 x = (1/m)·y + b'，斜率換成 Δx/Δy</span><br><br>
+    d<sub>1</sub> = [x<sub>理想</sub> at y<sub>i+1</sub>] − X<sub>i</sub> &nbsp;&nbsp;&nbsp;<span style="color:#6c7086">// 理想 x 到左方候選（不動）的距離</span><br>
+    d<sub>2</sub> = X<sub>i+1</sub> − [x<sub>理想</sub> at y<sub>i+1</sub>] &nbsp;<span style="color:#6c7086">// 右方候選（前進）到理想 x 的距離</span><br><br>
+    <span style="color:#6c7086">// 展開 d₁−d₂，兩側 × Δy：</span><br>
+    <span style="color:#f9e2af;font-weight:bold">\(P_0 = 2\Delta x - \Delta y\)</span><br>
+    <span style="color:#a6e3a1">P &lt; 0</span>：x 不動，P += 2Δx<br>
+    <span style="color:#f38ba8">P ≥ 0</span>：x++，P += 2Δx − 2Δy
   </div>
 
   <div class="box-note box-purple">
@@ -465,16 +480,15 @@ hr { border: none; border-top: 1px solid #313244; margin: 28px 0; }
 
   <p>關鍵是把兩個判斷做成<strong>對稱的兩個獨立 if</strong>（不是 if-else）：</p>
 
-  <div class="math">
-    <span class="row">err = dx − dy</span>
-    <span class="row cmt">// 注意：這等於 −P₀（對比 ① 的 P₀ = 2dy−dx，除以 2 再取負）</span>
-    <span class="row cmt"></span>
-    <span class="row">e2 = 2 × err   <span class="cmt">// 快照，相當於 −P</span></span>
-    <span class="row cmt"></span>
-    <span class="row cmt">// 對稱判斷一：要不要走 x？</span>
-    <span class="row ok">if e2 &gt; −dy: x += sx;  err −= dy</span>
-    <span class="row cmt">// 對稱判斷二：要不要走 y？</span>
-    <span class="row em">if e2 &lt;  dx: y += sy;  err += dx</span>
+  <div class="code">
+<span class="hi">err = dx − dy</span>  <span class="cmt">// 注意：這等於 −P₀（對比 ① 的 P₀ = 2dy−dx，除以 2 再取負）</span><br>
+<br>
+e2 = 2 × err  <span class="cmt">// 快照，相當於 −P</span><br>
+<br>
+<span class="cmt">// 對稱判斷一：要不要走 x？</span><br>
+<span class="ok">if e2 &gt; −dy: x += sx;  err −= dy</span><br>
+<span class="cmt">// 對稱判斷二：要不要走 y？</span><br>
+<span class="em">if e2 &lt;  dx: y += sy;  err += dx</span>
   </div>
 
   <p>把這兩個判斷和上面 8 個 case 的 P 對應起來：</p>
@@ -795,6 +809,15 @@ loadDir('SE');
     <strong>3. 同時步進</strong>：兩個 if 獨立（不是 if-else），處理斜率 = 1 的對角走法<br>
     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ 用 <code>e2</code> 快照，避免第一個 if 改 err 後影響第二個判斷
   </div>
+</div>
+
+<div class="next-ch">
+  <div>
+    <div class="next-label">NEXT CHAPTER</div>
+    <div class="next-title">Ch07 — 兩種推導視角與背後理論</div>
+    <div class="next-desc">誤差累積法與 d₁d₂ 法的等價性，以及中點測試的更深連結</div>
+  </div>
+  <a class="next-arrow" href="ch07_bresenham_theory.html">→</a>
 </div>
 
 </body>
