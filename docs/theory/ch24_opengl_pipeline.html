@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Ch24 — OpenGL 管線剖析</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[
+    {left:'$',right:'$',display:true},
+    {left:'\\(',right:'\\)',display:false}]});"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#1e1e2e;--bg1:#181825;--bg2:#11111b;
+  --border:#313244;--muted:#6c7086;--text:#cdd6f4;
+  --blue:#89b4fa;--green:#a6e3a1;--yellow:#f9e2af;
+  --orange:#fab387;--red:#f38ba8;--purple:#cba6f7;--teal:#94e2d5;
+}
+body{background:var(--bg);color:var(--text);
+  font-family:'Georgia',serif;font-size:15px;
+  padding:0 20px 80px;max-width:900px;margin:0 auto;line-height:1.9}
+nav{font-family:'Consolas',monospace;font-size:.78em;color:var(--muted);
+  padding:14px 0;border-bottom:1px solid var(--border);
+  margin-bottom:36px;display:flex;align-items:center;gap:10px}
+nav a{color:var(--muted);text-decoration:none}
+nav a:hover{color:var(--blue)}
+.nav-sep{color:var(--border)}.nav-cur{color:var(--text)}
+.nav-right{margin-left:auto;display:flex;gap:16px}
+.ch-header{margin-bottom:40px}
+.ch-label{font-family:'Consolas',monospace;font-size:.78em;color:var(--muted);letter-spacing:.1em;margin-bottom:8px}
+.ch-title{color:var(--blue);font-size:1.7em;font-weight:normal;margin-bottom:10px}
+.ch-sub{color:var(--muted);font-size:.88em;margin-bottom:14px}
+.ch-tags{display:flex;gap:6px;flex-wrap:wrap}
+.ch-tag{font-family:'Consolas',monospace;font-size:.75em;padding:2px 10px;
+  border-radius:99px;border:1px solid var(--border);color:var(--muted)}
+h2{color:var(--purple);font-size:1em;font-family:'Consolas',monospace;
+  letter-spacing:.05em;padding:10px 0;border-bottom:1px solid var(--border);
+  margin:40px 0 20px;display:flex;align-items:center;gap:12px}
+h2 .n{background:var(--purple);color:var(--bg2);font-weight:bold;
+  border-radius:50%;width:28px;height:28px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:.85em}
+h3{color:var(--yellow);font-size:.95em;margin:22px 0 10px}
+p{margin-bottom:12px}
+strong{color:var(--yellow)}
+em{color:var(--orange);font-style:normal}
+code{font-family:'Consolas',monospace;font-size:.88em;
+  background:var(--bg1);padding:1px 6px;border-radius:3px;color:var(--teal)}
+.box{border-radius:6px;padding:14px 18px;margin:16px 0;font-size:.9em;line-height:1.85}
+.box-blue  {background:var(--bg1);border-left:4px solid var(--blue)}
+.box-green {background:var(--bg1);border-left:4px solid var(--green)}
+.box-yellow{background:var(--bg1);border-left:4px solid var(--yellow)}
+.box-red   {background:var(--bg1);border-left:4px solid var(--red)}
+.box-purple{background:var(--bg1);border-left:4px solid var(--purple)}
+.katex-display{background:var(--bg1);border:1px solid var(--border);border-radius:6px;
+  padding:18px 24px;margin:14px 0;overflow-x:auto}
+.katex-display>.katex{color:var(--text)}
+.katex{color:var(--text);font-size:1em}
+.code{background:#0d0d14;border:1px solid var(--border);border-radius:8px;
+  padding:18px 22px;font-family:'Consolas',monospace;font-size:.85em;
+  line-height:2;margin:14px 0;white-space:pre;overflow-x:auto}
+.code .cmt{color:var(--muted)}.code .kw{color:var(--purple)}
+.code .val{color:var(--orange)}.code .fn{color:var(--blue)}
+.code .ty{color:var(--teal)}.code .str{color:var(--green)}
+.fig{margin:24px auto;text-align:center}
+.fig figcaption{color:var(--muted);font-size:.88em;margin-top:10px;font-style:italic}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+.two-col>div{background:var(--bg1);border:1px solid var(--border);border-radius:8px;padding:16px 18px}
+.col-title{font-family:'Consolas',monospace;font-size:.85em;margin-bottom:10px;color:var(--blue)}
+table{width:100%;border-collapse:collapse;font-size:.87em;margin:14px 0}
+th{background:var(--bg1);color:var(--blue);padding:9px 14px;text-align:left;
+   border-bottom:2px solid var(--border);font-family:'Consolas',monospace}
+td{padding:8px 14px;border-bottom:1px solid var(--bg1);vertical-align:top}
+tr:hover td{background:var(--bg1)}
+.next-ch{margin-top:56px;padding:20px 24px;background:var(--bg1);
+  border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;gap:20px}
+.next-label{font-family:'Consolas',monospace;font-size:.75em;color:var(--muted);margin-bottom:4px}
+.next-title{color:var(--blue);font-size:1em}
+.next-desc{color:var(--muted);font-size:.85em;margin-top:4px}
+.next-arrow{margin-left:auto;color:var(--blue);font-size:1.6em;text-decoration:none}
+.next-arrow:hover{color:var(--purple)}
+/* Pipeline diagram */
+.pipe-flow{display:flex;flex-direction:column;gap:0;margin:24px auto;max-width:640px}
+.pipe-stage{border-radius:6px;padding:13px 20px;display:flex;align-items:center;gap:14px}
+.pipe-stage.fixed{background:var(--bg1);border:1px solid var(--border)}
+.pipe-stage.prog{background:#1e1535;border:1px solid var(--purple)}
+.pipe-stage .snum{font-family:'Consolas',monospace;font-size:.78em;color:var(--muted);min-width:22px;flex-shrink:0}
+.pipe-stage .sbody{flex:1}
+.pipe-stage .sname{font-family:'Consolas',monospace;font-size:.9em}
+.pipe-stage.prog .sname{color:var(--purple)}
+.pipe-stage.fixed .sname{color:var(--text)}
+.pipe-stage .sdesc{color:var(--muted);font-size:.8em;margin-top:3px;line-height:1.5}
+.pipe-stage .sbadge{font-family:'Consolas',monospace;font-size:.7em;
+  padding:2px 10px;border-radius:99px;white-space:nowrap;flex-shrink:0}
+.pipe-stage.prog .sbadge{background:var(--purple);color:var(--bg2);font-weight:bold}
+.pipe-stage.fixed .sbadge{background:var(--border);color:var(--muted)}
+.pipe-arrow{text-align:center;color:var(--border);font-size:.85em;
+  padding:3px 0;font-family:'Consolas',monospace;color:var(--muted)}
+.ours{display:inline-block;font-family:'Consolas',monospace;font-size:.78em;
+  padding:1px 8px;border-radius:4px;background:#0d1f0d;
+  border:1px solid var(--green);color:var(--green);margin-left:8px}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">軟體光柵化</a>
+  <span class="nav-sep">/</span>
+  <span>理論</span>
+  <span class="nav-sep">/</span>
+  <span class="nav-cur">Ch24</span>
+  <div class="nav-right">
+    <a href="ch21_mvp_pipeline.html">← Ch21</a>
+    <a href="ch25_ishader.html">Ch25 →</a>
+  </div>
+</nav>
+
+<div class="ch-header">
+  <div class="ch-label">PART 7 · CHAPTER 24</div>
+  <div class="ch-title">OpenGL 管線剖析</div>
+  <div class="ch-sub">把 Ch01–Ch21 建立的每一個環節，對應到 OpenGL 的渲染管線——看清楚哪些是固定機制、哪些是可程式化的鉤子</div>
+  <div class="ch-tags">
+    <span class="ch-tag">渲染管線</span>
+    <span class="ch-tag">vertex shader</span>
+    <span class="ch-tag">fragment shader</span>
+    <span class="ch-tag">固定管線</span>
+    <span class="ch-tag">GPU 並行</span>
+  </div>
+</div>
+
+<p>
+  從 Ch01 到 Ch21，我們從零建立了一條<strong>固定管線</strong>：
+  Bresenham 畫線、邊緣函數填充三角形、重心座標插值、MVP 矩陣變換、Z-buffer 深度測試。
+  這條管線能正確渲染，但它是寫死的——顏色固定、光照模型固定、頂點處理固定，
+  想要任何不同效果都要改動渲染器核心。
+</p>
+<p>
+  OpenGL 2.0 在 2004 年用<strong>可程式化管線</strong>解決了這個問題，
+  它把整條管線只開放兩個「鉤子」讓你寫程式：Vertex Shader 和 Fragment Shader。
+  其他所有機制——裁剪、光柵化、深度測試——仍然是 GPU 固定執行的。
+  本章的任務是把我們手寫的每一個步驟，清楚地對應到 OpenGL 管線的每一個階段。
+</p>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2><div class="n">1</div>固定管線的根本限制</h2>
+
+<p>現在的 <code>DrawTriangle</code> 簽名是這樣的：</p>
+
+<div class="code"><span class="kw">void</span> <span class="fn">DrawTriangle</span>(<span class="kw">const</span> <span class="ty">Vertex</span>&amp; v1, <span class="kw">const</span> <span class="ty">Vertex</span>&amp; v2, <span class="kw">const</span> <span class="ty">Vertex</span>&amp; v3, <span class="ty">uint32_t</span> color);</div>
+
+<p>
+  傳入三個頂點（已是螢幕座標）和一個固定顏色，整個三角形只能填一種色。
+  如果想做<strong>逐像素光照</strong>（每個 pixel 的亮度不同），就完全沒有辦法——
+  一個 <code>uint32_t</code> 無法表達這件事。
+</p>
+
+<p>想做任何效果都得在 <code>DrawTriangle</code> 外面預先算好：</p>
+
+<div class="code"><span class="cmt">// Flat Shading：整面同色——勉強可以</span>
+<span class="ty">float</span> intensity = <span class="fn">dot</span>(face_normal, light_dir);
+device-><span class="fn">DrawTriangle</span>(v1, v2, v3, <span class="fn">apply_light</span>(base_color, intensity));
+
+<span class="cmt">// Gouraud Shading：每個頂點顏色不同，像素之間要插值——完全做不到</span>
+<span class="cmt">// Phong Shading：每個像素用插值法向量計算光照——更做不到</span>
+<span class="cmt">// 貼圖採樣：fragment 要查貼圖表——也做不到</span></div>
+
+<div class="box box-yellow">
+  <strong>固定管線的根本問題：</strong>
+  顏色計算邏輯「寫死」在 <code>DrawTriangle</code> 裡。
+  任何想客製化的效果，都要修改渲染器核心——這讓「引擎」和「遊戲/應用邏輯」完全耦合在一起，
+  每換一種光照模型就要重寫一次光柵化迴圈。
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2><div class="n">2</div>OpenGL 渲染管線全圖</h2>
+
+<p>
+  OpenGL 把「從頂點到像素」切成六個依序執行的階段。
+  <strong style="color:var(--purple)">紫色</strong>的兩個是可程式化的，其餘四個是 GPU 固定執行的機制。
+</p>
+
+<div class="pipe-flow">
+
+  <div class="pipe-stage fixed">
+    <div class="snum">①</div>
+    <div class="sbody">
+      <div class="sname">Vertex Data &nbsp;<span style="color:var(--muted);font-weight:normal;font-size:.85em">頂點資料</span></div>
+      <div class="sdesc">CPU 準備幾何資料：位置、法向量、UV……送進 GPU。對應 OpenGL 的 VBO + VAO。</div>
+    </div>
+    <div class="sbadge">固定</div>
+  </div>
+  <div class="pipe-arrow">↓</div>
+
+  <div class="pipe-stage prog">
+    <div class="snum">②</div>
+    <div class="sbody">
+      <div class="sname">Vertex Shader &nbsp;<span style="color:var(--muted);font-weight:normal;font-size:.85em">頂點著色器</span></div>
+      <div class="sdesc">逐頂點執行你的程式：MVP 變換 → Clip Space 座標；計算並輸出 varyings（UV、法向量…）。</div>
+    </div>
+    <div class="sbadge">可程式化</div>
+  </div>
+  <div class="pipe-arrow">↓</div>
+
+  <div class="pipe-stage fixed">
+    <div class="snum">③</div>
+    <div class="sbody">
+      <div class="sname">Primitive Assembly + Clipping</div>
+      <div class="sdesc">把頂點組成三角形；裁剪超出 NDC 視錐的部分（生成新頂點）；透視除法 ÷w → NDC \([-1,1]^3\)。</div>
+    </div>
+    <div class="sbadge">固定</div>
+  </div>
+  <div class="pipe-arrow">↓</div>
+
+  <div class="pipe-stage fixed">
+    <div class="snum">④</div>
+    <div class="sbody">
+      <div class="sname">Rasterization &nbsp;<span style="color:var(--muted);font-weight:normal;font-size:.85em">光柵化</span></div>
+      <div class="sdesc">Viewport 變換 → 螢幕像素座標；邊緣函數測試哪些像素在三角形內；計算重心座標；用透視修正插值 varyings。</div>
+    </div>
+    <div class="sbadge">固定</div>
+  </div>
+  <div class="pipe-arrow">↓</div>
+
+  <div class="pipe-stage prog">
+    <div class="snum">⑤</div>
+    <div class="sbody">
+      <div class="sname">Fragment Shader &nbsp;<span style="color:var(--muted);font-weight:normal;font-size:.85em">片元著色器</span></div>
+      <div class="sdesc">逐片元（像素）執行你的程式：採樣貼圖、計算光照、輸出最終顏色。可以 discard（捨棄此像素）。</div>
+    </div>
+    <div class="sbadge">可程式化</div>
+  </div>
+  <div class="pipe-arrow">↓</div>
+
+  <div class="pipe-stage fixed">
+    <div class="snum">⑥</div>
+    <div class="sbody">
+      <div class="sname">Fragment Operations + Framebuffer</div>
+      <div class="sdesc">Depth Test（Z-buffer 比較）、Alpha Blend、Stencil Test；通過的 fragment 寫入 Framebuffer → 螢幕。</div>
+    </div>
+    <div class="sbadge">固定</div>
+  </div>
+
+</div>
+
+<div class="box box-purple">
+  <strong>設計哲學：</strong>
+  「你的位置在哪？（Vertex Shader）」和「你是什麼顏色？（Fragment Shader）」——
+  只把這兩個問題開放給程式設計師，其餘所有機制都是 GPU 的固定邏輯。
+  這讓 Shader 開發者只需專注在數學，不用管底層掃描線和緩衝區操作。
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2><div class="n">3</div>我們的程式碼對應哪個階段</h2>
+
+<table>
+  <thead>
+    <tr><th>OpenGL 管線階段</th><th>我們現在的程式碼</th><th>Part 7 之後</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>① Vertex Data</td>
+      <td><code>Vertex v1, v2, v3</code>——在 main.cpp 手動建立螢幕座標頂點</td>
+      <td>改成物件空間座標，由 vertex() 做變換</td>
+    </tr>
+    <tr>
+      <td>② Vertex Shader</td>
+      <td><strong>目前：不存在</strong>——MVP 矩陣計算散落在 main.cpp 的 TODO 裡</td>
+      <td><code>IShader::vertex()</code> — Ch25</td>
+    </tr>
+    <tr>
+      <td>③ Primitive Assembly + Clipping</td>
+      <td>透視除法 + Viewport 在 Ch21 的軟體範例程式碼中；裁剪未實作</td>
+      <td>整合進新版 DrawTriangle — Ch26</td>
+    </tr>
+    <tr>
+      <td>④ Rasterization</td>
+      <td><code>DrawTriangle</code> 的包圍盒 + 重心座標掃描（Ch09–Ch12）</td>
+      <td>保留，加入透視修正插值 — Ch26</td>
+    </tr>
+    <tr>
+      <td>⑤ Fragment Shader</td>
+      <td><strong>目前：不存在</strong>——<code>SetPixel(x, y, color)</code> 填固定色</td>
+      <td><code>IShader::fragment()</code> — Ch25</td>
+    </tr>
+    <tr>
+      <td>⑥ Fragment Ops</td>
+      <td>Z-buffer 理論在 Ch12，程式碼中有 TODO</td>
+      <td>整合進新版 DrawTriangle — Ch26</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="box box-green">
+  <strong>重點：光柵化核心不用改。</strong>
+  <code>DrawTriangle</code> 的邊緣測試迴圈（④）是所有 GPU 光柵化器的邏輯核心，我們的軟體版本完全正確。
+  Part 7 只是在它的<em>前面</em>插入 vertex() 鉤子、在它的<em>裡面</em>插入 fragment() 鉤子，
+  並補上透視修正插值。
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2><div class="n">4</div>Vertex Shader 的輸入與輸出</h2>
+
+<p>Vertex Shader 是一個純函數，每個頂點獨立執行一次。它的輸入來自兩個地方：</p>
+
+<div class="two-col">
+  <div>
+    <div class="col-title">Attributes — 每頂點獨有</div>
+    <ul style="margin-left:16px;line-height:2.1;font-size:.9em">
+      <li>位置（Object Space）</li>
+      <li>法向量</li>
+      <li>UV 座標</li>
+      <li>頂點顏色</li>
+    </ul>
+  </div>
+  <div>
+    <div class="col-title">Uniforms — 整個 DrawCall 共用</div>
+    <ul style="margin-left:16px;line-height:2.1;font-size:.9em">
+      <li>MVP 矩陣</li>
+      <li>光照方向</li>
+      <li>貼圖（sampler）</li>
+      <li>相機位置</li>
+    </ul>
+  </div>
+</div>
+
+<p>Vertex Shader 必須輸出：</p>
+
+<ul style="margin:10px 0 16px 20px;line-height:2.1">
+  <li><strong>gl_Position</strong>：頂點在 <em>Clip Space</em> 的齊次座標 \((x, y, z, w)\)</li>
+  <li><strong>Varyings</strong>：任何你想傳給 Fragment Shader 的值（UV、世界座標法向量…）——Rasterizer 會自動做插值</li>
+</ul>
+
+<div class="code"><span class="cmt">// GLSL Vertex Shader — 最典型的結構</span>
+<span class="kw">layout</span>(location = <span class="val">0</span>) <span class="kw">in</span> <span class="ty">vec3</span> aPosition;   <span class="cmt">// attribute：物件空間位置</span>
+<span class="kw">layout</span>(location = <span class="val">1</span>) <span class="kw">in</span> <span class="ty">vec2</span> aUV;          <span class="cmt">// attribute：UV 座標</span>
+<span class="kw">layout</span>(location = <span class="val">2</span>) <span class="kw">in</span> <span class="ty">vec3</span> aNormal;      <span class="cmt">// attribute：法向量</span>
+
+<span class="kw">uniform</span> <span class="ty">mat4</span> uMVP;                          <span class="cmt">// uniform：MVP 矩陣</span>
+<span class="kw">uniform</span> <span class="ty">mat4</span> uModelInvT;                    <span class="cmt">// uniform：法向量矩陣（M 的逆轉置）</span>
+
+<span class="kw">out</span> <span class="ty">vec2</span>  vUV;                              <span class="cmt">// varying：傳給 fragment shader</span>
+<span class="kw">out</span> <span class="ty">vec3</span>  vNormal;                          <span class="cmt">// varying</span>
+<span class="kw">out</span> <span class="ty">vec3</span>  vWorldPos;                        <span class="cmt">// varying</span>
+
+<span class="kw">void</span> <span class="fn">main</span>() {
+    gl_Position = uMVP * <span class="ty">vec4</span>(aPosition, <span class="val">1.0</span>);        <span class="cmt">// → Clip Space</span>
+    vUV       = aUV;
+    vNormal   = (<span class="ty">vec3</span>)(uModelInvT * <span class="ty">vec4</span>(aNormal, <span class="val">0.0</span>)); <span class="cmt">// 法向量變換</span>
+    vWorldPos = aPosition;                              <span class="cmt">// 暫時不做 Model 變換</span>
+}</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2><div class="n">5</div>Fragment Shader 的輸入與輸出</h2>
+
+<p>
+  Fragment Shader 在光柵化後執行，針對<strong>每一個候選像素（fragment）</strong>計算顏色。
+  它接收 Rasterizer 插值好的 varyings，輸出最終顏色。
+</p>
+
+<div class="code"><span class="cmt">// GLSL Fragment Shader — Lambert 漫反射 + 貼圖</span>
+<span class="kw">in</span> <span class="ty">vec2</span>  vUV;
+<span class="kw">in</span> <span class="ty">vec3</span>  vNormal;
+
+<span class="kw">uniform</span> <span class="ty">sampler2D</span> uDiffuse;    <span class="cmt">// uniform：diffuse 貼圖</span>
+<span class="kw">uniform</span> <span class="ty">vec3</span> uLightDir;        <span class="cmt">// uniform：光照方向（世界空間，已正規化）</span>
+
+<span class="kw">out</span> <span class="ty">vec4</span> fragColor;
+
+<span class="kw">void</span> <span class="fn">main</span>() {
+    <span class="ty">vec3</span>  N      = <span class="fn">normalize</span>(vNormal);
+    <span class="ty">float</span> ndotl  = <span class="fn">max</span>(<span class="fn">dot</span>(N, uLightDir), <span class="val">0.0</span>);   <span class="cmt">// Lambert 漫反射</span>
+    <span class="ty">vec4</span>  albedo = <span class="fn">texture</span>(uDiffuse, vUV);           <span class="cmt">// 採樣貼圖</span>
+    fragColor = <span class="ty">vec4</span>(albedo.rgb * ndotl, <span class="val">1.0</span>);      <span class="cmt">// 最終輸出</span>
+}</div>
+
+<div class="box box-blue">
+  <strong>Fragment ≠ Pixel（重要區別）：</strong>
+  Fragment 是光柵化產生的「候選像素」，不保證最終寫入螢幕。
+  Fragment Shader 執行後，還要通過 Depth Test（比較 Z-buffer）和其他 Fragment Operations。
+  在我們的軟體光柵化中，<code>if (depth &gt;= zbuffer[…]) continue;</code> 做的正是這件事——
+  這一行發生在 fragment() 之前。
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2><div class="n">6</div>GPU 並行：為什麼 Shader 被設計成「純函數」</h2>
+
+<p>
+  GPU 透過大量並行執行 Shader 呼叫來達到高效能。理解這個模型，你就理解了為什麼 Shader 要被設計成獨立執行、不能互相通訊。
+</p>
+
+<div class="two-col">
+  <div>
+    <div class="col-title">Vertex Shader 並行</div>
+    <p style="font-size:.88em;margin-top:8px;line-height:1.85">
+      10 萬個三角形 → 30 萬次 vertex() 呼叫。
+      GPU 用數千個 core 同時執行，每個頂點完全獨立——沒有任何頂點需要等待另一個的結果。
+    </p>
+  </div>
+  <div>
+    <div class="col-title">Fragment Shader 並行</div>
+    <p style="font-size:.88em;margin-top:8px;line-height:1.85">
+      一個三角形可能覆蓋數千個像素 → 數千次 fragment() 呼叫。
+      GPU 把 32 個 fragment 打成一組（warp），同時執行相同指令流（SIMD）。
+    </p>
+  </div>
+</div>
+
+<p>
+  <strong>關鍵限制：</strong>Vertex Shader 執行時不能讀取「隔壁頂點」的資料；
+  Fragment Shader 執行時不能讀取「隔壁像素」的顏色。
+  每次呼叫完全隔離——這是 GPU 能高效並行的根本原因。
+</p>
+
+<div class="box box-green">
+  <strong>軟體光柵化的對應：</strong>
+  我們的 <code>DrawTriangle</code> 雙層 for 迴圈在 CPU 上依序跑完所有像素，邏輯等價於 GPU 的光柵化。
+  GPU 做的事情在數學上完全相同——只是把「每個像素的 fragment() 呼叫」用數千個 core 並行展開。
+  理解了這一點，你就理解了為什麼 Shader 不能有「全域可變狀態」（global mutable state）：
+  沒有隔壁，就沒有共享狀態的必要。
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2><div class="n">7</div>Varyings 的生命週期</h2>
+
+<p>
+  Varyings 是連接 Vertex Shader 和 Fragment Shader 的橋樑。
+  它的生命週期分為三個階段：
+</p>
+
+<figure class="fig">
+<svg width="680" height="130" viewBox="0 0 680 130" font-family="Consolas,monospace" font-size="12">
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6c7086"/>
+    </marker>
+  </defs>
+  <!-- boxes -->
+  <rect x="10" y="30" width="160" height="70" rx="6" fill="#1e1535" stroke="#cba6f7" stroke-width="1.5"/>
+  <text x="90" y="58" fill="#cba6f7" text-anchor="middle" font-size="13">vertex(face, vert)</text>
+  <text x="90" y="78" fill="#6c7086" text-anchor="middle" font-size="11">寫入 varyings 成員</text>
+  <text x="90" y="93" fill="#6c7086" text-anchor="middle" font-size="11">回傳 Clip Space 位置</text>
+
+  <rect x="260" y="30" width="160" height="70" rx="6" fill="#181825" stroke="#313244" stroke-width="1.5"/>
+  <text x="340" y="58" fill="#cdd6f4" text-anchor="middle" font-size="13">Rasterizer</text>
+  <text x="340" y="78" fill="#6c7086" text-anchor="middle" font-size="11">重心座標插值 varyings</text>
+  <text x="340" y="93" fill="#6c7086" text-anchor="middle" font-size="11">透視修正（÷w）</text>
+
+  <rect x="510" y="30" width="160" height="70" rx="6" fill="#1e1535" stroke="#cba6f7" stroke-width="1.5"/>
+  <text x="590" y="58" fill="#cba6f7" text-anchor="middle" font-size="13">fragment(bar)</text>
+  <text x="590" y="78" fill="#6c7086" text-anchor="middle" font-size="11">讀取插值後的 varyings</text>
+  <text x="590" y="93" fill="#6c7086" text-anchor="middle" font-size="11">輸出最終顏色</text>
+
+  <!-- arrows -->
+  <line x1="170" y1="65" x2="258" y2="65" stroke="#6c7086" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="420" y1="65" x2="508" y2="65" stroke="#6c7086" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- labels -->
+  <text x="214" y="56" fill="#f9e2af" text-anchor="middle" font-size="11">varyings[]</text>
+  <text x="214" y="70" fill="#6c7086" text-anchor="middle" font-size="10">寫入</text>
+  <text x="464" y="56" fill="#f9e2af" text-anchor="middle" font-size="11">bar 插值後</text>
+  <text x="464" y="70" fill="#6c7086" text-anchor="middle" font-size="10">讀取</text>
+</svg>
+<figcaption>Varying 由 vertex() 寫入，由 Rasterizer 插值，由 fragment() 讀取</figcaption>
+</figure>
+
+<p>
+  <strong>關鍵：</strong>Fragment Shader 看到的 varyings 已經是插值後的值，
+  不是任何一個頂點的原始值。三個頂點各有不同的 UV，Rasterizer 根據重心座標計算出
+  這個像素的 UV 是多少——這正是貼圖能「貼在三角形上」的原因。
+</p>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="box box-purple" style="margin-top:40px">
+  <strong>Ch24 重點整理：</strong>
+  <ul style="margin-top:8px;margin-left:16px;line-height:2.1;font-size:.9em">
+    <li>OpenGL 管線有六個階段，只有 <strong>② Vertex Shader</strong> 和 <strong>⑤ Fragment Shader</strong> 是可程式化的</li>
+    <li>我們的 <code>DrawTriangle</code> 對應 ④ Rasterization——這部分邏輯保持不變</li>
+    <li>目前「寫死的 MVP 變換」要搬進 <code>vertex()</code>，「寫死的 color」要搬進 <code>fragment()</code></li>
+    <li>Varyings 是連接兩個 Shader 的橋樑：vertex 寫入，Rasterizer 插值，fragment 讀取</li>
+    <li>GPU 靠「每個 Shader 呼叫完全獨立」來做大規模並行——軟體版邏輯相同，只是單執行緒執行</li>
+  </ul>
+</div>
+
+<div class="next-ch">
+  <div>
+    <div class="next-label">CHAPTER 25</div>
+    <div class="next-title">IShader 介面設計</div>
+    <div class="next-desc">
+      設計 <code>IShader</code> 抽象類別：<code>vertex()</code> 對應 GLSL vertex shader，
+      <code>fragment()</code> 對應 GLSL fragment shader。
+      Uniforms 與 Varyings 的職責分離，以及如何用 <code>FlatShader</code> 驗證整個架構。
+    </div>
+  </div>
+  <a href="ch25_ishader.html" class="next-arrow">→</a>
+</div>
+
+</body>
+</html>

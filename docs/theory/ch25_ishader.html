@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Ch25 — IShader 介面設計</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[
+    {left:'$',right:'$',display:true},
+    {left:'\\(',right:'\\)',display:false}]});"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#1e1e2e;--bg1:#181825;--bg2:#11111b;
+  --border:#313244;--muted:#6c7086;--text:#cdd6f4;
+  --blue:#89b4fa;--green:#a6e3a1;--yellow:#f9e2af;
+  --orange:#fab387;--red:#f38ba8;--purple:#cba6f7;--teal:#94e2d5;
+}
+body{background:var(--bg);color:var(--text);
+  font-family:'Georgia',serif;font-size:15px;
+  padding:0 20px 80px;max-width:900px;margin:0 auto;line-height:1.9}
+nav{font-family:'Consolas',monospace;font-size:.78em;color:var(--muted);
+  padding:14px 0;border-bottom:1px solid var(--border);
+  margin-bottom:36px;display:flex;align-items:center;gap:10px}
+nav a{color:var(--muted);text-decoration:none}
+nav a:hover{color:var(--blue)}
+.nav-sep{color:var(--border)}.nav-cur{color:var(--text)}
+.nav-right{margin-left:auto;display:flex;gap:16px}
+.ch-header{margin-bottom:40px}
+.ch-label{font-family:'Consolas',monospace;font-size:.78em;color:var(--muted);letter-spacing:.1em;margin-bottom:8px}
+.ch-title{color:var(--blue);font-size:1.7em;font-weight:normal;margin-bottom:10px}
+.ch-sub{color:var(--muted);font-size:.88em;margin-bottom:14px}
+.ch-tags{display:flex;gap:6px;flex-wrap:wrap}
+.ch-tag{font-family:'Consolas',monospace;font-size:.75em;padding:2px 10px;
+  border-radius:99px;border:1px solid var(--border);color:var(--muted)}
+h2{color:var(--purple);font-size:1em;font-family:'Consolas',monospace;
+  letter-spacing:.05em;padding:10px 0;border-bottom:1px solid var(--border);
+  margin:40px 0 20px;display:flex;align-items:center;gap:12px}
+h2 .n{background:var(--purple);color:var(--bg2);font-weight:bold;
+  border-radius:50%;width:28px;height:28px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:.85em}
+h3{color:var(--yellow);font-size:.95em;margin:22px 0 10px}
+p{margin-bottom:12px}
+strong{color:var(--yellow)}
+em{color:var(--orange);font-style:normal}
+code{font-family:'Consolas',monospace;font-size:.88em;
+  background:var(--bg1);padding:1px 6px;border-radius:3px;color:var(--teal)}
+.box{border-radius:6px;padding:14px 18px;margin:16px 0;font-size:.9em;line-height:1.85}
+.box-blue  {background:var(--bg1);border-left:4px solid var(--blue)}
+.box-green {background:var(--bg1);border-left:4px solid var(--green)}
+.box-yellow{background:var(--bg1);border-left:4px solid var(--yellow)}
+.box-red   {background:var(--bg1);border-left:4px solid var(--red)}
+.box-purple{background:var(--bg1);border-left:4px solid var(--purple)}
+.katex-display{background:var(--bg1);border:1px solid var(--border);border-radius:6px;
+  padding:18px 24px;margin:14px 0;overflow-x:auto}
+.katex-display>.katex{color:var(--text)}
+.katex{color:var(--text);font-size:1em}
+.code{background:#0d0d14;border:1px solid var(--border);border-radius:8px;
+  padding:18px 22px;font-family:'Consolas',monospace;font-size:.85em;
+  line-height:2;margin:14px 0;white-space:pre;overflow-x:auto}
+.code .cmt{color:var(--muted)}.code .kw{color:var(--purple)}
+.code .val{color:var(--orange)}.code .fn{color:var(--blue)}
+.code .ty{color:var(--teal)}.code .str{color:var(--green)}
+.fig{margin:24px auto;text-align:center}
+.fig figcaption{color:var(--muted);font-size:.88em;margin-top:10px;font-style:italic}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+.two-col>div{background:var(--bg1);border:1px solid var(--border);border-radius:8px;padding:16px 18px}
+.col-title{font-family:'Consolas',monospace;font-size:.85em;margin-bottom:10px;color:var(--blue)}
+table{width:100%;border-collapse:collapse;font-size:.87em;margin:14px 0}
+th{background:var(--bg1);color:var(--blue);padding:9px 14px;text-align:left;
+   border-bottom:2px solid var(--border);font-family:'Consolas',monospace}
+td{padding:8px 14px;border-bottom:1px solid var(--bg1);vertical-align:top}
+tr:hover td{background:var(--bg1)}
+.next-ch{margin-top:56px;padding:20px 24px;background:var(--bg1);
+  border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;gap:20px}
+.next-label{font-family:'Consolas',monospace;font-size:.75em;color:var(--muted);margin-bottom:4px}
+.next-title{color:var(--blue);font-size:1em}
+.next-desc{color:var(--muted);font-size:.85em;margin-top:4px}
+.next-arrow{margin-left:auto;color:var(--blue);font-size:1.6em;text-decoration:none}
+.next-arrow:hover{color:var(--purple)}
+/* uniform/varying tag */
+.tag-u{display:inline-block;font-family:'Consolas',monospace;font-size:.75em;
+  padding:1px 8px;border-radius:4px;background:#12201a;border:1px solid var(--green);color:var(--green)}
+.tag-v{display:inline-block;font-family:'Consolas',monospace;font-size:.75em;
+  padding:1px 8px;border-radius:4px;background:#1e1535;border:1px solid var(--purple);color:var(--purple)}
+.tag-a{display:inline-block;font-family:'Consolas',monospace;font-size:.75em;
+  padding:1px 8px;border-radius:4px;background:#201a12;border:1px solid var(--orange);color:var(--orange)}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">軟體光柵化</a>
+  <span class="nav-sep">/</span>
+  <span>理論</span>
+  <span class="nav-sep">/</span>
+  <span class="nav-cur">Ch25</span>
+  <div class="nav-right">
+    <a href="ch24_opengl_pipeline.html">← Ch24</a>
+    <a href="ch26_perspective_correct.html">Ch26 →</a>
+  </div>
+</nav>
+
+<div class="ch-header">
+  <div class="ch-label">PART 7 · CHAPTER 25</div>
+  <div class="ch-title">IShader 介面設計</div>
+  <div class="ch-sub">用 C++ 抽象類別模擬 GLSL 的 vertex/fragment shader——Uniforms、Varyings、以及讓不同著色器能替換的設計</div>
+  <div class="ch-tags">
+    <span class="ch-tag">IShader</span>
+    <span class="ch-tag">uniforms</span>
+    <span class="ch-tag">varyings</span>
+    <span class="ch-tag">抽象類別</span>
+    <span class="ch-tag">FlatShader</span>
+  </div>
+</div>
+
+<p>
+  Ch24 確認了我們需要兩個「鉤子」：<code>vertex()</code> 做 MVP 變換並輸出 Clip Space 座標，
+  <code>fragment()</code> 決定每個像素的最終顏色。
+  本章的任務是把這兩個鉤子設計成一個乾淨的 C++ 抽象介面 <code>IShader</code>，
+  讓不同的著色效果（Flat、Gouraud、Phong、Texture…）都能透過繼承來實作，
+  而光柵化迴圈本身不需要任何修改。
+</p>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2><div class="n">1</div>設計目標</h2>
+
+<p>我們要達成的效果是這樣的——光柵化迴圈寫一次，著色效果可以任意抽換：</p>
+
+<div class="code"><span class="cmt">// 光柵化器：不知道也不在乎「用什麼方法著色」</span>
+<span class="ty">FlatShader</span>    shader_a;
+<span class="ty">GouraudShader</span> shader_b;
+<span class="ty">PhongShader</span>   shader_c;
+
+device-><span class="fn">DrawTriangle</span>(shader_a, face_idx);   <span class="cmt">// 純色填充</span>
+device-><span class="fn">DrawTriangle</span>(shader_b, face_idx);   <span class="cmt">// 頂點光照插值</span>
+device-><span class="fn">DrawTriangle</span>(shader_c, face_idx);   <span class="cmt">// 逐像素光照</span></div>
+
+<p>
+  三個 <code>DrawTriangle</code> 呼叫——光柵化的包圍盒掃描、重心座標計算、Z-buffer 測試——
+  <em>一行都沒有改</em>。只有 <code>vertex()</code> 和 <code>fragment()</code> 的實作換掉了。
+  這就是多型（Polymorphism）的威力，也是 GPU Shader 架構的本質。
+</p>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2><div class="n">2</div>Uniform vs Varying：兩種資料的職責</h2>
+
+<p>在設計介面之前，必須先弄清楚資料的流向。GLSL 把 Shader 內的資料分成三類：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>類型</th>
+      <th>生命週期</th>
+      <th>誰寫入</th>
+      <th>誰讀取</th>
+      <th>典型範例</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="tag-u">Uniform</span></td>
+      <td>整個 DrawCall 不變</td>
+      <td>CPU（在呼叫前設定）</td>
+      <td>vertex() 和 fragment() 都可讀</td>
+      <td>MVP 矩陣、光照方向、貼圖</td>
+    </tr>
+    <tr>
+      <td><span class="tag-v">Varying</span></td>
+      <td>逐頂點寫、逐像素讀</td>
+      <td>vertex() 寫入</td>
+      <td>fragment() 讀取（插值後）</td>
+      <td>UV 座標、世界法向量、頂點顏色</td>
+    </tr>
+    <tr>
+      <td><span class="tag-a">Attribute</span></td>
+      <td>逐頂點獨有</td>
+      <td>CPU（在 VBO 裡）</td>
+      <td>vertex() 讀取</td>
+      <td>物件空間位置、原始 UV、原始法向量</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+  在我們的軟體光柵化中，<em>Attribute</em> 等同於「從 Mesh 資料結構裡取出的頂點資料」，
+  <em>Uniform</em> 是 Shader 的<strong>成員變數</strong>（在 DrawCall 前設定好），
+  <em>Varying</em> 也是 Shader 的成員變數（由 vertex() 寫入，由 fragment() 讀取）。
+</p>
+
+<div class="box box-blue">
+  <strong>C++ 的映射：</strong>
+  GLSL 把 Uniform 和 Varying 用 <code>layout</code> 關鍵字聲明在 Shader 程式的全域範圍；
+  在 C++ 裡，我們直接把它們寫成 Shader 子類別的<strong>成員變數</strong>。
+  這樣每個 Shader 實例都有自己的 Uniform 和 Varying 儲存空間，
+  而光柵化器透過介面指標呼叫，完全不需要知道內部結構。
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2><div class="n">3</div>需要的數學型別</div></h2>
+
+<p>
+  設計 IShader 之前，我們需要幾個基本數學型別。
+  現有的 <code>Vec3f</code> 只有三個分量，但 Clip Space 需要四分量齊次座標 \((x, y, z, w)\)，
+  MVP 矩陣運算需要 4×4 矩陣。
+</p>
+
+<div class="code"><span class="cmt">// ── 新增到 render_device.h（或獨立的 math.h）──</span>
+
+<span class="kw">struct</span> <span class="ty">Vec2f</span> {
+    <span class="ty">float</span> x, y;
+    <span class="ty">Vec2f</span>(<span class="ty">float</span> x = <span class="val">0</span>, <span class="ty">float</span> y = <span class="val">0</span>) : x(x), y(y) {}
+};
+
+<span class="kw">struct</span> <span class="ty">Vec4f</span> {
+    <span class="ty">float</span> x, y, z, w;
+    <span class="ty">Vec4f</span>(<span class="ty">float</span> x=<span class="val">0</span>, <span class="ty">float</span> y=<span class="val">0</span>, <span class="ty">float</span> z=<span class="val">0</span>, <span class="ty">float</span> w=<span class="val">1</span>) : x(x),y(y),z(z),w(w) {}
+    <span class="ty">Vec4f</span>(<span class="ty">Vec3f</span> v, <span class="ty">float</span> w=<span class="val">1</span>)                     : x(v.x),y(v.y),z(v.z),w(w) {}
+};
+
+<span class="kw">struct</span> <span class="ty">Mat4</span> {
+    <span class="ty">float</span> m[<span class="val">4</span>][<span class="val">4</span>] = {};                      <span class="cmt">// 行主序（row-major）</span>
+    <span class="ty">Vec4f</span> <span class="kw">operator</span>*(<span class="kw">const</span> <span class="ty">Vec4f</span>&amp; v) <span class="kw">const</span> {
+        <span class="kw">return</span> {
+            m[<span class="val">0</span>][<span class="val">0</span>]*v.x + m[<span class="val">0</span>][<span class="val">1</span>]*v.y + m[<span class="val">0</span>][<span class="val">2</span>]*v.z + m[<span class="val">0</span>][<span class="val">3</span>]*v.w,
+            m[<span class="val">1</span>][<span class="val">0</span>]*v.x + m[<span class="val">1</span>][<span class="val">1</span>]*v.y + m[<span class="val">1</span>][<span class="val">2</span>]*v.z + m[<span class="val">1</span>][<span class="val">3</span>]*v.w,
+            m[<span class="val">2</span>][<span class="val">0</span>]*v.x + m[<span class="val">2</span>][<span class="val">1</span>]*v.y + m[<span class="val">2</span>][<span class="val">2</span>]*v.z + m[<span class="val">2</span>][<span class="val">3</span>]*v.w,
+            m[<span class="val">3</span>][<span class="val">0</span>]*v.x + m[<span class="val">3</span>][<span class="val">1</span>]*v.y + m[<span class="val">3</span>][<span class="val">2</span>]*v.z + m[<span class="val">3</span>][<span class="val">3</span>]*v.w
+        };
+    }
+    <span class="ty">Mat4</span> <span class="kw">operator</span>*(<span class="kw">const</span> <span class="ty">Mat4</span>&amp; o) <span class="kw">const</span>;   <span class="cmt">// 矩陣×矩陣（實作略）</span>
+    <span class="kw">static</span> <span class="ty">Mat4</span> <span class="fn">identity</span>();
+    <span class="kw">static</span> <span class="ty">Mat4</span> <span class="fn">lookAt</span>(<span class="ty">Vec3f</span> eye, <span class="ty">Vec3f</span> center, <span class="ty">Vec3f</span> up);   <span class="cmt">// Ch19</span>
+    <span class="kw">static</span> <span class="ty">Mat4</span> <span class="fn">perspective</span>(<span class="ty">float</span> fov, <span class="ty">float</span> aspect, <span class="ty">float</span> near, <span class="ty">float</span> far); <span class="cmt">// Ch18</span>
+};</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2><div class="n">4</div>IShader 介面定義</h2>
+
+<p>有了型別之後，IShader 的定義非常簡潔：</p>
+
+<div class="code"><span class="cmt">// ishader.h</span>
+<span class="kw">#pragma once</span>
+<span class="kw">#include</span> <span class="str">"math.h"</span>   <span class="cmt">// Vec2f, Vec3f, Vec4f, Mat4</span>
+<span class="kw">#include</span> <span class="str">&lt;cstdint&gt;</span>
+
+<span class="kw">struct</span> <span class="ty">IShader</span> {
+    <span class="kw">virtual</span> ~<span class="ty">IShader</span>() = <span class="kw">default</span>;
+
+    <span class="cmt">// ── Vertex Stage ──────────────────────────────────────────────</span>
+    <span class="cmt">// 每個三角形呼叫三次（face_idx = 第幾個三角形，vert_idx = 0/1/2）</span>
+    <span class="cmt">// 必須：從 Mesh 讀取 Attributes，進行 MVP 變換</span>
+    <span class="cmt">// 必須：把要傳給 fragment() 的資料存進自己的 Varying 成員</span>
+    <span class="cmt">// 回傳：頂點在 Clip Space 的齊次座標（尚未做透視除法）</span>
+    <span class="kw">virtual</span> <span class="ty">Vec4f</span> <span class="fn">vertex</span>(<span class="ty">int</span> face_idx, <span class="ty">int</span> vert_idx) = <span class="val">0</span>;
+
+    <span class="cmt">// ── Fragment Stage ────────────────────────────────────────────</span>
+    <span class="cmt">// 每個通過深度測試的像素呼叫一次</span>
+    <span class="cmt">// bar：透視修正後的重心座標（用來插值 Varyings）</span>
+    <span class="cmt">// color：[out] 要寫入 framebuffer 的像素顏色</span>
+    <span class="cmt">// 回傳 false → discard（捨棄此像素，不寫入）</span>
+    <span class="kw">virtual</span> <span class="ty">bool</span> <span class="fn">fragment</span>(<span class="ty">Vec3f</span> bar, <span class="ty">uint32_t</span>&amp; color) = <span class="val">0</span>;
+};</div>
+
+<div class="box box-green">
+  <strong>為什麼 fragment() 回傳 bool？</strong>
+  這對應 GLSL 的 <code>discard</code> 關鍵字——讓 Fragment Shader 可以「放棄」這個像素。
+  常見用途：Alpha 測試（半透明貼圖的邊緣裁切）、輪廓線繪製（只保留邊界像素）。
+  回傳 <code>false</code> 時，光柵化器跳過寫入，也不更新 Z-buffer。
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2><div class="n">5</div>資料流程圖</h2>
+
+<p>
+  一次 <code>DrawTriangle(shader, face_idx)</code> 呼叫的完整資料流：
+</p>
+
+<figure class="fig">
+<svg width="780" height="370" viewBox="0 0 780 370" font-family="Consolas,monospace" font-size="12">
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#6c7086"/>
+    </marker>
+    <marker id="arrg" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#a6e3a1"/>
+    </marker>
+    <marker id="arrp" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#cba6f7"/>
+    </marker>
+  </defs>
+
+  <!-- CPU block -->
+  <rect x="10" y="10" width="140" height="80" rx="6" fill="#181825" stroke="#313244" stroke-width="1.5"/>
+  <text x="80" y="36" fill="#f9e2af" text-anchor="middle" font-size="13">CPU</text>
+  <text x="80" y="55" fill="#6c7086" text-anchor="middle" font-size="11">設定 Uniforms</text>
+  <text x="80" y="72" fill="#6c7086" text-anchor="middle" font-size="11">shader.mvp = …</text>
+
+  <!-- vertex() block -->
+  <rect x="220" y="10" width="160" height="80" rx="6" fill="#1e1535" stroke="#cba6f7" stroke-width="1.5"/>
+  <text x="300" y="35" fill="#cba6f7" text-anchor="middle" font-size="13">vertex(face, 0)</text>
+  <text x="300" y="55" fill="#6c7086" text-anchor="middle" font-size="11">讀 mesh attributes</text>
+  <text x="300" y="70" fill="#6c7086" text-anchor="middle" font-size="11">MVP → clip[0]，存 varying</text>
+
+  <rect x="220" y="105" width="160" height="60" rx="6" fill="#1e1535" stroke="#cba6f7" stroke-width="1.5"/>
+  <text x="300" y="130" fill="#cba6f7" text-anchor="middle" font-size="13">vertex(face, 1)</text>
+  <text x="300" y="148" fill="#6c7086" text-anchor="middle" font-size="11">→ clip[1]，存 varying</text>
+
+  <rect x="220" y="178" width="160" height="60" rx="6" fill="#1e1535" stroke="#cba6f7" stroke-width="1.5"/>
+  <text x="300" y="203" fill="#cba6f7" text-anchor="middle" font-size="13">vertex(face, 2)</text>
+  <text x="300" y="221" fill="#6c7086" text-anchor="middle" font-size="11">→ clip[2]，存 varying</text>
+
+  <!-- rasterizer block -->
+  <rect x="460" y="10" width="160" height="230" rx="6" fill="#181825" stroke="#313244" stroke-width="1.5"/>
+  <text x="540" y="36" fill="#cdd6f4" text-anchor="middle" font-size="13">Rasterizer</text>
+  <text x="540" y="60" fill="#6c7086" text-anchor="middle" font-size="11">透視除法 → NDC</text>
+  <text x="540" y="80" fill="#6c7086" text-anchor="middle" font-size="11">Viewport → 螢幕</text>
+  <text x="540" y="110" fill="#6c7086" text-anchor="middle" font-size="11">包圍盒掃描</text>
+  <text x="540" y="130" fill="#6c7086" text-anchor="middle" font-size="11">重心座標 (λ1,λ2,λ3)</text>
+  <text x="540" y="155" fill="#f9e2af" text-anchor="middle" font-size="11">透視修正插值 varyings</text>
+  <text x="540" y="175" fill="#6c7086" text-anchor="middle" font-size="11">Z-buffer 深度測試</text>
+  <text x="540" y="205" fill="#6c7086" text-anchor="middle" font-size="11">→ 通過才呼叫 fragment()</text>
+
+  <!-- fragment() block -->
+  <rect x="460" y="255" width="160" height="80" rx="6" fill="#1e1535" stroke="#cba6f7" stroke-width="1.5"/>
+  <text x="540" y="280" fill="#cba6f7" text-anchor="middle" font-size="13">fragment(bar)</text>
+  <text x="540" y="300" fill="#6c7086" text-anchor="middle" font-size="11">讀插值後的 varyings</text>
+  <text x="540" y="318" fill="#6c7086" text-anchor="middle" font-size="11">計算顏色 → color</text>
+
+  <!-- framebuffer -->
+  <rect x="680" y="255" width="90" height="80" rx="6" fill="#181825" stroke="#313244" stroke-width="1.5"/>
+  <text x="725" y="293" fill="#a6e3a1" text-anchor="middle" font-size="13">SetPixel</text>
+  <text x="725" y="313" fill="#6c7086" text-anchor="middle" font-size="11">寫入 FB</text>
+
+  <!-- arrows: CPU → vertex -->
+  <line x1="150" y1="50" x2="218" y2="50" stroke="#a6e3a1" stroke-width="1.5" marker-end="url(#arrg)"/>
+  <text x="185" y="43" fill="#a6e3a1" text-anchor="middle" font-size="10">uniforms</text>
+
+  <!-- arrows: vertex → rasterizer -->
+  <line x1="380" y1="50" x2="458" y2="80" stroke="#cba6f7" stroke-width="1.5" marker-end="url(#arrp)"/>
+  <line x1="380" y1="135" x2="458" y2="110" stroke="#cba6f7" stroke-width="1.5" marker-end="url(#arrp)"/>
+  <line x1="380" y1="208" x2="458" y2="140" stroke="#cba6f7" stroke-width="1.5" marker-end="url(#arrp)"/>
+  <text x="428" y="65" fill="#cba6f7" text-anchor="middle" font-size="10">clip[0..2]</text>
+  <text x="428" y="88" fill="#6c7086" text-anchor="middle" font-size="10">varyings</text>
+
+  <!-- arrow: rasterizer → fragment -->
+  <line x1="540" y1="240" x2="540" y2="253" stroke="#6c7086" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- arrow: fragment → SetPixel -->
+  <line x1="620" y1="295" x2="678" y2="295" stroke="#a6e3a1" stroke-width="1.5" marker-end="url(#arrg)"/>
+  <text x="649" y="287" fill="#a6e3a1" text-anchor="middle" font-size="10">color</text>
+</svg>
+<figcaption>一次 DrawTriangle 呼叫的完整資料流。紫色區塊 = 可程式化（你寫的程式碼）；灰色區塊 = 光柵化器固定邏輯。</figcaption>
+</figure>
+
+<div class="box box-yellow">
+  <strong>關鍵執行順序：</strong>
+  三次 <code>vertex()</code> 呼叫<em>全部完成</em>之後，Rasterizer 才開始掃描像素。
+  也就是說，fragment() 呼叫時，三個頂點的 clip 座標和 varyings 都已經存好了——
+  Rasterizer 可以安全地做重心座標插值。
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2><div class="n">6</div>對照 GLSL：C++ vs GLSL 的映射</h2>
+
+<div class="two-col">
+  <div>
+    <div class="col-title">GLSL（GPU 上執行）</div>
+<div class="code" style="font-size:.78em;margin:8px 0 0">
+<span class="cmt">// Vertex Shader</span>
+<span class="kw">uniform</span> <span class="ty">mat4</span> uMVP;
+<span class="kw">uniform</span> <span class="ty">vec3</span> uLightDir;
+
+<span class="kw">in</span>  <span class="ty">vec3</span> aPos;
+<span class="kw">in</span>  <span class="ty">vec2</span> aUV;
+<span class="kw">out</span> <span class="ty">vec2</span> vUV;
+<span class="kw">out</span> <span class="ty">float</span> vLight;
+
+<span class="kw">void</span> <span class="fn">main</span>() {
+    gl_Position = uMVP * <span class="ty">vec4</span>(aPos,<span class="val">1</span>);
+    vUV = aUV;
+    vLight = <span class="fn">dot</span>(aNormal, uLightDir);
+}
+
+<span class="cmt">// Fragment Shader</span>
+<span class="kw">in</span> <span class="ty">vec2</span>  vUV;
+<span class="kw">in</span> <span class="ty">float</span> vLight;
+<span class="kw">uniform</span> <span class="ty">sampler2D</span> uTex;
+
+<span class="kw">void</span> <span class="fn">main</span>() {
+    <span class="ty">vec3</span> c = <span class="fn">texture</span>(uTex, vUV).rgb;
+    gl_FragColor = <span class="ty">vec4</span>(c*vLight, <span class="val">1</span>);
+}</div>
+  </div>
+  <div>
+    <div class="col-title">C++ IShader（CPU 上執行）</div>
+<div class="code" style="font-size:.78em;margin:8px 0 0">
+<span class="kw">struct</span> <span class="ty">GouraudShader</span> : <span class="ty">IShader</span> {
+    <span class="cmt">// === Uniforms（成員變數，DrawCall 前設定）</span>
+    <span class="ty">Mat4</span>    mvp;
+    <span class="ty">Vec3f</span>   light_dir;
+    <span class="ty">Texture</span>* tex;
+    <span class="ty">Mesh</span>*    mesh;
+
+    <span class="cmt">// === Varyings（vertex 寫，fragment 讀）</span>
+    <span class="ty">Vec2f</span> v_uv[<span class="val">3</span>];      <span class="cmt">// 三頂點的 UV</span>
+    <span class="ty">float</span> v_light[<span class="val">3</span>];   <span class="cmt">// 三頂點的光照強度</span>
+
+    <span class="ty">Vec4f</span> <span class="fn">vertex</span>(<span class="ty">int</span> fi, <span class="ty">int</span> vi) <span class="kw">override</span> {
+        <span class="ty">Vec3f</span> pos = mesh-><span class="fn">pos</span>(fi, vi);
+        <span class="ty">Vec3f</span> n   = mesh-><span class="fn">normal</span>(fi, vi);
+        v_uv[vi]    = mesh-><span class="fn">uv</span>(fi, vi);
+        v_light[vi] = <span class="fn">dot</span>(n, light_dir);
+        <span class="kw">return</span> mvp * <span class="ty">Vec4f</span>(pos, <span class="val">1</span>);
+    }
+
+    <span class="ty">bool</span> <span class="fn">fragment</span>(<span class="ty">Vec3f</span> bar, <span class="ty">uint32_t</span>&amp; c) <span class="kw">override</span> {
+        <span class="ty">Vec2f</span> uv = bar.<span class="fn">interp</span>(v_uv);
+        <span class="ty">float</span> lt = bar.<span class="fn">interp</span>(v_light);
+        c = tex-><span class="fn">sample</span>(uv) * lt;
+        <span class="kw">return</span> <span class="val">true</span>;
+    }
+};</div>
+  </div>
+</div>
+
+<p>
+  兩邊的結構完全對應：<strong>GLSL 的 <code>uniform</code> = C++ 的成員變數（DrawCall 前設定）</strong>，
+  <strong>GLSL 的 <code>out</code>/<code>in</code> varying = C++ 的陣列成員變數（vertex 寫、fragment 讀）</strong>。
+  關鍵差異是，GLSL 的插值由 GPU 硬體自動完成；在 C++ 版本裡，
+  插值這件事由光柵化器在呼叫 fragment() 前計算好並傳入 <code>bar</code>（重心座標）。
+</p>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2><div class="n">7</div>FlatShader：最簡單的完整實作</h2>
+
+<p>
+  FlatShader 是驗證整個管線最好的起點：每個三角形填充固定顏色，
+  不需要貼圖、不需要法向量插值，只需要 MVP 變換是否正確。
+</p>
+
+<div class="code"><span class="kw">struct</span> <span class="ty">FlatShader</span> : <span class="ty">IShader</span> {
+    <span class="cmt">// ── Uniforms ────────────────────────────────────────────────</span>
+    <span class="ty">Mat4</span>  mvp;                 <span class="cmt">// Model-View-Projection 矩陣</span>
+    <span class="ty">Vec3f</span> light_dir;           <span class="cmt">// 光照方向（世界空間，已正規化）</span>
+    <span class="ty">Mesh</span>* mesh;
+
+    <span class="cmt">// ── Varyings ────────────────────────────────────────────────</span>
+    <span class="ty">float</span> v_intensity;         <span class="cmt">// 面法向量與光照的點積（整個面相同）</span>
+
+    <span class="cmt">// ── vertex() ────────────────────────────────────────────────</span>
+    <span class="ty">Vec4f</span> <span class="fn">vertex</span>(<span class="ty">int</span> fi, <span class="ty">int</span> vi) <span class="kw">override</span> {
+        <span class="ty">Vec3f</span> pos = mesh-><span class="fn">pos</span>(fi, vi);
+
+        <span class="cmt">// 只在第 0 個頂點計算面法向量（整個面只需計算一次）</span>
+        <span class="kw">if</span> (vi == <span class="val">0</span>) {
+            <span class="ty">Vec3f</span> a = mesh-><span class="fn">pos</span>(fi, <span class="val">0</span>);
+            <span class="ty">Vec3f</span> b = mesh-><span class="fn">pos</span>(fi, <span class="val">1</span>);
+            <span class="ty">Vec3f</span> c = mesh-><span class="fn">pos</span>(fi, <span class="val">2</span>);
+            <span class="ty">Vec3f</span> face_n = <span class="fn">normalize</span>(<span class="fn">cross</span>(b - a, c - a));
+            v_intensity = <span class="fn">dot</span>(face_n, light_dir);
+        }
+
+        <span class="kw">return</span> mvp * <span class="ty">Vec4f</span>(pos, <span class="val">1.0f</span>);   <span class="cmt">// → Clip Space</span>
+    }
+
+    <span class="cmt">// ── fragment() ──────────────────────────────────────────────</span>
+    <span class="ty">bool</span> <span class="fn">fragment</span>(<span class="ty">Vec3f</span> bar, <span class="ty">uint32_t</span>&amp; color) <span class="kw">override</span> {
+        <span class="kw">if</span> (v_intensity &lt; <span class="val">0.0f</span>) <span class="kw">return</span> <span class="val">false</span>;   <span class="cmt">// 背面：discard</span>
+
+        <span class="ty">uint8_t</span> g = (<span class="ty">uint8_t</span>)(v_intensity * <span class="val">255</span>);
+        color = (g &lt;&lt; <span class="val">16</span>) | (g &lt;&lt; <span class="val">8</span>) | g;     <span class="cmt">// 灰階（白光 × 強度）</span>
+        <span class="kw">return</span> <span class="val">true</span>;
+    }
+};</div>
+
+<p>使用方式：</p>
+
+<div class="code"><span class="ty">FlatShader</span> shader;
+shader.mesh      = &amp;my_mesh;
+shader.mvp       = <span class="ty">Mat4</span>::<span class="fn">perspective</span>(...) * <span class="ty">Mat4</span>::<span class="fn">lookAt</span>(...) * model_matrix;
+shader.light_dir = <span class="fn">normalize</span>({<span class="val">0</span>, <span class="val">1</span>, <span class="val">1</span>});
+
+<span class="kw">for</span> (<span class="ty">int</span> fi = <span class="val">0</span>; fi &lt; my_mesh.<span class="fn">face_count</span>(); fi++) {
+    device-><span class="fn">DrawTriangle</span>(shader, fi);
+}</div>
+
+<div class="box box-green">
+  <strong>FlatShader 的驗證價值：</strong>
+  如果 FlatShader 能正確顯示模型的輪廓、透視感、正確的深度排序——
+  就代表 MVP 管線、透視除法、Viewport 變換、Z-buffer 全部正確。
+  在開發 GouraudShader 或 PhongShader 之前，一定要先讓 FlatShader 完全正確。
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2><div class="n">8</div>Varying 的插值：bar 的意義</h2>
+
+<p>
+  fragment() 收到的 <code>bar</code> 是<strong>透視修正後的重心座標</strong>
+  \((\lambda_1, \lambda_2, \lambda_3)\)，
+  \(\lambda_1 + \lambda_2 + \lambda_3 = 1\)。
+  任何 Varying 的插值只需要一行：
+</p>
+
+<div class="code"><span class="cmt">// UV 插值</span>
+<span class="ty">Vec2f</span> uv = {
+    bar.x * v_uv[<span class="val">0</span>].x + bar.y * v_uv[<span class="val">1</span>].x + bar.z * v_uv[<span class="val">2</span>].x,
+    bar.x * v_uv[<span class="val">0</span>].y + bar.y * v_uv[<span class="val">1</span>].y + bar.z * v_uv[<span class="val">2</span>].y
+};
+
+<span class="cmt">// 光照強度插值</span>
+<span class="ty">float</span> intensity = bar.x*v_light[<span class="val">0</span>] + bar.y*v_light[<span class="val">1</span>] + bar.z*v_light[<span class="val">2</span>];
+
+<span class="cmt">// 法向量插值（Phong Shading 用）</span>
+<span class="ty">Vec3f</span> N = <span class="fn">normalize</span>({
+    bar.x*v_n[<span class="val">0</span>].x + bar.y*v_n[<span class="val">1</span>].x + bar.z*v_n[<span class="val">2</span>].x,
+    bar.x*v_n[<span class="val">0</span>].y + bar.y*v_n[<span class="val">1</span>].y + bar.z*v_n[<span class="val">2</span>].y,
+    bar.x*v_n[<span class="val">0</span>].z + bar.y*v_n[<span class="val">1</span>].z + bar.z*v_n[<span class="val">2</span>].z
+});</div>
+
+<p>
+  <strong>為什麼是「透視修正後」？</strong>
+  單純用螢幕座標計算的重心座標做插值，在透視投影下會得到錯誤的結果
+  （UV 扭曲、法向量不準確）。
+  光柵化器在傳 <code>bar</code> 給 fragment() 之前，必須做透視修正——這正是 Ch26 的主題。
+</p>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2><div class="n">9</div>常見的 IShader 子類別一覽</h2>
+
+<table>
+  <thead>
+    <tr><th>Shader</th><th>vertex() 做什麼</th><th>fragment() 做什麼</th><th>Varyings</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>FlatShader</code></td>
+      <td>MVP 變換，計算面法向量</td>
+      <td>整面填充固定顏色（強度 = N·L）</td>
+      <td><code>float intensity</code></td>
+    </tr>
+    <tr>
+      <td><code>GouraudShader</code></td>
+      <td>MVP 變換，計算每個頂點 N·L</td>
+      <td>插值三頂點的光照強度</td>
+      <td><code>float light[3]</code></td>
+    </tr>
+    <tr>
+      <td><code>PhongShader</code></td>
+      <td>MVP 變換，輸出世界空間法向量</td>
+      <td>插值法向量，逐像素計算 N·L</td>
+      <td><code>Vec3f normal[3]</code></td>
+    </tr>
+    <tr>
+      <td><code>TextureShader</code></td>
+      <td>MVP 變換，輸出 UV</td>
+      <td>採樣貼圖，Lambert 光照</td>
+      <td><code>Vec2f uv[3]</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="box box-purple" style="margin-top:40px">
+  <strong>Ch25 重點整理：</strong>
+  <ul style="margin-top:8px;margin-left:16px;line-height:2.1;font-size:.9em">
+    <li><code>IShader</code> 只有兩個純虛函數：<code>vertex(face, vert)</code> 和 <code>fragment(bar, color)</code></li>
+    <li><strong>Uniform</strong> = 子類別成員變數，DrawCall 前設定，vertex 和 fragment 都可讀</li>
+    <li><strong>Varying</strong> = 子類別陣列成員（長度 3），vertex() 寫入，fragment() 讀取（插值後）</li>
+    <li>fragment() 回傳 <code>false</code> = discard（對應 GLSL 的 <code>discard</code>）</li>
+    <li>所有 Shader 子類別共用同一個光柵化迴圈——光柵化器只知道 <code>IShader&amp;</code>，不知道子類別</li>
+    <li>開發新效果：繼承 IShader，只寫 vertex() 和 fragment() 即可</li>
+  </ul>
+</div>
+
+<div class="next-ch">
+  <div>
+    <div class="next-label">CHAPTER 26</div>
+    <div class="next-title">DrawTriangle 重構 + 透視正確插值</div>
+    <div class="next-desc">
+      把 <code>DrawTriangle</code> 改造成接受 <code>IShader&amp;</code> 的新 API，
+      並推導透視修正插值（1/w trick）：
+      為什麼螢幕座標的線性插值是錯的？如何用 \(\lambda_i / w_i\) 修正它？
+    </div>
+  </div>
+  <a href="ch26_perspective_correct.html" class="next-arrow">→</a>
+</div>
+
+</body>
+</html>

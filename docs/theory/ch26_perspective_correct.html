@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Ch26 — DrawTriangle 重構 + 透視正確插值</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[
+    {left:'$',right:'$',display:true},
+    {left:'\\(',right:'\\)',display:false}]});"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#1e1e2e;--bg1:#181825;--bg2:#11111b;
+  --border:#313244;--muted:#6c7086;--text:#cdd6f4;
+  --blue:#89b4fa;--green:#a6e3a1;--yellow:#f9e2af;
+  --orange:#fab387;--red:#f38ba8;--purple:#cba6f7;--teal:#94e2d5;
+}
+body{background:var(--bg);color:var(--text);
+  font-family:'Georgia',serif;font-size:15px;
+  padding:0 20px 80px;max-width:900px;margin:0 auto;line-height:1.9}
+nav{font-family:'Consolas',monospace;font-size:.78em;color:var(--muted);
+  padding:14px 0;border-bottom:1px solid var(--border);
+  margin-bottom:36px;display:flex;align-items:center;gap:10px}
+nav a{color:var(--muted);text-decoration:none}
+nav a:hover{color:var(--blue)}
+.nav-sep{color:var(--border)}.nav-cur{color:var(--text)}
+.nav-right{margin-left:auto;display:flex;gap:16px}
+.ch-header{margin-bottom:40px}
+.ch-label{font-family:'Consolas',monospace;font-size:.78em;color:var(--muted);letter-spacing:.1em;margin-bottom:8px}
+.ch-title{color:var(--blue);font-size:1.7em;font-weight:normal;margin-bottom:10px}
+.ch-sub{color:var(--muted);font-size:.88em;margin-bottom:14px}
+.ch-tags{display:flex;gap:6px;flex-wrap:wrap}
+.ch-tag{font-family:'Consolas',monospace;font-size:.75em;padding:2px 10px;
+  border-radius:99px;border:1px solid var(--border);color:var(--muted)}
+h2{color:var(--purple);font-size:1em;font-family:'Consolas',monospace;
+  letter-spacing:.05em;padding:10px 0;border-bottom:1px solid var(--border);
+  margin:40px 0 20px;display:flex;align-items:center;gap:12px}
+h2 .n{background:var(--purple);color:var(--bg2);font-weight:bold;
+  border-radius:50%;width:28px;height:28px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:.85em}
+h3{color:var(--yellow);font-size:.95em;margin:22px 0 10px}
+p{margin-bottom:12px}
+strong{color:var(--yellow)}
+em{color:var(--orange);font-style:normal}
+code{font-family:'Consolas',monospace;font-size:.88em;
+  background:var(--bg1);padding:1px 6px;border-radius:3px;color:var(--teal)}
+.box{border-radius:6px;padding:14px 18px;margin:16px 0;font-size:.9em;line-height:1.85}
+.box-blue  {background:var(--bg1);border-left:4px solid var(--blue)}
+.box-green {background:var(--bg1);border-left:4px solid var(--green)}
+.box-yellow{background:var(--bg1);border-left:4px solid var(--yellow)}
+.box-red   {background:var(--bg1);border-left:4px solid var(--red)}
+.box-purple{background:var(--bg1);border-left:4px solid var(--purple)}
+.katex-display{background:var(--bg1);border:1px solid var(--border);border-radius:6px;
+  padding:18px 24px;margin:14px 0;overflow-x:auto}
+.katex-display>.katex{color:var(--text)}
+.katex{color:var(--text);font-size:1em}
+.code{background:#0d0d14;border:1px solid var(--border);border-radius:8px;
+  padding:18px 22px;font-family:'Consolas',monospace;font-size:.85em;
+  line-height:2;margin:14px 0;white-space:pre;overflow-x:auto}
+.code .cmt{color:var(--muted)}.code .kw{color:var(--purple)}
+.code .val{color:var(--orange)}.code .fn{color:var(--blue)}
+.code .ty{color:var(--teal)}.code .str{color:var(--green)}
+.fig{margin:24px auto;text-align:center}
+.fig figcaption{color:var(--muted);font-size:.88em;margin-top:10px;font-style:italic}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+.two-col>div{background:var(--bg1);border:1px solid var(--border);border-radius:8px;padding:16px 18px}
+.col-title{font-family:'Consolas',monospace;font-size:.85em;margin-bottom:10px;color:var(--blue)}
+.col-title.wrong{color:var(--red)}
+.col-title.right{color:var(--green)}
+table{width:100%;border-collapse:collapse;font-size:.87em;margin:14px 0}
+th{background:var(--bg1);color:var(--blue);padding:9px 14px;text-align:left;
+   border-bottom:2px solid var(--border);font-family:'Consolas',monospace}
+td{padding:8px 14px;border-bottom:1px solid var(--bg1);vertical-align:top}
+tr:hover td{background:var(--bg1)}
+.next-ch{margin-top:56px;padding:20px 24px;background:var(--bg1);
+  border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;gap:20px}
+.next-label{font-family:'Consolas',monospace;font-size:.75em;color:var(--muted);margin-bottom:4px}
+.next-title{color:var(--blue);font-size:1em}
+.next-desc{color:var(--muted);font-size:.85em;margin-top:4px}
+.next-arrow{margin-left:auto;color:var(--blue);font-size:1.6em;text-decoration:none}
+.next-arrow:hover{color:var(--purple)}
+/* trace table */
+.trace{width:100%;border-collapse:collapse;font-size:.82em;margin:14px 0;font-family:'Consolas',monospace}
+.trace th{background:var(--bg2);color:var(--blue);padding:7px 12px;text-align:center;
+   border-bottom:2px solid var(--border);font-weight:normal}
+.trace td{padding:6px 12px;border-bottom:1px solid var(--bg1);text-align:center}
+.trace .hi{color:var(--orange);font-weight:bold}
+.trace .ok{color:var(--green)}
+.trace .wrong{color:var(--red)}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">軟體光柵化</a>
+  <span class="nav-sep">/</span>
+  <span>理論</span>
+  <span class="nav-sep">/</span>
+  <span class="nav-cur">Ch26</span>
+  <div class="nav-right">
+    <a href="ch25_ishader.html">← Ch25</a>
+    <a href="../index.html">首頁</a>
+  </div>
+</nav>
+
+<div class="ch-header">
+  <div class="ch-label">PART 7 · CHAPTER 26</div>
+  <div class="ch-title">DrawTriangle 重構 + 透視正確插值</div>
+  <div class="ch-sub">
+    把 DrawTriangle 改成接受 IShader 的可程式化版本；
+    從零推導透視正確插值（1/w trick）：螢幕重心座標和 3D 重心座標到底差在哪裡？
+  </div>
+  <div class="ch-tags">
+    <span class="ch-tag">DrawTriangle 重構</span>
+    <span class="ch-tag">1/w trick</span>
+    <span class="ch-tag">透視修正插值</span>
+    <span class="ch-tag">Z-buffer</span>
+    <span class="ch-tag">完整管線</span>
+  </div>
+</div>
+
+<p>
+  Ch24 告訴我們 OpenGL 管線的兩個可程式化鉤子（vertex、fragment），
+  Ch25 定義了 <code>IShader</code> 介面。
+  現在是最後一塊拼圖：<strong>把 <code>DrawTriangle</code> 的光柵化迴圈改造成呼叫 Shader 的版本</strong>。
+</p>
+<p>
+  但改造的過程中有一個隱藏的數學陷阱：
+  我們在 Ch10 用重心座標插值屬性，但那套公式假設頂點在<em>同一個平面</em>，
+  而透視投影會破壞這個假設——在螢幕空間算出的重心座標和 3D 空間的重心座標<em>不一樣</em>。
+  不修正就直接插值 UV，會產生明顯可見的扭曲。
+</p>
+<p>
+  本章的任務就是同時解決兩件事：API 重構和透視修正。
+</p>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2><div class="n">1</div>回顧：現有 DrawTriangle 的三個問題</h2>
+
+<p>
+  Ch12 之後，我們的 <code>DrawTriangle</code> 已經能正確填充三角形。
+  但回頭看它的簽名，有三個根本限制阻止我們進入可程式化管線：
+</p>
+
+<div class="code"><span class="cmt">// render_device.h — 現有的簽名</span>
+<span class="kw">void</span> <span class="fn">DrawTriangle</span>(<span class="kw">const</span> <span class="ty">Vertex</span>&amp; v1, <span class="kw">const</span> <span class="ty">Vertex</span>&amp; v2, <span class="kw">const</span> <span class="ty">Vertex</span>&amp; v3, <span class="ty">uint32_t</span> color);
+
+<span class="cmt">// 問題 ①：頂點已經是螢幕座標</span>
+<span class="cmt">//   → MVP 變換必須在外部手動完成，vertex shader 無法參與</span>
+
+<span class="cmt">// 問題 ②：顏色是固定的 uint32_t</span>
+<span class="cmt">//   → fragment shader 完全沒有執行的機會</span>
+
+<span class="cmt">// 問題 ③：沒有 Z-buffer</span>
+<span class="cmt">//   → 深度排序完全依賴繪製順序（Painter's Algorithm 的困境）</span></div>
+
+<p>
+  新的 <code>DrawTriangle</code> 要一次解決這三個問題。
+  新簽名很簡單——但背後的光柵化迴圈需要精心改造：
+</p>
+
+<div class="code"><span class="cmt">// 新版簽名</span>
+<span class="kw">void</span> RenderDevice::<span class="fn">DrawTriangle</span>(<span class="ty">IShader</span>&amp; shader, <span class="ty">int</span> face_idx);</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2><div class="n">2</div>新 DrawTriangle 的五個步驟</h2>
+
+<p>一次 <code>DrawTriangle(shader, fi)</code> 呼叫，光柵化器依序執行五個步驟：</p>
+
+<figure class="fig">
+<svg width="780" height="110" viewBox="0 0 780 110" font-family="Consolas,monospace" font-size="11">
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#6c7086"/>
+    </marker>
+  </defs>
+  <!-- Step boxes -->
+  <rect x="5"   y="10" width="120" height="55" rx="6" fill="#1e1535" stroke="#cba6f7" stroke-width="1.5"/>
+  <rect x="150" y="10" width="120" height="55" rx="6" fill="#181825" stroke="#313244" stroke-width="1.5"/>
+  <rect x="295" y="10" width="120" height="55" rx="6" fill="#181825" stroke="#313244" stroke-width="1.5"/>
+  <rect x="440" y="10" width="120" height="55" rx="6" fill="#181825" stroke="#313244" stroke-width="1.5"/>
+  <rect x="585" y="10" width="105" height="55" rx="6" fill="#1e1535" stroke="#cba6f7" stroke-width="1.5"/>
+  <rect x="710" y="10" width="66"  height="55" rx="6" fill="#181825" stroke="#313244" stroke-width="1.5"/>
+  <!-- Labels -->
+  <text x="65"  y="30" fill="#cba6f7" text-anchor="middle" font-weight="bold">① vertex()</text>
+  <text x="65"  y="50" fill="#6c7086" text-anchor="middle" font-size="10">×3 → clip[0..2]</text>
+  <text x="210" y="30" fill="#cdd6f4" text-anchor="middle" font-weight="bold">② ÷w</text>
+  <text x="210" y="50" fill="#6c7086" text-anchor="middle" font-size="10">clip → NDC</text>
+  <text x="355" y="30" fill="#cdd6f4" text-anchor="middle" font-weight="bold">③ Viewport</text>
+  <text x="355" y="50" fill="#6c7086" text-anchor="middle" font-size="10">NDC → 螢幕</text>
+  <text x="500" y="30" fill="#cdd6f4" text-anchor="middle" font-weight="bold">④ 掃描</text>
+  <text x="500" y="50" fill="#6c7086" text-anchor="middle" font-size="10">bar + Z-test</text>
+  <text x="637" y="30" fill="#cba6f7" text-anchor="middle" font-weight="bold">⑤ fragment()</text>
+  <text x="637" y="50" fill="#6c7086" text-anchor="middle" font-size="10">→ color</text>
+  <text x="743" y="30" fill="#cdd6f4" text-anchor="middle" font-weight="bold">寫入</text>
+  <text x="743" y="50" fill="#6c7086" text-anchor="middle" font-size="10">FB + Z</text>
+  <!-- Arrows -->
+  <line x1="125" y1="37" x2="148" y2="37" stroke="#6c7086" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="270" y1="37" x2="293" y2="37" stroke="#6c7086" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="415" y1="37" x2="438" y2="37" stroke="#6c7086" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="560" y1="37" x2="583" y2="37" stroke="#6c7086" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="690" y1="37" x2="708" y2="37" stroke="#6c7086" stroke-width="1.5" marker-end="url(#arr)"/>
+  <!-- Legend -->
+  <rect x="5" y="80" width="12" height="12" rx="2" fill="#1e1535" stroke="#cba6f7"/>
+  <text x="22" y="91" fill="#6c7086" font-size="10">= 你寫的 Shader 程式碼</text>
+  <rect x="180" y="80" width="12" height="12" rx="2" fill="#181825" stroke="#313244"/>
+  <text x="197" y="91" fill="#6c7086" font-size="10">= DrawTriangle 的固定邏輯</text>
+</svg>
+</figure>
+
+<p>
+  步驟 ①~③ 是<strong>頂點階段</strong>（每個三角形執行一次），
+  步驟 ④~⑤ 在<strong>像素層級的迴圈裡</strong>反覆執行（每個候選像素一次）。
+  透視修正發生在 ④ → ⑤ 之間——把螢幕空間重心座標轉換成透視修正版本，
+  再傳給 <code>fragment()</code>。
+</p>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2><div class="n">3</div>頂點階段：vertex → clip → NDC → 螢幕</h2>
+
+<p>新版 DrawTriangle 的前三步，對應 Ch18–Ch21 的 MVP 管線：</p>
+
+<div class="code"><span class="cmt">// ── ① 呼叫 vertex shader 三次 ────────────────────────────────</span>
+<span class="ty">Vec4f</span> clip[<span class="val">3</span>];
+<span class="kw">for</span> (<span class="ty">int</span> i = <span class="val">0</span>; i &lt; <span class="val">3</span>; i++)
+    clip[i] = shader.<span class="fn">vertex</span>(face_idx, i);
+
+<span class="cmt">// ── ② 透視除法 → NDC ────────────────────────────────────────</span>
+<span class="ty">float</span> w[<span class="val">3</span>];          <span class="cmt">// ★ 保留每個頂點的 clip-space w 值</span>
+<span class="ty">Vec3f</span> ndc[<span class="val">3</span>];
+<span class="kw">for</span> (<span class="ty">int</span> i = <span class="val">0</span>; i &lt; <span class="val">3</span>; i++) {
+    w[i]   = clip[i].w;
+    ndc[i] = { clip[i].x / w[i],
+               clip[i].y / w[i],
+               clip[i].z / w[i] };
+}
+
+<span class="cmt">// ── ③ Viewport 變換 → 螢幕座標（Ch20 的公式）───────────────</span>
+<span class="ty">float</span> sx[<span class="val">3</span>], sy[<span class="val">3</span>], sz[<span class="val">3</span>];
+<span class="kw">for</span> (<span class="ty">int</span> i = <span class="val">0</span>; i &lt; <span class="val">3</span>; i++) {
+    sx[i] = (ndc[i].x + <span class="val">1.0f</span>) * <span class="val">0.5f</span> * width;
+    sy[i] = (<span class="val">1.0f</span> - ndc[i].y) * <span class="val">0.5f</span> * height;  <span class="cmt">// Y 翻轉</span>
+    sz[i] = (ndc[i].z + <span class="val">1.0f</span>) * <span class="val">0.5f</span>;           <span class="cmt">// 深度映射到 [0,1]</span>
+}</div>
+
+<div class="box box-yellow">
+  <strong>為什麼要保留 <code>w[i]</code>？</strong>
+  透視除法之後，NDC 座標裡的 w 資訊就「丟失了」。
+  但我們後面做透視修正插值必須用到每個頂點的 clip-space w 值。
+  如果只存 NDC 而不存 w，就無法修正。這是實作中最容易遺忘的細節。
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2><div class="n">4</div>透視投影的陷阱：一條邊的故事</h2>
+
+<p>
+  接下來要做光柵化——用 Ch10 的重心座標插值屬性（UV、法向量…）。
+  但這裡隱藏了一個問題。我們先看一條線段的情況，把直覺建立起來。
+</p>
+
+<h3>側視圖：看清螢幕中點 ≠ 3D 中點</h3>
+
+<p>
+  考慮三角形的一條邊 AB：A 在近處（depth 小），B 在遠處（depth 大）。
+  設 A 的 UV=0、B 的 UV=1，3D 中點 M 的 UV=0.5。
+</p>
+
+<figure class="fig">
+<svg width="520" height="290" viewBox="0 0 520 290" font-family="Consolas,monospace" font-size="11">
+  <defs>
+    <marker id="a1" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#6c7086"/>
+    </marker>
+  </defs>
+  <!-- Background labels -->
+  <text x="85" y="18" fill="#6c7086" text-anchor="middle" font-size="10">螢幕平面</text>
+  <text x="460" y="18" fill="#6c7086" text-anchor="middle" font-size="10" font-style="italic">← 深度方向 →</text>
+
+  <!-- Screen plane (vertical line) -->
+  <line x1="90" y1="25" x2="90" y2="265" stroke="#45475a" stroke-width="2" stroke-dasharray="6,3"/>
+
+  <!-- Camera (eye) -->
+  <circle cx="30" cy="145" r="6" fill="#fab387"/>
+  <text x="30" y="170" fill="#fab387" text-anchor="middle" font-size="11">eye</text>
+
+  <!-- Vertex A (near) -->
+  <circle cx="200" cy="62" r="5" fill="#89b4fa"/>
+  <text x="210" y="50" fill="#89b4fa" font-size="12">A (near)</text>
+  <text x="210" y="74" fill="#6c7086" font-size="10">UV = 0</text>
+
+  <!-- Vertex B (far) -->
+  <circle cx="450" cy="230" r="5" fill="#a6e3a1"/>
+  <text x="415" y="252" fill="#a6e3a1" font-size="12">B (far)</text>
+  <text x="415" y="268" fill="#6c7086" font-size="10">UV = 1</text>
+
+  <!-- 3D midpoint M -->
+  <circle cx="325" cy="146" r="5" fill="#f9e2af"/>
+  <text x="340" y="140" fill="#f9e2af" font-size="11">M (3D 中點)</text>
+  <text x="340" y="156" fill="#6c7086" font-size="10">UV = 0.5</text>
+
+  <!-- Projection ray: eye → A → screen -->
+  <line x1="30" y1="145" x2="200" y2="62" stroke="#89b4fa" stroke-width="1" stroke-opacity="0.5"/>
+  <line x1="30" y1="145" x2="90" y2="111" stroke="#89b4fa" stroke-width="1.2" stroke-dasharray="4,3"/>
+  <circle cx="90" cy="111" r="4" fill="#89b4fa"/>
+  <text x="77" y="108" fill="#89b4fa" text-anchor="end" font-size="10">A'</text>
+
+  <!-- Projection ray: eye → B → screen -->
+  <line x1="30" y1="145" x2="450" y2="230" stroke="#a6e3a1" stroke-width="1" stroke-opacity="0.5"/>
+  <line x1="30" y1="145" x2="90" y2="163" stroke="#a6e3a1" stroke-width="1.2" stroke-dasharray="4,3"/>
+  <circle cx="90" cy="163" r="4" fill="#a6e3a1"/>
+  <text x="77" y="167" fill="#a6e3a1" text-anchor="end" font-size="10">B'</text>
+
+  <!-- Projection ray: eye → M → screen -->
+  <line x1="30" y1="145" x2="325" y2="146" stroke="#f9e2af" stroke-width="1" stroke-opacity="0.5"/>
+  <line x1="30" y1="145" x2="90" y2="145.3" stroke="#f9e2af" stroke-width="1.2" stroke-dasharray="4,3"/>
+  <circle cx="90" cy="145" r="4" fill="#f9e2af"/>
+  <text x="77" y="149" fill="#f9e2af" text-anchor="end" font-size="10">M<tspan font-size="8" dy="3">proj</tspan></text>
+
+  <!-- Screen midpoint M' -->
+  <circle cx="90" cy="137" r="4" fill="#f38ba8"/>
+  <text x="77" y="133" fill="#f38ba8" text-anchor="end" font-size="10">M'</text>
+
+  <!-- Bracket showing A'B' on screen -->
+  <line x1="95" y1="111" x2="102" y2="111" stroke="#6c7086" stroke-width="1"/>
+  <line x1="95" y1="163" x2="102" y2="163" stroke="#6c7086" stroke-width="1"/>
+  <line x1="102" y1="111" x2="102" y2="163" stroke="#6c7086" stroke-width="1"/>
+
+  <!-- Annotation: M' vs M_proj gap -->
+  <line x1="94" y1="137" x2="110" y2="137" stroke="#f38ba8" stroke-width="0.8"/>
+  <line x1="94" y1="145" x2="110" y2="145" stroke="#f9e2af" stroke-width="0.8"/>
+  <line x1="110" y1="137" x2="110" y2="145" stroke="#fab387" stroke-width="1.5"/>
+  <text x="118" y="143" fill="#fab387" font-size="9">差距!</text>
+
+  <!-- Legend box -->
+  <rect x="280" y="20" width="230" height="95" rx="6" fill="#181825" stroke="#313244" stroke-width="1"/>
+  <circle cx="295" cy="40" r="4" fill="#f38ba8"/>
+  <text x="305" y="44" fill="#f38ba8" font-size="10">M' = 螢幕中點 (A'B' 的中點)</text>
+  <text x="305" y="58" fill="#6c7086" font-size="10">naive 插值在這裡給 UV = 0.5</text>
+  <circle cx="295" cy="78" r="4" fill="#f9e2af"/>
+  <text x="305" y="82" fill="#f9e2af" font-size="10">M<tspan font-size="8" dy="2">proj</tspan><tspan dy="-2"> = 真正的 UV=0.5 投影點</tspan></text>
+  <text x="305" y="100" fill="#6c7086" font-size="10">M' 的正確 UV 其實不是 0.5！</text>
+</svg>
+<figcaption>
+  側視圖：A 離相機近（投影到螢幕上佔較大範圍），B 離相機遠。
+  螢幕中點 M' 和 3D 中點 M 的投影 M<sub>proj</sub> 不在同一個位置——
+  naive 插值在 M' 給出 UV=0.5，但正確值偏向 A（因為 A 在 3D 中更近）。
+</figcaption>
+</figure>
+
+<p>
+  <strong>核心直覺：</strong>近處的頂點在螢幕上佔用的範圍比較大（因為離相機近，看起來比較大），
+  所以螢幕中點在 3D 空間中其實偏向近處的頂點。
+  如果我們在螢幕中點用 UV=0.5（各佔一半），就是錯的——
+  正確值應該更偏向 A 的 UV=0（近處頂點的權重應該更高）。
+</p>
+
+<div class="box box-red">
+  <strong>錯誤的根源：</strong>
+  我們在 Ch10 推導的重心座標公式，是用<em>螢幕空間</em>的 2D 座標計算的。
+  但「螢幕空間的重心座標」和「3D 空間的重心座標」在透視投影下<strong>不相等</strong>。
+  直接用螢幕重心座標插值 UV，就相當於在螢幕中點強制給 UV=0.5——
+  而不是給物件在 3D 空間中真正對應的 UV 值。
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2><div class="n">5</div>從零推導：螢幕重心座標 vs 3D 重心座標</h2>
+
+<p>
+  現在我們有了直覺，來做嚴格的數學推導。
+  這是整個教學系列最重要的一段數學——不跳步驟，完整走一遍。
+</p>
+
+<h3>Step 1：定義兩組重心座標</h3>
+
+<p>三角形三個頂點的 clip-space 座標為 \(\mathbf{v}_i = (x_i, y_i, z_i, w_i)\)，\(i = 0, 1, 2\)。</p>
+
+<p>
+  投影到螢幕後，2D 位置是 \(\mathbf{p}_i = (x_i/w_i,\; y_i/w_i)\)。
+  對螢幕上的任一點 P，我們用 2D 面積比算出<strong>螢幕空間重心座標</strong>
+  \(\mu = (\mu_0, \mu_1, \mu_2)\)，使得：
+</p>
+
+$P = \mu_0\,\mathbf{p}_0 + \mu_1\,\mathbf{p}_1 + \mu_2\,\mathbf{p}_2, \qquad \mu_0 + \mu_1 + \mu_2 = 1$
+
+<p>
+  這就是 Ch10 的公式——完全正確，只是它算出的是<em>螢幕空間</em>的權重。
+</p>
+
+<p>
+  同時，在 3D 空間中，同一個點 P 對應的<strong>3D 重心座標</strong>
+  \(\lambda = (\lambda_0, \lambda_1, \lambda_2)\) 滿足：
+</p>
+
+$\text{正確的屬性插值} = \lambda_0\,f_0 + \lambda_1\,f_1 + \lambda_2\,f_2$
+
+<p>
+  問題是：<strong>\(\mu_i \neq \lambda_i\)</strong>。
+  我們的光柵化器只能算出 \(\mu\)（因為光柵化發生在螢幕空間），
+  但正確插值需要 \(\lambda\)。
+  我們需要找到一個從 \(\mu\) 轉換到 \(\lambda\) 的公式。
+</p>
+
+<h3>Step 2：建立 \(\mu\) 和 \(\lambda\) 的關係</h3>
+
+<p>
+  在 clip space，三角形上的任一點可以用 3D 重心座標表示為齊次座標：
+</p>
+
+$\mathbf{v} = \lambda_0\,\mathbf{v}_0 + \lambda_1\,\mathbf{v}_1 + \lambda_2\,\mathbf{v}_2$
+
+<p>
+  投影到螢幕後（除以 w 分量），螢幕位置是：
+</p>
+
+$P = \frac{(\lambda_0 x_0 + \lambda_1 x_1 + \lambda_2 x_2)}
+         {\lambda_0 w_0 + \lambda_1 w_1 + \lambda_2 w_2}
+\;,\quad
+   \frac{(\lambda_0 y_0 + \lambda_1 y_1 + \lambda_2 y_2)}
+         {\lambda_0 w_0 + \lambda_1 w_1 + \lambda_2 w_2}$
+
+<p>
+  但同時，P 也滿足螢幕重心座標的定義
+  \(P = \sum \mu_i\, \mathbf{p}_i = \sum \mu_i (x_i/w_i,\; y_i/w_i)\)。
+  合併兩個表達式，比較 x 分量：
+</p>
+
+$\sum_{i}\mu_i \frac{x_i}{w_i} = \frac{\sum_{i}\lambda_i x_i}{\sum_{i}\lambda_i w_i}$
+
+<p>
+  令 \(D = \sum_i \lambda_i w_i\)（一個標量），上式變成：
+</p>
+
+$\mu_i \cdot \frac{x_i}{w_i} \;\leftrightarrow\; \frac{\lambda_i \cdot x_i}{D}$
+
+<p>
+  要讓這個等式對<em>任意</em> \(x_i\) 值都成立（不只是特定的三角形），
+  唯一的可能是每一項都分別相等：
+</p>
+
+$\boxed{\frac{\mu_i}{w_i} = \frac{\lambda_i}{D}} \qquad \Longleftrightarrow \qquad \lambda_i = D \cdot \frac{\mu_i}{w_i}$
+
+<h3>Step 3：求出 D</h3>
+
+<p>
+  利用 \(\sum \lambda_i = 1\) 的約束：
+</p>
+
+$\sum_{i}\lambda_i = D \sum_{i}\frac{\mu_i}{w_i} = 1 \qquad \Longrightarrow \qquad D = \frac{1}{\displaystyle\sum_{i}\frac{\mu_i}{w_i}}$
+
+<h3>Step 4：得到最終公式</h3>
+
+<p>把 D 代入，得到 3D 重心座標和螢幕重心座標的關係：</p>
+
+<div class="box box-blue">
+  <strong>透視修正重心座標公式：</strong>
+
+  $\boxed{\lambda_i = \frac{\mu_i \,/\, w_i}{\displaystyle\sum_{j=0}^{2}\;\mu_j \,/\, w_j}}$
+
+  其中 \(\mu_i\) 是螢幕空間重心座標（Ch10 的公式算出的），
+  \(w_i\) 是第 \(i\) 個頂點的 clip-space w 值，
+  \(\lambda_i\) 是正確的 3D 重心座標——用它來插值任何屬性都是正確的。
+</div>
+
+<p>
+  <strong>直覺驗證：</strong>w 值較小的頂點（離相機較近的）獲得更大的權重——
+  符合我們在 Section 4 的側視圖直覺。
+</p>
+
+<h3>驗證：正交投影退化</h3>
+
+<p>
+  正交投影時，所有頂點的 w 值相同（\(w_0 = w_1 = w_2 = w\)）：
+</p>
+
+$\lambda_i = \frac{\mu_i / w}{\sum_j \mu_j / w} = \frac{\mu_i}{\sum_j \mu_j} = \mu_i$
+
+<p>
+  公式退化為 \(\lambda_i = \mu_i\)——螢幕重心座標等於 3D 重心座標。
+  正確！正交投影不存在透視扭曲，不需要修正。
+</p>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2><div class="n">6</div>透視修正重心座標的程式碼</h2>
+
+<p>把公式翻譯成 C++ 只需四行：</p>
+
+<div class="code"><span class="cmt">// μ = (l0, l1, l2)：螢幕空間重心座標（Ch10 的公式）</span>
+<span class="cmt">// w[0..2]：三個頂點的 clip-space w 值</span>
+
+<span class="ty">float</span> S = l0/w[<span class="val">0</span>] + l1/w[<span class="val">1</span>] + l2/w[<span class="val">2</span>];   <span class="cmt">// 分母（1/w 的加權和）</span>
+
+<span class="ty">Vec3f</span> bar = {                            <span class="cmt">// λ = 透視修正重心座標</span>
+    (l0 / w[<span class="val">0</span>]) / S,
+    (l1 / w[<span class="val">1</span>]) / S,
+    (l2 / w[<span class="val">2</span>]) / S
+};</div>
+
+<p>
+  有了 \(\lambda\)（即 <code>bar</code>），fragment() 裡的所有屬性插值
+  都可以直接用簡單的線性組合——因為 \(\lambda\) 已經是正確的 3D 權重：
+</p>
+
+<div class="code"><span class="cmt">// fragment() 內：所有 varying 插值都用 bar（已修正）</span>
+<span class="ty">Vec2f</span> uv = {
+    bar.x * v_uv[<span class="val">0</span>].x + bar.y * v_uv[<span class="val">1</span>].x + bar.z * v_uv[<span class="val">2</span>].x,
+    bar.x * v_uv[<span class="val">0</span>].y + bar.y * v_uv[<span class="val">1</span>].y + bar.z * v_uv[<span class="val">2</span>].y
+};
+<span class="ty">Vec3f</span> normal = <span class="fn">normalize</span>({
+    bar.x * v_n[<span class="val">0</span>].x + bar.y * v_n[<span class="val">1</span>].x + bar.z * v_n[<span class="val">2</span>].x,
+    bar.x * v_n[<span class="val">0</span>].y + bar.y * v_n[<span class="val">1</span>].y + bar.z * v_n[<span class="val">2</span>].y,
+    bar.x * v_n[<span class="val">0</span>].z + bar.y * v_n[<span class="val">1</span>].z + bar.z * v_n[<span class="val">2</span>].z
+});</div>
+
+<div class="box box-green">
+  <strong>這就是 Ch25 所說的：</strong>
+  「fragment() 收到的 <code>bar</code> 是透視修正後的重心座標」。
+  光柵化器計算修正版 \(\lambda\) 後傳給 fragment()，
+  所以 Shader 開發者完全不需要知道 1/w trick 的存在——
+  他只要用 <code>bar.x*f[0] + bar.y*f[1] + bar.z*f[2]</code> 就能得到正確結果。
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2><div class="n">7</div>深度插值為何不需要修正？</h2>
+
+<p>
+  你可能注意到一個奇怪的地方：
+  Z-buffer 的深度值用的是<em>未修正</em>的螢幕重心座標 \(\mu\) 來插值，
+  而不是修正後的 \(\lambda\)。這不是錯了嗎？
+</p>
+
+<div class="code"><span class="cmt">// Z-buffer 深度插值——用 l0, l1, l2（螢幕重心座標 μ），不是 bar（修正版 λ）</span>
+<span class="ty">float</span> depth = l0*sz[<span class="val">0</span>] + l1*sz[<span class="val">1</span>] + l2*sz[<span class="val">2</span>];</div>
+
+<p>
+  <strong>沒有錯。</strong>原因在於我們插值的是 \(z_{\text{ndc}}\)，而不是原始的 3D 深度。
+  \(z_{\text{ndc}}\) 的定義是：
+</p>
+
+$z_{\text{ndc}} = \frac{z_{\text{clip}}}{w_{\text{clip}}}$
+
+<p>
+  它已經除過 w 了。回想 Section 5 的推導：
+  任何 clip-space 量除以 w 的結果，都可以用螢幕重心座標 \(\mu\) 線性插值。
+  這正是我們推導過程的出發點——螢幕座標本身就是 \(x_{\text{clip}}/w\) 和 \(y_{\text{clip}}/w\)，
+  而 \(z_{\text{ndc}} = z_{\text{clip}}/w\) 具有完全相同的性質。
+</p>
+
+<div class="box box-blue">
+  <strong>結論（業界標準實作）：</strong><br>
+  ● 深度值 \(z_{\text{ndc}}\)：用螢幕重心座標 \((\mu_0, \mu_1, \mu_2)\) 插值——<em>已經</em>除過 w<br>
+  ● UV、法向量等屬性：用透視修正重心座標 \((\lambda_0, \lambda_1, \lambda_2)\) 插值——<em>還沒</em>除過 w，需要修正
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2><div class="n">8</div>新版 DrawTriangle 完整實作</h2>
+
+<p>把 Section 3（頂點階段）+ Section 6（透視修正）+ Section 7（深度）組合成完整函式：</p>
+
+<div class="code"><span class="kw">void</span> RenderDevice::<span class="fn">DrawTriangle</span>(<span class="ty">IShader</span>&amp; shader, <span class="ty">int</span> face_idx) {
+
+    <span class="cmt">// ── ① Vertex Stage ──────────────────────────────────────────</span>
+    <span class="ty">Vec4f</span> clip[<span class="val">3</span>];
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="val">0</span>; i &lt; <span class="val">3</span>; i++)
+        clip[i] = shader.<span class="fn">vertex</span>(face_idx, i);
+
+    <span class="cmt">// ── ② 透視除法 ─────────────────────────────────────────────</span>
+    <span class="ty">float</span> w[<span class="val">3</span>];
+    <span class="ty">Vec3f</span> ndc[<span class="val">3</span>];
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="val">0</span>; i &lt; <span class="val">3</span>; i++) {
+        w[i]   = clip[i].w;
+        ndc[i] = { clip[i].x/w[i], clip[i].y/w[i], clip[i].z/w[i] };
+    }
+
+    <span class="cmt">// ── ③ Viewport ─────────────────────────────────────────────</span>
+    <span class="ty">float</span> sx[<span class="val">3</span>], sy[<span class="val">3</span>], sz[<span class="val">3</span>];
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="val">0</span>; i &lt; <span class="val">3</span>; i++) {
+        sx[i] = (ndc[i].x + <span class="val">1.f</span>) * <span class="val">.5f</span> * width;
+        sy[i] = (<span class="val">1.f</span> - ndc[i].y) * <span class="val">.5f</span> * height;
+        sz[i] = (ndc[i].z + <span class="val">1.f</span>) * <span class="val">.5f</span>;
+    }
+
+    <span class="cmt">// ── ④ 包圍盒（Ch11）──────────────────────────────────────</span>
+    <span class="ty">int</span> minX = std::<span class="fn">max</span>(<span class="val">0</span>,       (<span class="ty">int</span>)std::<span class="fn">floor</span>((std::<span class="fn">min</span>)({sx[<span class="val">0</span>],sx[<span class="val">1</span>],sx[<span class="val">2</span>]})));
+    <span class="ty">int</span> maxX = std::<span class="fn">min</span>(width-<span class="val">1</span>, (<span class="ty">int</span>)std::<span class="fn">ceil</span> ((std::<span class="fn">max</span>)({sx[<span class="val">0</span>],sx[<span class="val">1</span>],sx[<span class="val">2</span>]})));
+    <span class="ty">int</span> minY = std::<span class="fn">max</span>(<span class="val">0</span>,        (<span class="ty">int</span>)std::<span class="fn">floor</span>((std::<span class="fn">min</span>)({sy[<span class="val">0</span>],sy[<span class="val">1</span>],sy[<span class="val">2</span>]})));
+    <span class="ty">int</span> maxY = std::<span class="fn">min</span>(height-<span class="val">1</span>,(<span class="ty">int</span>)std::<span class="fn">ceil</span> ((std::<span class="fn">max</span>)({sy[<span class="val">0</span>],sy[<span class="val">1</span>],sy[<span class="val">2</span>]})));
+
+    <span class="cmt">// ── ⑤ 光柵化迴圈 ─────────────────────────────────────────</span>
+    <span class="ty">float</span> denom = (sy[<span class="val">1</span>]-sy[<span class="val">2</span>])*(sx[<span class="val">0</span>]-sx[<span class="val">2</span>]) + (sx[<span class="val">2</span>]-sx[<span class="val">1</span>])*(sy[<span class="val">0</span>]-sy[<span class="val">2</span>]);
+    <span class="kw">if</span> (std::<span class="fn">abs</span>(denom) &lt; <span class="val">1e-6f</span>) <span class="kw">return</span>;  <span class="cmt">// 退化三角形</span>
+
+    <span class="kw">for</span> (<span class="ty">int</span> y = minY; y &lt;= maxY; y++) {
+      <span class="kw">for</span> (<span class="ty">int</span> x = minX; x &lt;= maxX; x++) {
+
+        <span class="cmt">// 螢幕空間重心座標 μ（Ch10 的公式）</span>
+        <span class="ty">float</span> l0 = ((sy[<span class="val">1</span>]-sy[<span class="val">2</span>])*(x-sx[<span class="val">2</span>]) + (sx[<span class="val">2</span>]-sx[<span class="val">1</span>])*(y-sy[<span class="val">2</span>])) / denom;
+        <span class="ty">float</span> l1 = ((sy[<span class="val">2</span>]-sy[<span class="val">0</span>])*(x-sx[<span class="val">2</span>]) + (sx[<span class="val">0</span>]-sx[<span class="val">2</span>])*(y-sy[<span class="val">2</span>])) / denom;
+        <span class="ty">float</span> l2 = <span class="val">1.f</span> - l0 - l1;
+        <span class="kw">if</span> (l0 &lt; <span class="val">0</span> || l1 &lt; <span class="val">0</span> || l2 &lt; <span class="val">0</span>) <span class="kw">continue</span>;
+
+        <span class="cmt">// 深度測試（用 μ 插值——Section 7 解釋了為什麼這是正確的）</span>
+        <span class="ty">float</span> depth = l0*sz[<span class="val">0</span>] + l1*sz[<span class="val">1</span>] + l2*sz[<span class="val">2</span>];
+        <span class="ty">int</span>   idx   = y * width + x;
+        <span class="kw">if</span> (depth &gt;= zbuffer[idx]) <span class="kw">continue</span>;
+
+        <span class="cmt">// ★ 透視修正重心座標 λ（Section 5 的公式）</span>
+        <span class="ty">float</span> S = l0/w[<span class="val">0</span>] + l1/w[<span class="val">1</span>] + l2/w[<span class="val">2</span>];
+        <span class="ty">Vec3f</span> bar = { (l0/w[<span class="val">0</span>])/S, (l1/w[<span class="val">1</span>])/S, (l2/w[<span class="val">2</span>])/S };
+
+        <span class="cmt">// Fragment Shader（bar 已修正，fragment 裡插值就是正確的）</span>
+        <span class="ty">uint32_t</span> color;
+        <span class="kw">if</span> (!shader.<span class="fn">fragment</span>(bar, color)) <span class="kw">continue</span>;
+
+        <span class="cmt">// 寫入 Framebuffer + 更新 Z-buffer</span>
+        zbuffer[idx] = depth;
+        <span class="fn">SetPixel</span>(x, y, color);
+      }
+    }
+}</div>
+
+<div class="box box-yellow">
+  <strong>Z-buffer 的配置：</strong>
+  <code>zbuffer</code> 是 <code>float*</code> 陣列，大小 <code>width × height</code>，
+  在 <code>RenderDevice</code> 建構時分配。
+  每幀開始時用 <code>Clear()</code> 重設為 <code>1.0f</code>（最遠深度，因為深度範圍是 [0,1]）。
+  深度測試 <code>depth &gt;= zbuffer[idx]</code> 表示：新 fragment 比已有的更遠或等距 → 丟棄。
+</div>
+
+<p>
+  <strong>和舊版 DrawTriangle 的程式碼對比：</strong>
+  光柵化迴圈的核心結構（包圍盒 + 重心座標測試）和 Ch12 完全相同，
+  只增加了三處：vertex() 呼叫、1/w 修正、fragment() 呼叫。
+  我們沒有重寫光柵化——我們只是在它的外層加了 Shader 介面。
+</p>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2><div class="n">9</div>數值範例：手算透視修正</h2>
+
+<p>
+  用一個具體的三角形，走一遍透視修正的計算。
+  這個範例能幫助你驗證自己的實作是否正確。
+</p>
+
+<h3>設定</h3>
+
+<p>
+  三個頂點經過 MVP 變換後的 clip-space w 值（代表深度）和 UV 座標：
+</p>
+
+<table>
+  <thead><tr><th>頂點</th><th>clip w</th><th>UV</th><th>含義</th></tr></thead>
+  <tbody>
+    <tr><td>\(V_0\)</td><td>\(w_0 = 2\)</td><td>(0, 0)</td><td>最近（w 最小）</td></tr>
+    <tr><td>\(V_1\)</td><td>\(w_1 = 4\)</td><td>(1, 0)</td><td>最遠</td></tr>
+    <tr><td>\(V_2\)</td><td>\(w_2 = 3\)</td><td>(0, 1)</td><td>中間距離</td></tr>
+  </tbody>
+</table>
+
+<p>
+  假設螢幕上某個像素 P 計算出的<strong>螢幕空間重心座標</strong>為
+  \(\mu = (0.50,\; 0.30,\; 0.20)\)。
+</p>
+
+<h3>Naive 插值（錯誤）</h3>
+
+<p>如果直接用 \(\mu\) 插值 UV：</p>
+
+$\text{UV}_{\text{naive}} = 0.50\,(0,0) + 0.30\,(1,0) + 0.20\,(0,1) = \mathbf{(0.300,\; 0.200)}$
+
+<h3>透視修正插值（正確）</h3>
+
+<div class="box box-blue" style="font-size:.85em">
+  <strong>Step 1：</strong>計算分母 \(S\)
+
+  $S = \frac{\mu_0}{w_0} + \frac{\mu_1}{w_1} + \frac{\mu_2}{w_2}
+     = \frac{0.50}{2} + \frac{0.30}{4} + \frac{0.20}{3}
+     = 0.250 + 0.075 + 0.067
+     = 0.392$
+
+  <strong>Step 2：</strong>計算透視修正重心座標 \(\lambda\)
+
+  $\lambda_0 = \frac{0.250}{0.392} = \mathbf{0.639}, \quad
+   \lambda_1 = \frac{0.075}{0.392} = \mathbf{0.191}, \quad
+   \lambda_2 = \frac{0.067}{0.392} = \mathbf{0.170}$
+
+  驗證：\(0.639 + 0.191 + 0.170 = 1.000\) ✓
+
+  <strong>Step 3：</strong>用 \(\lambda\) 插值 UV
+
+  $\text{UV}_{\text{correct}} = 0.639\,(0,0) + 0.191\,(1,0) + 0.170\,(0,1) = \mathbf{(0.191,\; 0.170)}$
+</div>
+
+<h3>比較結果</h3>
+
+<table class="trace">
+  <thead><tr><th></th><th>\(\mu_0 / \lambda_0\)</th><th>\(\mu_1 / \lambda_1\)</th><th>\(\mu_2 / \lambda_2\)</th><th>UV.x</th><th>UV.y</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>Naive（螢幕 \(\mu\)）</td>
+      <td>0.500</td><td>0.300</td><td>0.200</td>
+      <td class="wrong">0.300</td><td class="wrong">0.200</td>
+    </tr>
+    <tr>
+      <td>修正（3D \(\lambda\)）</td>
+      <td class="hi">0.639</td><td>0.191</td><td>0.170</td>
+      <td class="ok">0.191</td><td class="ok">0.170</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+  修正後，\(V_0\)（最近的頂點，\(w=2\)）的權重從 0.500 跳到 <strong>0.639</strong>——增加了 28%。
+  \(V_1\)（最遠的頂點，\(w=4\)）的權重從 0.300 降到 0.191——減少了 36%。
+</p>
+<p>
+  <strong>結果符合直覺：</strong>近處的頂點在 3D 空間中佔據更大的「實際面積」，
+  所以它的屬性值在插值時應該佔更大的權重。
+  如果用 naive 插值，遠處頂點的 UV 被過度放大，就會產生「貼圖拉伸」的視覺錯誤。
+</p>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2><div class="n">10</div>舊版 vs 新版對比</h2>
+
+<div class="two-col">
+  <div>
+    <div class="col-title wrong">舊版 DrawTriangle（Ch12）</div>
+    <ul style="margin:10px 0 0 16px;line-height:2.1;font-size:.88em">
+      <li>輸入：螢幕座標頂點 + 固定 <code>uint32_t</code></li>
+      <li>MVP：在外部手動計算</li>
+      <li>著色：整個三角形同一色</li>
+      <li>深度：無 Z-buffer</li>
+      <li>插值：螢幕空間線性（透視下不正確）</li>
+      <li>擴展：換著色 = 改核心程式碼</li>
+    </ul>
+  </div>
+  <div>
+    <div class="col-title right">新版 DrawTriangle（Ch26）</div>
+    <ul style="margin:10px 0 0 16px;line-height:2.1;font-size:.88em">
+      <li>輸入：<code>IShader&amp;</code> + 三角形索引</li>
+      <li>MVP：vertex() 鉤子，Shader 自行決定</li>
+      <li>著色：fragment() 鉤子，逐像素可程式化</li>
+      <li>深度：Z-buffer 深度測試</li>
+      <li>插值：透視修正重心座標（\(\lambda_i = \mu_i/w_i / S\)）</li>
+      <li>擴展：換著色 = 換一個 Shader 物件</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2><div class="n">11</div>常見錯誤與除錯</h2>
+
+<table>
+  <thead><tr><th>錯誤</th><th>症狀</th><th>修正</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>w 值取錯</strong></td>
+      <td>貼圖扭曲，越靠近相機越嚴重</td>
+      <td>必須用 <code>clip[i].w</code>（clip space w），不是 NDC z。<br>NDC 值已經除過 w，不能再用它做修正。</td>
+    </tr>
+    <tr>
+      <td><strong>Z-buffer 沒清除</strong></td>
+      <td>第二幀開始物件消失或全黑</td>
+      <td>每幀 <code>Clear()</code> 時必須同時重設 zbuffer 為 <code>1.0f</code>。</td>
+    </tr>
+    <tr>
+      <td><strong>對深度也做透視修正</strong></td>
+      <td>深度精度異常，Z-fighting 增加</td>
+      <td>深度值 \(z_{\text{ndc}}\) 已除過 w，用 \(\mu\) 插值。<br>只有 UV、法向量等「未除過 w」的屬性才需要用 \(\lambda\)。</td>
+    </tr>
+    <tr>
+      <td><strong>fragment() 在 Z-test 前呼叫</strong></td>
+      <td>效能極差（每個像素都執行 Shader）</td>
+      <td>先做深度測試，通過後才呼叫 fragment()。<br>被遮擋的像素直接跳過，不浪費計算。</td>
+    </tr>
+    <tr>
+      <td><strong>denom 在迴圈內重算</strong></td>
+      <td>效能浪費（不影響正確性）</td>
+      <td>重心座標的分母 <code>denom</code> 對同一個三角形是常數，<br>提到迴圈外面只算一次。</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="box box-purple" style="margin-top:40px">
+  <strong>Ch26 重點整理：</strong>
+  <ul style="margin-top:8px;margin-left:16px;line-height:2.1;font-size:.9em">
+    <li>新版 <code>DrawTriangle(IShader&amp;, face_idx)</code> 在光柵化迴圈前後插入 vertex()/fragment() 鉤子</li>
+    <li>必須保留 <code>clip[i].w</code>（不能只存 NDC），因為透視修正需要它</li>
+    <li>螢幕重心座標 \(\mu_i\) ≠ 3D 重心座標 \(\lambda_i\)，直接用 \(\mu\) 插值屬性會產生透視扭曲</li>
+    <li><strong>核心公式：</strong>\(\lambda_i = (\mu_i / w_i) \,/\, \sum_j (\mu_j / w_j)\)</li>
+    <li>深度值用 \(\mu\) 插值（因為 \(z_{\text{ndc}}\) 已除過 w）；UV/法向量等屬性用 \(\lambda\) 插值</li>
+    <li>修正後的 \(\lambda\) 傳給 fragment()，Shader 開發者不需要知道 1/w trick 的細節</li>
+  </ul>
+</div>
+
+<div class="next-ch">
+  <div>
+    <div class="next-label">PART 7 完成！</div>
+    <div class="next-title">你現在有了一個完整的可程式化軟體光柵化器</div>
+    <div class="next-desc">
+      IShader 介面 + 新版 DrawTriangle = 完整的軟體版 OpenGL 可程式化管線。
+      接下來 Part 8 會用這個架構實作不同的 Shader——Flat、Gouraud、Phong、Texture，
+      每一個都讓你深入理解一種光照模型和渲染技術。
+    </div>
+  </div>
+  <a href="../index.html" class="next-arrow">⌂</a>
+</div>
+
+</body>
+</html>
