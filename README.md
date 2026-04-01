@@ -49,3 +49,8 @@ int main() {
     return 0;
 }
 ```
+
+
+## TODO
+* [ ] Follow the tutorial
+* [ ] UI library like [libiui](https://github.com/sysprog21/libiui)
