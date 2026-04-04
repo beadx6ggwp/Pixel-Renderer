@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>C++ 複習 — 系列教學</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:     #1e1e2e;
+  --bg1:    #181825;
+  --bg2:    #11111b;
+  --border: #313244;
+  --muted:  #6c7086;
+  --text:   #cdd6f4;
+  --blue:   #89b4fa;
+  --green:  #a6e3a1;
+  --yellow: #f9e2af;
+  --orange: #fab387;
+  --red:    #f38ba8;
+  --purple: #cba6f7;
+  --teal:   #94e2d5;
+}
+body {
+  background: var(--bg2); color: var(--text);
+  font-family: 'Georgia', serif; font-size: 15px;
+  min-height: 100vh;
+}
+
+/* ── Hero */
+.hero {
+  background: var(--bg1);
+  border-bottom: 1px solid var(--border);
+  padding: 56px 40px 48px;
+  text-align: center;
+}
+.hero-label {
+  font-family: 'Consolas', monospace; font-size: 0.78em;
+  color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase;
+  margin-bottom: 14px;
+}
+.hero h1 {
+  font-size: 2.2em; color: var(--blue); margin-bottom: 14px;
+  font-weight: normal;
+}
+.hero-sub {
+  color: var(--muted); max-width: 580px; margin: 0 auto 28px;
+  font-size: 0.92em; line-height: 1.8;
+}
+.hero-tags { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.tag {
+  font-family: 'Consolas', monospace; font-size: 0.75em;
+  padding: 3px 10px; border-radius: 99px; border: 1px solid;
+}
+.tag-blue   { color: var(--blue);   border-color: var(--blue);   background: #1a2a3d; }
+.tag-green  { color: var(--green);  border-color: var(--green);  background: #1a2d1a; }
+.tag-purple { color: var(--purple); border-color: var(--purple); background: #2a1a3d; }
+
+/* ── Layout */
+.container { max-width: 1040px; margin: 0 auto; padding: 48px 32px; }
+
+/* ── Overview strip */
+.overview {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 16px; margin-bottom: 48px;
+}
+.ov-card {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 8px;
+  padding: 18px 16px; text-align: center;
+}
+.ov-num  { font-family: 'Consolas', monospace; font-size: 2em; font-weight: bold; margin-bottom: 4px; }
+.ov-label { color: var(--muted); font-size: 0.82em; }
+
+/* ── Part headers */
+.part { margin-bottom: 40px; }
+.part-header {
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 16px; padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.part-num {
+  font-family: 'Consolas', monospace; font-size: 0.75em;
+  color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase;
+}
+.part-title { font-size: 1.05em; color: var(--text); }
+.part-desc  { color: var(--muted); font-size: 0.85em; margin-left: auto; }
+
+/* ── Chapter cards */
+.chapters { display: flex; flex-direction: column; gap: 10px; }
+.ch {
+  display: flex; align-items: flex-start; gap: 16px;
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 8px;
+  padding: 16px 20px; text-decoration: none; color: inherit;
+  transition: border-color 0.15s, background 0.15s;
+  position: relative; overflow: hidden;
+}
+.ch::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px; background: var(--border); border-radius: 3px 0 0 3px;
+  transition: background 0.15s;
+}
+.ch:hover::before { background: var(--blue); }
+.ch:hover { border-color: #414259; background: #1e1e2e; }
+.ch.done::before  { background: var(--green); }
+.ch.impl::before  { background: var(--orange); }
+.ch.bonus::before { background: var(--teal); }
+.ch.soon { opacity: 0.5; cursor: default; pointer-events: none; }
+.ch.soon::before  { background: var(--border); }
+
+.ch-num {
+  font-family: 'Consolas', monospace; font-size: 0.78em;
+  color: var(--muted); width: 32px; flex-shrink: 0; padding-top: 3px;
+}
+.ch-body { flex: 1; min-width: 0; }
+.ch-title {
+  font-size: 0.95em; color: var(--text); margin-bottom: 4px;
+  display: flex; align-items: center; gap: 8px;
+}
+.ch-desc  { color: var(--muted); font-size: 0.82em; line-height: 1.6; }
+.ch-tags  { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.ch-tag {
+  font-family: 'Consolas', monospace; font-size: 0.72em;
+  padding: 1px 7px; border-radius: 4px; background: var(--bg2);
+  color: var(--muted); border: 1px solid var(--border);
+}
+
+.badge {
+  font-family: 'Consolas', monospace; font-size: 0.68em;
+  padding: 1px 7px; border-radius: 4px; flex-shrink: 0;
+}
+.badge-done  { background: #1a2d1a; color: var(--green);  border: 1px solid var(--green); }
+.badge-soon  { background: var(--bg2); color: var(--muted); border: 1px solid var(--border); }
+
+.ch-arrow {
+  color: var(--muted); font-size: 0.9em; padding-top: 3px; flex-shrink: 0;
+  transition: transform 0.15s, color 0.15s;
+}
+.ch:hover .ch-arrow { transform: translateX(3px); color: var(--blue); }
+
+/* ── Prereq map */
+.prereq {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 8px;
+  padding: 24px 28px; margin-bottom: 48px;
+}
+.prereq h3 { color: var(--yellow); font-size: 0.9em; margin-bottom: 16px; font-family: 'Consolas', monospace; }
+.prereq-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+.prereq-item { font-size: 0.85em; }
+.prereq-name { color: var(--text); margin-bottom: 2px; }
+.prereq-desc { color: var(--muted); font-size: 0.88em; line-height: 1.5; }
+
+/* ── Footer */
+.footer {
+  border-top: 1px solid var(--border);
+  padding: 24px 40px; text-align: center;
+  color: var(--muted); font-size: 0.82em;
+  font-family: 'Consolas', monospace;
+}
+
+@media (max-width: 700px) {
+  .overview { grid-template-columns: 1fr 1fr; }
+  .prereq-grid { grid-template-columns: 1fr; }
+  .hero { padding: 36px 20px; }
+  .container { padding: 32px 16px; }
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-label">系列教學</div>
+  <h1>C++ 複習：從記憶喚醒到渲染器實戰</h1>
+  <p class="hero-sub">以你的軟體渲染器專案為主軸，快速恢復 C++ 手感。<br>不是從零開始的教科書，而是一份幫你「想起來」的複習筆記。</p>
+  <div class="hero-tags">
+    <span class="tag tag-blue">C++11/14</span>
+    <span class="tag tag-green">Software Renderer</span>
+    <span class="tag tag-purple">Refresher</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="overview">
+    <div class="ov-card">
+      <div class="ov-num" style="color:var(--blue)">0</div>
+      <div class="ov-label">章節已完成</div>
+    </div>
+    <div class="ov-card">
+      <div class="ov-num" style="color:var(--yellow)">19</div>
+      <div class="ov-label">章節總計</div>
+    </div>
+    <div class="ov-card">
+      <div class="ov-num" style="color:var(--purple)">6</div>
+      <div class="ov-label">學習模組</div>
+    </div>
+    <div class="ov-card">
+      <div class="ov-num" style="color:var(--green)">1</div>
+      <div class="ov-label">實作章節</div>
+    </div>
+  </div>
+
+  <div class="prereq">
+    <h3>▌ 前置知識（分階段）</h3>
+    <div class="prereq-grid">
+      <div class="prereq-item">
+        <div class="prereq-name">Part 1-2 所需</div>
+        <div class="prereq-desc">曾經寫過任何程式語言，知道變數、函數、迴圈是什麼</div>
+      </div>
+      <div class="prereq-item">
+        <div class="prereq-name">Part 3-4 所需</div>
+        <div class="prereq-desc">能讀懂基本的 class 定義，知道什麼是陣列和函數呼叫</div>
+      </div>
+      <div class="prereq-item">
+        <div class="prereq-name">Part 5-6 所需</div>
+        <div class="prereq-desc">完成前四個 Part，對指標和 OOP 有基本感覺</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ Part 1 ═══════════════ -->
+  <div class="part">
+    <div class="part-header">
+      <span class="part-num">Part 1</span>
+      <span class="part-title">記憶喚醒：編譯與記憶體</span>
+      <span class="part-desc">compilation · memory · pointer</span>
+    </div>
+    <div class="chapters">
+      <a class="ch soon" href="theory/ch01_compilation_model.html">
+        <div class="ch-num">01</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            編譯模型
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">從 .cpp 到 .exe 的旅程——預處理、編譯、連結三步驟，理解 #include 到底做了什麼</div>
+          <div class="ch-tags">
+            <span class="ch-tag">compilation</span>
+            <span class="ch-tag">linker</span>
+            <span class="ch-tag">header</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch soon" href="theory/ch02_memory_layout.html">
+        <div class="ch-num">02</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            記憶體四區
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">Stack、Heap、Static、Code——你的變數住在哪裡，決定了它的命運</div>
+          <div class="ch-tags">
+            <span class="ch-tag">memory</span>
+            <span class="ch-tag">stack</span>
+            <span class="ch-tag">heap</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch soon" href="theory/ch03_pointer_reference.html">
+        <div class="ch-num">03</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            指標與參考
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">地址、解引用、與別名——C++ 最令人又愛又恨的核心機制</div>
+          <div class="ch-tags">
+            <span class="ch-tag">pointer</span>
+            <span class="ch-tag">reference</span>
+            <span class="ch-tag">address</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- ═══════════════ Part 2 ═══════════════ -->
+  <div class="part">
+    <div class="part-header">
+      <span class="part-num">Part 2</span>
+      <span class="part-title">物件導向核心</span>
+      <span class="part-desc">class · inheritance · polymorphism</span>
+    </div>
+    <div class="chapters">
+      <a class="ch soon" href="theory/ch04_struct_class.html">
+        <div class="ch-num">04</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            struct 與 class
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">封裝你的資料——從 C 的 struct 到 C++ 的 class，只差一個 private</div>
+          <div class="ch-tags">
+            <span class="ch-tag">struct</span>
+            <span class="ch-tag">class</span>
+            <span class="ch-tag">access-control</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch soon" href="theory/ch05_ctor_dtor.html">
+        <div class="ch-num">05</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            建構與解構
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">物件的一生——從初始化列表到析構順序，RAII 的起點</div>
+          <div class="ch-tags">
+            <span class="ch-tag">constructor</span>
+            <span class="ch-tag">destructor</span>
+            <span class="ch-tag">RAII</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch soon" href="theory/ch06_inheritance_virtual.html">
+        <div class="ch-num">06</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            繼承與虛擬函數
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">多型的代價與回報——virtual 關鍵字背後的 vtable 機制</div>
+          <div class="ch-tags">
+            <span class="ch-tag">inheritance</span>
+            <span class="ch-tag">virtual</span>
+            <span class="ch-tag">vtable</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch soon" href="theory/ch07_interface_abstract.html">
+        <div class="ch-num">07</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            抽象類別與介面
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">IShader 的設計哲學——純虛擬函數如何定義一份「契約」</div>
+          <div class="ch-tags">
+            <span class="ch-tag">interface</span>
+            <span class="ch-tag">pure-virtual</span>
+            <span class="ch-tag">abstract</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- ═══════════════ Part 3 ═══════════════ -->
+  <div class="part">
+    <div class="part-header">
+      <span class="part-num">Part 3</span>
+      <span class="part-title">運算子與泛型</span>
+      <span class="part-desc">operator · template · specialization</span>
+    </div>
+    <div class="chapters">
+      <a class="ch soon" href="theory/ch08_operator_overloading.html">
+        <div class="ch-num">08</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            運算子重載
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">讓 Vec3f 可以做加減乘除——成員函數 vs 友元函數的選擇</div>
+          <div class="ch-tags">
+            <span class="ch-tag">operator-overloading</span>
+            <span class="ch-tag">friend</span>
+            <span class="ch-tag">Vec3f</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch soon" href="theory/ch09_function_template.html">
+        <div class="ch-num">09</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            函數模板
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">一份程式碼，多種型別——從 std::min 到自己的 embed&lt;&gt;</div>
+          <div class="ch-tags">
+            <span class="ch-tag">template</span>
+            <span class="ch-tag">function-template</span>
+            <span class="ch-tag">type-deduction</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch soon" href="theory/ch10_class_template.html">
+        <div class="ch-num">10</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            類別模板與特化
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">vec&lt;DIM,T&gt; 怎麼做到的——泛型類別、偏特化、與 typedef 別名</div>
+          <div class="ch-tags">
+            <span class="ch-tag">class-template</span>
+            <span class="ch-tag">specialization</span>
+            <span class="ch-tag">typedef</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- ═══════════════ Part 4 ═══════════════ -->
+  <div class="part">
+    <div class="part-header">
+      <span class="part-num">Part 4</span>
+      <span class="part-title">STL 實戰</span>
+      <span class="part-desc">vector · map · algorithm</span>
+    </div>
+    <div class="chapters">
+      <a class="ch soon" href="theory/ch11_containers.html">
+        <div class="ch-num">11</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            容器三劍客
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">vector、map、bitset——選對容器，程式碼少一半</div>
+          <div class="ch-tags">
+            <span class="ch-tag">STL</span>
+            <span class="ch-tag">vector</span>
+            <span class="ch-tag">map</span>
+            <span class="ch-tag">bitset</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch soon" href="theory/ch12_algorithm_iterator.html">
+        <div class="ch-num">12</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            演算法與迭代器
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">fill、min、max、sort——不要自己寫迴圈，讓 STL 幫你</div>
+          <div class="ch-tags">
+            <span class="ch-tag">STL</span>
+            <span class="ch-tag">algorithm</span>
+            <span class="ch-tag">iterator</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- ═══════════════ Part 5 ═══════════════ -->
+  <div class="part">
+    <div class="part-header">
+      <span class="part-num">Part 5</span>
+      <span class="part-title">Modern C++ 補課</span>
+      <span class="part-desc">auto · lambda · smart pointer · move</span>
+    </div>
+    <div class="chapters">
+      <a class="ch soon" href="theory/ch13_auto_uniform_init.html">
+        <div class="ch-num">13</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            auto 與統一初始化
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">少打字，更安全——C++11 讓宣告變數不再痛苦</div>
+          <div class="ch-tags">
+            <span class="ch-tag">auto</span>
+            <span class="ch-tag">uniform-init</span>
+            <span class="ch-tag">C++11</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch soon" href="theory/ch14_lambda.html">
+        <div class="ch-num">14</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            Lambda 表達式
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">就地定義的小函數——capture list 與閉包的祕密</div>
+          <div class="ch-tags">
+            <span class="ch-tag">lambda</span>
+            <span class="ch-tag">closure</span>
+            <span class="ch-tag">C++11</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch soon" href="theory/ch15_smart_pointer.html">
+        <div class="ch-num">15</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            智慧指標
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">告別手動 delete——unique_ptr 與 shared_ptr 的所有權語意</div>
+          <div class="ch-tags">
+            <span class="ch-tag">unique_ptr</span>
+            <span class="ch-tag">shared_ptr</span>
+            <span class="ch-tag">RAII</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch soon" href="theory/ch16_move_semantics.html">
+        <div class="ch-num">16</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            移動語意與右值參考
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">效能的最後一哩路——std::move 到底移動了什麼？</div>
+          <div class="ch-tags">
+            <span class="ch-tag">move</span>
+            <span class="ch-tag">rvalue-ref</span>
+            <span class="ch-tag">C++11</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- ═══════════════ Part 6 ═══════════════ -->
+  <div class="part">
+    <div class="part-header">
+      <span class="part-num">Part 6</span>
+      <span class="part-title">工程實踐</span>
+      <span class="part-desc">preprocessor · design pattern · architecture</span>
+    </div>
+    <div class="chapters">
+      <a class="ch soon" href="theory/ch17_preprocessor.html">
+        <div class="ch-num">17</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            預處理器全解
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">#include、#define、#pragma——編譯器看到你的程式碼之前，發生了什麼</div>
+          <div class="ch-tags">
+            <span class="ch-tag">preprocessor</span>
+            <span class="ch-tag">macro</span>
+            <span class="ch-tag">header-guard</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch soon" href="theory/ch18_design_patterns.html">
+        <div class="ch-num">18</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            設計模式速查
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">Template Method、Strategy、RAII——渲染器裡藏著哪些經典模式</div>
+          <div class="ch-tags">
+            <span class="ch-tag">design-pattern</span>
+            <span class="ch-tag">architecture</span>
+            <span class="ch-tag">RAII</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch impl soon" href="impl/ch01_renderer_walkthrough.html">
+        <div class="ch-num">I-01</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            渲染器架構導覽
+            <span class="badge badge-soon">規劃中</span>
+          </div>
+          <div class="ch-desc">從 main.cpp 讀懂整個專案——帶著 C++ 的新眼光重新看你的程式碼</div>
+          <div class="ch-tags">
+            <span class="ch-tag">code-reading</span>
+            <span class="ch-tag">architecture</span>
+            <span class="ch-tag">renderer</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  built with patience · powered by curiosity
+</div>
+
+</body>
+</html>

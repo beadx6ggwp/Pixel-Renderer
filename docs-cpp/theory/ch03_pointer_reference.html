@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Ch03 — 指標與參考</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:     #1e1e2e;
+  --bg1:    #181825;
+  --bg2:    #11111b;
+  --border: #313244;
+  --muted:  #6c7086;
+  --text:   #cdd6f4;
+  --blue:   #89b4fa;
+  --green:  #a6e3a1;
+  --yellow: #f9e2af;
+  --orange: #fab387;
+  --red:    #f38ba8;
+  --purple: #cba6f7;
+  --teal:   #94e2d5;
+}
+body {
+  background: var(--bg); color: var(--text);
+  font-family: 'Georgia', serif; font-size: 15px;
+  padding: 0 20px 80px; max-width: 900px; margin: 0 auto;
+  line-height: 1.9;
+}
+nav {
+  font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted);
+  padding: 14px 0; border-bottom: 1px solid var(--border);
+  margin-bottom: 36px; display: flex; align-items: center; gap: 10px;
+}
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--blue); }
+.nav-sep { color: var(--border); }
+.nav-cur { color: var(--text); }
+.nav-right { margin-left: auto; display: flex; gap: 16px; }
+.ch-header { margin-bottom: 40px; }
+.ch-label {
+  font-family: 'Consolas', monospace; font-size: 0.78em;
+  color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px;
+}
+.ch-title { color: var(--blue); font-size: 1.7em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub   { color: var(--muted); font-size: 0.88em; margin-bottom: 14px; }
+.ch-tags  { display: flex; gap: 6px; flex-wrap: wrap; }
+.ch-tag {
+  font-family: 'Consolas', monospace; font-size: 0.72em;
+  padding: 1px 7px; border-radius: 4px;
+  background: var(--bg2); color: var(--muted); border: 1px solid var(--border);
+}
+h2 {
+  color: var(--purple); font-size: 1em;
+  font-family: 'Consolas', monospace; letter-spacing: 0.05em;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+  margin: 44px 0 20px;
+  display: flex; align-items: center; gap: 12px;
+}
+h2 .n {
+  background: var(--purple); color: var(--bg2); font-weight: bold;
+  border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 0.85em;
+}
+h3 { color: var(--yellow); font-size: 0.95em; margin: 24px 0 10px; }
+p  { margin-bottom: 12px; }
+strong { color: var(--yellow); }
+em { color: var(--orange); font-style: normal; }
+ul, ol { margin: 8px 0 14px 26px; line-height: 2.2; }
+.box {
+  border-radius: 6px; padding: 14px 18px; margin: 16px 0;
+  font-size: 0.9em; line-height: 1.85;
+}
+.box-blue   { background: var(--bg1); border-left: 4px solid var(--blue); }
+.box-green  { background: var(--bg1); border-left: 4px solid var(--green); }
+.box-yellow { background: var(--bg1); border-left: 4px solid var(--yellow); }
+.box-red    { background: var(--bg1); border-left: 4px solid var(--red); }
+.box-purple { background: var(--bg1); border-left: 4px solid var(--purple); }
+.code {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em;
+  line-height: 2.1; margin: 14px 0;
+}
+.code .cmt { color: var(--muted); }
+.code .kw  { color: var(--purple); }
+.code .val { color: var(--orange); }
+.code .ok  { color: var(--green); }
+.code .tp  { color: var(--blue); }
+.code .fn  { color: var(--teal); }
+.fig { margin: 24px auto; text-align: center; }
+.fig figcaption { color: var(--muted); font-size: 0.88em; margin-top: 8px; font-style: italic; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+.two-col > div {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 8px;
+  padding: 16px 18px;
+}
+.col-title { font-family: 'Consolas', monospace; font-size: 0.85em; margin-bottom: 10px; color: var(--muted); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9em; }
+thead { background: var(--bg1); }
+th { color: var(--muted); font-family: 'Consolas', monospace; font-size: 0.85em;
+     padding: 8px 14px; text-align: left; border-bottom: 2px solid var(--border); }
+td { padding: 8px 14px; border-bottom: 1px solid var(--border); }
+hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+.next-ch {
+  margin-top: 56px; padding: 20px 24px;
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 8px;
+  display: flex; align-items: center; gap: 20px;
+}
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+.next-title { color: var(--blue); font-size: 1em; }
+.next-desc  { color: var(--muted); font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: var(--blue); font-size: 1.6em; text-decoration: none; }
+.next-arrow:hover { color: var(--purple); }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">C++ 複習</a>
+  <span class="nav-sep">/</span>
+  <span class="nav-cur">Ch03 — 指標與參考</span>
+  <div class="nav-right">
+    <a href="ch02_memory_layout.html">&larr; Ch02</a>
+    <a href="ch04_struct_class.html">Ch04 &rarr;</a>
+  </div>
+</nav>
+
+<div class="ch-header">
+  <div class="ch-label">PART 1 &middot; CHAPTER 03</div>
+  <div class="ch-title">指標與參考</div>
+  <div class="ch-sub">地址、解引用、與別名</div>
+  <div class="ch-tags">
+    <span class="ch-tag">pointer</span>
+    <span class="ch-tag">reference</span>
+    <span class="ch-tag">address</span>
+  </div>
+</div>
+
+<!-- ===== Opening ===== -->
+
+<p>
+打開你的渲染器程式碼，隨便看一眼就能找到這些東西：<code>RenderDevice* device</code>、<code>ScreenManager* screen</code>、<code>unsigned char* frame_buffer</code>、<code>const Vertex&amp; v1</code>。星號和 ampersand 到處都是。你可能已經隱約知道它們跟「地址」有關，但如果有人問你：<code>*</code> 在宣告時和在使用時意思一不一樣？<code>&amp;</code> 在宣告時和在使用時呢？你可能會猶豫。
+</p>
+
+<p>
+這一章，我們要把 <code>*</code> 和 <code>&amp;</code> 的四種含義一次搞清楚。不再含糊，不再混淆。
+</p>
+
+<div class="box box-blue">
+<strong>本章範圍</strong> &mdash; 徹底搞懂 <code>*</code> 和 <code>&amp;</code> 的四種含義（宣告指標、解引用、宣告參考、取地址），以及指標和參考各自的使用場景。你會看到你的渲染器裡每一個 <code>*</code> 和 <code>&amp;</code> 背後的設計意圖。
+</div>
+
+<!-- ===== Section 1 ===== -->
+
+<h2><span class="n">1</span> 地址：記憶體的門牌號碼</h2>
+
+<p>
+上一章你看到記憶體被分成 stack、heap、static、code 四個區域。但不管在哪個區域，每一個 byte 都有一個獨一無二的<strong>地址</strong>（address）。你可以把地址想成門牌號碼 &mdash; 每棟房子（每個 byte）都有自己的號碼，只要你知道號碼，就能找到那棟房子。
+</p>
+
+<figure class="fig">
+<svg width="500" height="120" viewBox="0 0 500 120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arr1" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="none" stroke="#89b4fa" stroke-width="1.2"/>
+    </marker>
+  </defs>
+  <!-- memory cells -->
+  <rect x="30" y="40" width="60" height="40" rx="4" fill="#89b4fa" fill-opacity="0.1" stroke="#89b4fa" stroke-width="1"/>
+  <rect x="90" y="40" width="60" height="40" rx="4" fill="#89b4fa" fill-opacity="0.1" stroke="#89b4fa" stroke-width="1"/>
+  <rect x="150" y="40" width="60" height="40" rx="4" fill="#a6e3a1" fill-opacity="0.15" stroke="#a6e3a1" stroke-width="1"/>
+  <rect x="210" y="40" width="60" height="40" rx="4" fill="#a6e3a1" fill-opacity="0.15" stroke="#a6e3a1" stroke-width="1"/>
+  <rect x="270" y="40" width="60" height="40" rx="4" fill="#a6e3a1" fill-opacity="0.15" stroke="#a6e3a1" stroke-width="1"/>
+  <rect x="330" y="40" width="60" height="40" rx="4" fill="#a6e3a1" fill-opacity="0.15" stroke="#a6e3a1" stroke-width="1"/>
+  <rect x="390" y="40" width="60" height="40" rx="4" fill="#6c7086" fill-opacity="0.1" stroke="#6c7086" stroke-width="1"/>
+  <!-- addresses -->
+  <text x="60" y="30" text-anchor="middle" font-family="Consolas" font-size="10" fill="#6c7086">0x1000</text>
+  <text x="120" y="30" text-anchor="middle" font-family="Consolas" font-size="10" fill="#6c7086">0x1004</text>
+  <text x="180" y="30" text-anchor="middle" font-family="Consolas" font-size="10" fill="#6c7086">0x1008</text>
+  <text x="240" y="30" text-anchor="middle" font-family="Consolas" font-size="10" fill="#6c7086">0x100C</text>
+  <text x="300" y="30" text-anchor="middle" font-family="Consolas" font-size="10" fill="#6c7086">0x1010</text>
+  <text x="360" y="30" text-anchor="middle" font-family="Consolas" font-size="10" fill="#6c7086">0x1014</text>
+  <text x="420" y="30" text-anchor="middle" font-family="Consolas" font-size="10" fill="#6c7086">0x1018</text>
+  <!-- values -->
+  <text x="60" y="65" text-anchor="middle" font-family="Consolas" font-size="12" fill="#89b4fa">42</text>
+  <text x="120" y="65" text-anchor="middle" font-family="Consolas" font-size="12" fill="#89b4fa">7</text>
+  <text x="180" y="65" text-anchor="middle" font-family="Consolas" font-size="12" fill="#a6e3a1">3.14</text>
+  <text x="300" y="65" text-anchor="middle" font-family="Consolas" font-size="12" fill="#a6e3a1">(cont)</text>
+  <text x="420" y="65" text-anchor="middle" font-family="Consolas" font-size="12" fill="#6c7086">...</text>
+  <!-- labels -->
+  <text x="60" y="100" text-anchor="middle" font-family="Consolas" font-size="10" fill="#89b4fa">int x</text>
+  <text x="120" y="100" text-anchor="middle" font-family="Consolas" font-size="10" fill="#89b4fa">int y</text>
+  <text x="240" y="100" text-anchor="middle" font-family="Consolas" font-size="10" fill="#a6e3a1">double d</text>
+</svg>
+<figcaption>每個變數佔據一段連續的 byte，每段都有起始地址（門牌號碼）</figcaption>
+</figure>
+
+<p>
+在 C++ 裡，<code>&amp;</code> 放在變數前面（不是宣告裡）就是<strong>取地址運算子</strong>。它的意思是「把這個變數的門牌號碼告訴我」：
+</p>
+
+<div class="code">
+<span class="tp">int</span> x = <span class="val">42</span>;<br>
+<span class="fn">printf</span>(<span class="val">"%p\n"</span>, &amp;x); <span class="cmt">// 印出 x 的地址，例如 0x61fe1c</span>
+</div>
+
+<p>
+這裡的 <code>&amp;x</code> 不是在宣告參考 &mdash; 它是在<em>使用</em>已經存在的變數 <code>x</code>，問它：「你住在哪裡？」。記住這個區別，因為 <code>&amp;</code> 在宣告和使用時的意思完全不同。
+</p>
+
+<!-- ===== Section 2 ===== -->
+
+<h2><span class="n">2</span> 指標：存放地址的變數</h2>
+
+<p>
+知道了地址，下一個問題是：我能不能把地址<em>存起來</em>？當然可以。存放地址的變數就叫做<strong>指標</strong>（pointer）。
+</p>
+
+<div class="code">
+<span class="tp">int</span> x = <span class="val">42</span>;<br>
+<span class="tp">int</span>* p = &amp;x; <span class="cmt">// p 是指標，裡面存的是 x 的地址</span>
+</div>
+
+<p>
+這裡就是最容易混淆的地方了。<code>*</code> 出現在兩個完全不同的場景：
+</p>
+
+<div class="two-col">
+<div>
+  <div class="col-title" style="color:#cba6f7;">宣告時的 *</div>
+  <p style="margin-bottom:0;"><code><span style="color:#89b4fa">int</span>* p</code> &mdash; 星號出現在型別旁邊，意思是「<strong>p 是一個指標</strong>，它指向 int」。它在定義 p 的身分。</p>
+</div>
+<div>
+  <div class="col-title" style="color:#fab387;">使用時的 *</div>
+  <p style="margin-bottom:0;"><code>*p</code> &mdash; 星號出現在已存在的指標前面，意思是「<strong>去 p 存放的那個地址</strong>，把那裡的值拿出來」。這叫<em>解引用</em>（dereference）。</p>
+</div>
+</div>
+
+<div class="code">
+<span class="tp">int</span> x = <span class="val">42</span>;<br>
+<span class="tp">int</span>* p = &amp;x;   <span class="cmt">// 宣告：p 是指標，存放 x 的地址</span><br>
+<span class="fn">printf</span>(<span class="val">"%d\n"</span>, *p);  <span class="cmt">// 使用：去 p 指向的地方 → 印出 42</span><br>
+*p = <span class="val">99</span>;        <span class="cmt">// 使用：去 p 指向的地方 → 把那裡改成 99</span><br>
+<span class="fn">printf</span>(<span class="val">"%d\n"</span>, x);   <span class="cmt">// x 現在是 99</span>
+</div>
+
+<figure class="fig">
+<svg width="480" height="150" viewBox="0 0 480 150" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arr2" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="none" stroke="#cba6f7" stroke-width="1.5"/>
+    </marker>
+  </defs>
+  <!-- variable x -->
+  <rect x="300" y="30" width="120" height="50" rx="6" fill="#a6e3a1" fill-opacity="0.12" stroke="#a6e3a1" stroke-width="1.2"/>
+  <text x="360" y="22" text-anchor="middle" font-family="Consolas" font-size="11" fill="#a6e3a1">int x</text>
+  <text x="360" y="60" text-anchor="middle" font-family="Consolas" font-size="16" fill="#a6e3a1">42</text>
+  <text x="360" y="96" text-anchor="middle" font-family="Consolas" font-size="10" fill="#6c7086">addr: 0x1000</text>
+  <!-- pointer p -->
+  <rect x="60" y="30" width="150" height="50" rx="6" fill="#cba6f7" fill-opacity="0.12" stroke="#cba6f7" stroke-width="1.2"/>
+  <text x="135" y="22" text-anchor="middle" font-family="Consolas" font-size="11" fill="#cba6f7">int* p</text>
+  <text x="135" y="60" text-anchor="middle" font-family="Consolas" font-size="14" fill="#cba6f7">0x1000</text>
+  <text x="135" y="96" text-anchor="middle" font-family="Consolas" font-size="10" fill="#6c7086">addr: 0x2000</text>
+  <!-- arrow -->
+  <line x1="210" y1="55" x2="295" y2="55" stroke="#cba6f7" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr2)"/>
+  <text x="252" y="48" text-anchor="middle" font-family="Consolas" font-size="10" fill="#cba6f7">*p</text>
+  <!-- legend -->
+  <text x="60" y="135" font-family="Consolas" font-size="10" fill="#6c7086">p 自己住在 0x2000，但它「裡面」存的值是 0x1000（x 的地址）</text>
+</svg>
+<figcaption>指標 p 是一個變數，它的值就是另一個變數的地址</figcaption>
+</figure>
+
+<p>
+看你的渲染器裡的 <code>application.h</code>：
+</p>
+
+<div class="code">
+<span class="kw">class</span> <span class="tp">Application</span> {<br>
+&nbsp;&nbsp;<span class="tp">RenderDevice</span>* device = <span class="kw">nullptr</span>; <span class="cmt">// device 是指標，存放 RenderDevice 物件的地址</span><br>
+};
+</div>
+
+<p>
+<code>RenderDevice*</code> 裡的 <code>*</code> 是宣告時的意思 &mdash; 告訴編譯器「device 不是一個 RenderDevice 物件，而是一個<em>存放 RenderDevice 地址</em>的變數」。當你在 <code>application.cpp</code> 裡寫 <code>device = new RenderDevice(&amp;screen)</code> 時，<code>new</code> 在 heap 上建立物件並傳回它的地址，這個地址被存進 <code>device</code>。
+</p>
+
+<!-- ===== Section 3 ===== -->
+
+<h2><span class="n">3</span> 指標運算實戰</h2>
+
+<h3>箭頭運算子 -&gt;</h3>
+
+<p>
+當你有一個指標 <code>p</code> 指向某個物件，你想存取物件的成員，你得先解引用再用點號：<code>(*p).member</code>。但這太囉唆了，所以 C++ 提供了<strong>箭頭運算子</strong> <code>-&gt;</code> 作為簡寫：
+</p>
+
+<div class="code">
+<span class="cmt">// 以下兩行完全等價</span><br>
+(*device).<span class="fn">DrawTriangle</span>(v1, v2, v3, color);<br>
+device-&gt;<span class="fn">DrawTriangle</span>(v1, v2, v3, color); <span class="cmt">// 更常用的寫法</span>
+</div>
+
+<p>
+你的 <code>main.cpp</code> 裡正是這樣呼叫的：<code>device-&gt;DrawTriangle({400, 100}, {500, 300}, {300, 300}, 0xFF0000)</code>。因為 <code>device</code> 是指標，所以用 <code>-&gt;</code>，不能用 <code>.</code>。
+</p>
+
+<h3>nullptr：空指標</h3>
+
+<p>
+指標可以不指向任何東西，這時候它的值是 <code>nullptr</code>（C++11 以前用 <code>NULL</code> 或 <code>0</code>）。你的 <code>Application</code> 就是這樣初始化的：
+</p>
+
+<div class="code">
+<span class="tp">RenderDevice</span>* device = <span class="kw">nullptr</span>; <span class="cmt">// 還沒建立，先指向「沒有」</span><br>
+<br>
+<span class="cmt">// 在建構子裡才真正建立：</span><br>
+<span class="kw">if</span> (running) device = <span class="kw">new</span> <span class="tp">RenderDevice</span>(&amp;screen);
+</div>
+
+<p>
+對 <code>nullptr</code> 做解引用（<code>*device</code> 或 <code>device-&gt;...</code>）是<strong>未定義行為</strong>，通常直接當掉。所以在使用指標之前，你有責任確認它不是 null。
+</p>
+
+<h3>this 指標與 SetWindowLongPtr</h3>
+
+<p>
+你的 <code>ScreenManager</code> 裡有一段很典型的 Windows API 用法：
+</p>
+
+<div class="code">
+<span class="cmt">// screen_manager.cpp — 建立視窗後</span><br>
+<span class="fn">SetWindowLongPtr</span>(window_handle, GWLP_USERDATA, (<span class="tp">LONG_PTR</span>)<span class="kw">this</span>);<br>
+<br>
+<span class="cmt">// 在靜態的 WindowProc 裡取回：</span><br>
+<span class="tp">ScreenManager</span>* self = (<span class="tp">ScreenManager</span>*)<span class="fn">GetWindowLongPtr</span>(hwnd, GWLP_USERDATA);
+</div>
+
+<p>
+<code>this</code> 是 C++ 在每個成員函式裡自動提供的指標，指向「呼叫這個函式的那個物件」。這裡的技巧是：把 <code>this</code> 指標藏進 Windows 的視窗資料裡，之後在靜態函式中用 <code>GetWindowLongPtr</code> 把它撈回來，轉型成 <code>ScreenManager*</code>，就能再次存取物件的成員。整個過程就是在搬運一個地址。
+</p>
+
+<h3>指標的指標（簡介）</h3>
+
+<p>
+既然指標是一個變數，它自己也有地址，所以可以有「指向指標的指標」：<code>int** pp</code>。在渲染器裡你不太會用到，但理解它的存在可以幫助你不被多層 <code>*</code> 嚇到。核心邏輯不變 &mdash; 每一層 <code>*</code> 都是「再往下找一層地址」。
+</p>
+
+<!-- ===== Section 4 ===== -->
+
+<h2><span class="n">4</span> 參考：不能改指向的別名</h2>
+
+<p>
+C++ 除了指標以外，還有另一種跟地址有關的機制：<strong>參考</strong>（reference）。參考是一個變數的<em>別名</em> &mdash; 它不是一個新的變數，它就是那個變數本身。
+</p>
+
+<div class="code">
+<span class="tp">int</span> x = <span class="val">42</span>;<br>
+<span class="tp">int</span>&amp; r = x; <span class="cmt">// r 是 x 的別名。r 就是 x，x 就是 r。</span><br>
+r = <span class="val">99</span>;      <span class="cmt">// 改 r 就是改 x</span><br>
+<span class="fn">printf</span>(<span class="val">"%d\n"</span>, x); <span class="cmt">// 印出 99</span>
+</div>
+
+<p>
+注意這裡的 <code>&amp;</code> 出現在宣告中（<code>int&amp; r</code>），意思是「r 是 int 的參考」。這跟前面的 <code>&amp;x</code>（取地址）意思完全不同。
+</p>
+
+<div class="box box-blue">
+<strong>總結 &amp; 的兩種含義</strong><br>
+<code>int&amp; r = x;</code> &mdash; 宣告時：r 是 x 的別名（參考宣告）<br>
+<code>&amp;x</code> &mdash; 使用時：給我 x 的地址（取地址運算子）<br><br>
+同樣地，<code>*</code> 也有兩種含義：<br>
+<code>int* p = &amp;x;</code> &mdash; 宣告時：p 是指標<br>
+<code>*p = 99;</code> &mdash; 使用時：去 p 存放的地址（解引用）
+</div>
+
+<p>
+參考和指標最大的區別：
+</p>
+
+<ul>
+<li>參考<strong>不能為 null</strong>。宣告時就必須綁定到一個變數。</li>
+<li>參考<strong>不能改指向</strong>。一旦綁定，終身不變。<code>r = y</code> 不是讓 r 改指向 y，而是把 y 的值拷貝給 x。</li>
+<li>參考<strong>語法更乾淨</strong>。不需要 <code>*</code> 解引用，也不需要 <code>-&gt;</code>，直接用 <code>.</code>。</li>
+</ul>
+
+<p>
+比喻一下：<strong>指標</strong>像一張便利貼，上面寫著一個地址，你可以擦掉重寫，也可以什麼都不寫（null）。<strong>參考</strong>像是在一個人身上掛了第二個名牌 &mdash; 名牌就是那個人的一部分，不能拆下來掛到別人身上。
+</p>
+
+<p>
+你的渲染器裡兩種都有。為什麼 <code>RenderDevice</code> 的建構子用指標，而 <code>DrawTriangle</code> 用參考？
+</p>
+
+<div class="code">
+<span class="cmt">// 建構子 — 用指標</span><br>
+<span class="tp">RenderDevice</span>::<span class="fn">RenderDevice</span>(<span class="tp">ScreenManager</span>* s) : screen(s) {<br>
+&nbsp;&nbsp;frame_buffer = screen-&gt;<span class="fn">GetFrameBuffer</span>();<br>
+}<br>
+<br>
+<span class="cmt">// DrawTriangle — 用 const 參考</span><br>
+<span class="kw">void</span> <span class="tp">RenderDevice</span>::<span class="fn">DrawTriangle</span>(<span class="kw">const</span> <span class="tp">Vertex</span>&amp; v1, <span class="kw">const</span> <span class="tp">Vertex</span>&amp; v2,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">const</span> <span class="tp">Vertex</span>&amp; v3, <span class="tp">uint32_t</span> color) {<br>
+&nbsp;&nbsp;<span class="cmt">// ...</span><br>
+}
+</div>
+
+<p>
+<code>ScreenManager* s</code> 用指標，因為 RenderDevice 需要把這個地址<em>存起來</em>（成員 <code>screen</code>），將來可能需要改指向（或一開始是 nullptr）。而 <code>const Vertex&amp; v1</code> 用 const 參考，因為你只是想<em>讀取</em>頂點資料，不想拷貝整個 Vertex 結構，也不需要存起來。
+</p>
+
+<!-- ===== Section 5 ===== -->
+
+<h2><span class="n">5</span> 函數參數：值、指標、參考</h2>
+
+<p>
+函數接收參數有三種方式。這是你在寫渲染器時最常面對的選擇：
+</p>
+
+<table>
+<thead>
+<tr>
+  <th>傳遞方式</th>
+  <th>語法</th>
+  <th>特性</th>
+  <th>適用場景</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td style="color:#f9e2af;">傳值</td>
+  <td><code>void f(Vertex v)</code></td>
+  <td>拷貝整個物件；修改不影響外面</td>
+  <td>小型別（int, float）</td>
+</tr>
+<tr>
+  <td style="color:#cba6f7;">傳指標</td>
+  <td><code>void f(Vertex* v)</code></td>
+  <td>傳地址；可以是 nullptr；可改指向</td>
+  <td>可能為 null、需要存起來</td>
+</tr>
+<tr>
+  <td style="color:#a6e3a1;">傳參考</td>
+  <td><code>void f(Vertex&amp; v)</code></td>
+  <td>別名；不能是 null；可修改原物件</td>
+  <td>需要修改外面的變數</td>
+</tr>
+<tr>
+  <td style="color:#89b4fa;">傳 const 參考</td>
+  <td><code>void f(const Vertex&amp; v)</code></td>
+  <td>別名；不能修改；零拷貝</td>
+  <td><strong>最常用</strong>：唯讀大物件</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+來看一個具體的比較：
+</p>
+
+<div class="two-col">
+<div>
+  <div class="col-title" style="color:#f38ba8;">傳值 — 拷貝整個 Vertex</div>
+  <div class="code" style="margin:8px 0;">
+<span class="kw">void</span> <span class="fn">draw</span>(<span class="tp">Vertex</span> v) {<br>
+&nbsp;&nbsp;<span class="cmt">// v 是外面那個的複製品</span><br>
+&nbsp;&nbsp;<span class="cmt">// 修改 v 不影響原本的</span><br>
+}
+  </div>
+  <p style="font-size:0.85em;">如果 Vertex 有 x, y, z, u, v, color... 每次呼叫都拷貝一整份，很浪費。</p>
+</div>
+<div>
+  <div class="col-title" style="color:#a6e3a1;">傳 const 參考 — 零拷貝</div>
+  <div class="code" style="margin:8px 0;">
+<span class="kw">void</span> <span class="fn">draw</span>(<span class="kw">const</span> <span class="tp">Vertex</span>&amp; v) {<br>
+&nbsp;&nbsp;<span class="cmt">// v 就是外面那個本身</span><br>
+&nbsp;&nbsp;<span class="cmt">// const 保證不會改到它</span><br>
+}
+  </div>
+  <p style="font-size:0.85em;">不拷貝、不能改。你的 DrawTriangle 就是這樣做的。</p>
+</div>
+</div>
+
+<h3>多型派發用參考</h3>
+
+<p>
+在 myMiniRender 裡有一個進階用法：
+</p>
+
+<div class="code">
+<span class="kw">void</span> <span class="fn">triangle2</span>(<span class="tp">Vec4f</span>* pts, <span class="tp">IShader</span>&amp; shader, <span class="tp">TGAImage</span>&amp; image, <span class="tp">float</span>* zbuffer) {<br>
+&nbsp;&nbsp;shader.<span class="fn">fragment</span>(bc, color); <span class="cmt">// 多型呼叫 — 走虛函式表</span><br>
+}
+</div>
+
+<p>
+<code>IShader&amp; shader</code> 用參考而不是指標，因為：(1) shader 不可能是 null &mdash; 畫三角形一定要有 shader；(2) 參考也支援多型，只要 <code>IShader</code> 有虛函式，傳進來的派生類別就會走自己的實作。參考和指標都能實現多型，但參考的語法更明確地表達「這個東西一定存在」的意圖。
+</p>
+
+<!-- ===== Section 6 ===== -->
+
+<h2><span class="n">6</span> 你的渲染器裡的指標地圖</h2>
+
+<p>
+讓我們把你的 Pixel-Renderer 裡所有的指標和參考關係畫出來。每一根線都是一個你現在能看懂的 <code>*</code> 或 <code>&amp;</code>。
+</p>
+
+<figure class="fig">
+<svg width="520" height="340" viewBox="0 0 520 340" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arr3" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="none" stroke="#cba6f7" stroke-width="1.2"/>
+    </marker>
+    <marker id="arr4" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="none" stroke="#89b4fa" stroke-width="1.2"/>
+    </marker>
+    <marker id="arr5" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="none" stroke="#f38ba8" stroke-width="1.2"/>
+    </marker>
+    <marker id="arr6" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="none" stroke="#a6e3a1" stroke-width="1.2"/>
+    </marker>
+  </defs>
+
+  <!-- Stack region -->
+  <rect x="10" y="10" width="200" height="150" rx="8" fill="#89b4fa" fill-opacity="0.06" stroke="#89b4fa" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="20" y="30" font-family="Consolas" font-size="11" fill="#89b4fa">STACK</text>
+
+  <!-- Application box -->
+  <rect x="25" y="42" width="170" height="105" rx="6" fill="#181825" stroke="#313244" stroke-width="1"/>
+  <text x="35" y="60" font-family="Consolas" font-size="11" fill="#cdd6f4">Application</text>
+  <text x="35" y="82" font-family="Consolas" font-size="10" fill="#6c7086">ScreenManager screen</text>
+  <text x="35" y="100" font-family="Consolas" font-size="10" fill="#cba6f7">RenderDevice* device</text>
+  <text x="35" y="118" font-family="Consolas" font-size="10" fill="#6c7086">bool running</text>
+  <text x="35" y="138" font-family="Consolas" font-size="9" fill="#89b4fa">(stack object)</text>
+
+  <!-- Heap region -->
+  <rect x="270" y="10" width="240" height="210" rx="8" fill="#f38ba8" fill-opacity="0.06" stroke="#f38ba8" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="280" y="30" font-family="Consolas" font-size="11" fill="#f38ba8">HEAP</text>
+
+  <!-- RenderDevice box -->
+  <rect x="285" y="42" width="210" height="90" rx="6" fill="#181825" stroke="#313244" stroke-width="1"/>
+  <text x="295" y="60" font-family="Consolas" font-size="11" fill="#cdd6f4">RenderDevice</text>
+  <text x="295" y="80" font-family="Consolas" font-size="10" fill="#cba6f7">ScreenManager* screen</text>
+  <text x="295" y="98" font-family="Consolas" font-size="10" fill="#cba6f7">unsigned char* frame_buffer</text>
+  <text x="295" y="120" font-family="Consolas" font-size="9" fill="#f38ba8">(new RenderDevice)</text>
+
+  <!-- DIB buffer box -->
+  <rect x="285" y="150" width="210" height="55" rx="6" fill="#181825" stroke="#313244" stroke-width="1"/>
+  <text x="295" y="170" font-family="Consolas" font-size="11" fill="#cdd6f4">DIB frame buffer</text>
+  <text x="295" y="190" font-family="Consolas" font-size="9" fill="#f38ba8">(OS-allocated memory)</text>
+
+  <!-- Arrow: device -> RenderDevice (owning) -->
+  <line x1="195" y1="100" x2="280" y2="80" stroke="#cba6f7" stroke-width="1.5" marker-end="url(#arr3)"/>
+  <text x="222" y="82" font-family="Consolas" font-size="9" fill="#f9e2af">owns</text>
+
+  <!-- Arrow: RenderDevice.screen -> Application.screen (observing) -->
+  <path d="M295,80 Q240,40 195,82" fill="none" stroke="#89b4fa" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#arr4)"/>
+  <text x="225" y="50" font-family="Consolas" font-size="9" fill="#89b4fa">observes</text>
+
+  <!-- Arrow: frame_buffer -> DIB -->
+  <line x1="390" y1="105" x2="390" y2="145" stroke="#a6e3a1" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#arr6)"/>
+  <text x="400" y="130" font-family="Consolas" font-size="9" fill="#a6e3a1">observes</text>
+
+  <!-- Legend -->
+  <rect x="10" y="240" width="500" height="85" rx="6" fill="#181825" stroke="#313244" stroke-width="1"/>
+  <text x="24" y="262" font-family="Consolas" font-size="10" fill="#f9e2af">Legend:</text>
+  <line x1="24" y1="278" x2="60" y2="278" stroke="#cba6f7" stroke-width="1.5"/>
+  <text x="68" y="282" font-family="Consolas" font-size="10" fill="#cba6f7">RenderDevice* device</text>
+  <text x="250" y="282" font-family="Consolas" font-size="10" fill="#6c7086">— 擁有指標（needs delete）</text>
+
+  <line x1="24" y1="298" x2="60" y2="298" stroke="#89b4fa" stroke-width="1.2" stroke-dasharray="4,3"/>
+  <text x="68" y="302" font-family="Consolas" font-size="10" fill="#89b4fa">ScreenManager* screen</text>
+  <text x="260" y="302" font-family="Consolas" font-size="10" fill="#6c7086">— 觀察指標（不 delete）</text>
+
+  <line x1="24" y1="318" x2="60" y2="318" stroke="#a6e3a1" stroke-width="1.2" stroke-dasharray="4,3"/>
+  <text x="68" y="322" font-family="Consolas" font-size="10" fill="#a6e3a1">unsigned char* frame_buffer</text>
+  <text x="290" y="322" font-family="Consolas" font-size="10" fill="#6c7086">— 觀察指標（OS 管理）</text>
+</svg>
+<figcaption>Pixel-Renderer 的指標所有權地圖</figcaption>
+</figure>
+
+<p>
+三種指標，三種角色：
+</p>
+
+<ul>
+<li><code>RenderDevice* device</code> &mdash; <strong>擁有指標</strong>（owning pointer）。Application 用 <code>new</code> 建立它，在解構子裡用 <code>delete device</code> 釋放它。忘記 delete 就是記憶體洩漏。</li>
+<li><code>ScreenManager* screen</code>（在 RenderDevice 裡）&mdash; <strong>觀察指標</strong>（observing pointer）。RenderDevice 只是「看一眼」ScreenManager，不負責它的生命週期。<code>screen</code> 指向的物件是 Application 的成員變數，住在 stack 上，Application 結束時自動銷毀。</li>
+<li><code>unsigned char* frame_buffer</code> &mdash; <strong>觀察指標</strong>。指向 Windows 的 DIB section 記憶體，由 OS 管理。ScreenManager 在 <code>CreateDIBSection</code> 時拿到這個地址，在 <code>Shutdown</code> 時由 <code>DeleteObject</code> 釋放。</li>
+</ul>
+
+<p>
+至於 <code>const Vertex&amp; v1</code> 和（myMiniRender 的）<code>IShader&amp; shader</code> 都是<strong>參考</strong> &mdash; 它們不涉及所有權，只是在函式呼叫期間「借用」物件，避免拷貝。
+</p>
+
+<hr>
+
+<!-- ===== Box: Pitfalls ===== -->
+
+<div class="box box-yellow">
+<strong>常見陷阱</strong><br><br>
+<strong>1. 懸空指標（dangling pointer）</strong> &mdash; 物件已經被 delete 了，但指標還在。之後用這個指標就是未定義行為。解法：delete 之後把指標設為 nullptr。<br><br>
+<strong>2. 忘記檢查 nullptr</strong> &mdash; 你的 <code>device</code> 初始是 nullptr。如果視窗建立失敗（<code>running == false</code>），device 永遠是 nullptr。對它呼叫 <code>device-&gt;DrawTriangle(...)</code> 直接當掉。<br><br>
+<strong>3. 搞混 * 的兩種意思</strong> &mdash; <code>int* p = &amp;x;</code> 的 <code>*</code> 是宣告（p 是指標），<code>*p = 99;</code> 的 <code>*</code> 是解引用（去那個地址）。新手常把兩者混為一談。口訣：<em>左邊是身分，右邊是動作</em>。出現在型別旁邊就是宣告指標，出現在表達式裡就是解引用。
+</div>
+
+<!-- ===== Box: 三件事 ===== -->
+
+<div class="box box-green">
+<strong>記住三件事</strong><br><br>
+<strong>1.</strong> 指標是存放地址的變數。<code>*</code> 在宣告時是「我是指標」，在使用時是「去那個地址」（解引用）。<code>&amp;</code> 在宣告時是「我是參考」，在使用時是「給我地址」。四個含義，不要混淆。<br><br>
+<strong>2.</strong> 參考是別名 &mdash; 綁定後不能改指向、不能為 null。指標可以改指向、可以是 null。<br><br>
+<strong>3.</strong> 函數參數最常用的模式：小型別傳值，大型別唯讀用 <code>const T&amp;</code>，需要可能為 null 或需要存起來時用 <code>T*</code>。
+</div>
+
+<!-- ===== Box: Forward link ===== -->
+
+<div class="box box-purple">
+<strong>下一步</strong> &mdash; 現在你懂了指標和參考，你知道 <code>RenderDevice*</code> 是存放地址的變數，<code>const Vertex&amp;</code> 是借用物件的別名。但 <code>RenderDevice</code> 和 <code>Vertex</code> 本身是什麼？它們是怎麼被定義出來的？下一章我們進入 <strong>struct 與 class</strong> &mdash; C++ 裡自訂型別的基礎。你會看到成員變數、成員函式、存取控制，以及你的渲染器裡每一個 class 的結構。
+</div>
+
+<!-- ===== Next chapter card ===== -->
+
+<div class="next-ch">
+  <div>
+    <div class="next-label">NEXT CHAPTER</div>
+    <div class="next-title">Ch04 &mdash; Struct 與 Class</div>
+    <div class="next-desc">成員變數、成員函式、存取控制 &mdash; 自訂型別的基礎</div>
+  </div>
+  <a class="next-arrow" href="ch04_struct_class.html">&rarr;</a>
+</div>
+
+</body>
+</html>

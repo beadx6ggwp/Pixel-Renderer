@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Ch01 — 編譯模型</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:     #1e1e2e;
+  --bg1:    #181825;
+  --bg2:    #11111b;
+  --border: #313244;
+  --muted:  #6c7086;
+  --text:   #cdd6f4;
+  --blue:   #89b4fa;
+  --green:  #a6e3a1;
+  --yellow: #f9e2af;
+  --orange: #fab387;
+  --red:    #f38ba8;
+  --purple: #cba6f7;
+  --teal:   #94e2d5;
+}
+body {
+  background: var(--bg); color: var(--text);
+  font-family: 'Georgia', serif; font-size: 15px;
+  padding: 0 20px 80px; max-width: 900px; margin: 0 auto;
+  line-height: 1.9;
+}
+nav {
+  font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted);
+  padding: 14px 0; border-bottom: 1px solid var(--border);
+  margin-bottom: 36px; display: flex; align-items: center; gap: 10px;
+}
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--blue); }
+.nav-sep { color: var(--border); }
+.nav-cur { color: var(--text); }
+.nav-right { margin-left: auto; display: flex; gap: 16px; }
+.ch-header { margin-bottom: 40px; }
+.ch-label {
+  font-family: 'Consolas', monospace; font-size: 0.78em;
+  color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px;
+}
+.ch-title { color: var(--blue); font-size: 1.7em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub   { color: var(--muted); font-size: 0.88em; margin-bottom: 14px; }
+.ch-tags  { display: flex; gap: 6px; flex-wrap: wrap; }
+.ch-tag {
+  font-family: 'Consolas', monospace; font-size: 0.72em;
+  padding: 1px 7px; border-radius: 4px;
+  background: var(--bg2); color: var(--muted); border: 1px solid var(--border);
+}
+h2 {
+  color: var(--purple); font-size: 1em;
+  font-family: 'Consolas', monospace; letter-spacing: 0.05em;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+  margin: 44px 0 20px;
+  display: flex; align-items: center; gap: 12px;
+}
+h2 .n {
+  background: var(--purple); color: var(--bg2); font-weight: bold;
+  border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 0.85em;
+}
+h3 { color: var(--yellow); font-size: 0.95em; margin: 24px 0 10px; }
+p  { margin-bottom: 12px; }
+strong { color: var(--yellow); }
+em { color: var(--orange); font-style: normal; }
+ul, ol { margin: 8px 0 14px 26px; line-height: 2.2; }
+.box {
+  border-radius: 6px; padding: 14px 18px; margin: 16px 0;
+  font-size: 0.9em; line-height: 1.85;
+}
+.box-blue   { background: var(--bg1); border-left: 4px solid var(--blue); }
+.box-green  { background: var(--bg1); border-left: 4px solid var(--green); }
+.box-yellow { background: var(--bg1); border-left: 4px solid var(--yellow); }
+.box-red    { background: var(--bg1); border-left: 4px solid var(--red); }
+.box-purple { background: var(--bg1); border-left: 4px solid var(--purple); }
+.code {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em;
+  line-height: 2.1; margin: 14px 0;
+}
+.code .cmt { color: var(--muted); }
+.code .kw  { color: var(--purple); }
+.code .val { color: var(--orange); }
+.code .ok  { color: var(--green); }
+.code .tp  { color: var(--blue); }
+.code .fn  { color: var(--teal); }
+.fig { margin: 24px auto; text-align: center; }
+.fig figcaption { color: var(--muted); font-size: 0.88em; margin-top: 8px; font-style: italic; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+.two-col > div {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 8px;
+  padding: 16px 18px;
+}
+.col-title { font-family: 'Consolas', monospace; font-size: 0.85em; margin-bottom: 10px; color: var(--muted); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9em; }
+thead { background: var(--bg1); }
+th { color: var(--muted); font-family: 'Consolas', monospace; font-size: 0.85em;
+     padding: 8px 14px; text-align: left; border-bottom: 2px solid var(--border); }
+td { padding: 8px 14px; border-bottom: 1px solid var(--border); }
+hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+.katex-display {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 6px;
+  padding: 18px 24px; margin: 14px 0; overflow-x: auto;
+}
+.next-ch {
+  margin-top: 56px; padding: 20px 24px;
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 8px;
+  display: flex; align-items: center; gap: 20px;
+}
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+.next-title { color: var(--blue); font-size: 1em; }
+.next-desc  { color: var(--muted); font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: var(--blue); font-size: 1.6em; text-decoration: none; }
+.next-arrow:hover { color: var(--purple); }
+</style>
+</head>
+<body>
+
+<!-- ============ NAV ============ -->
+<nav>
+  <a href="../index.html">C++ 複習</a>
+  <span class="nav-sep">/</span>
+  <span class="nav-cur">Ch01 — 編譯模型</span>
+  <div class="nav-right">
+    <a href="ch02_memory_layout.html">Ch02 &rarr;</a>
+  </div>
+</nav>
+
+<!-- ============ HEADER ============ -->
+<div class="ch-header">
+  <div class="ch-label">PART 1 &middot; CHAPTER 01</div>
+  <div class="ch-title">編譯模型</div>
+  <div class="ch-sub">從 .cpp 到 .exe 的旅程</div>
+  <div class="ch-tags">
+    <span class="ch-tag">compilation</span>
+    <span class="ch-tag">linker</span>
+    <span class="ch-tag">header</span>
+  </div>
+</div>
+
+<!-- ============ OPENING ============ -->
+<p>
+打開你的渲染器專案資料夾，你會看到這些檔案：<em>main.cpp</em>、<em>application.h</em>、<em>application.cpp</em>、<em>screen_manager.h</em>、<em>screen_manager.cpp</em>、<em>render_device.h</em>、<em>render_device.cpp</em>。為什麼不把所有程式碼寫在一個檔案裡就好？為什麼要把 <code>.h</code> 和 <code>.cpp</code> 分開？當你在 VS Code 按下 Build，那短短幾秒鐘裡到底發生了什麼事？
+</p>
+<p>
+更重要的是，你一定遇過這個令人崩潰的錯誤訊息：<strong>undefined reference to `RenderDevice::DrawTriangle(...)`</strong>。編譯明明通過了，為什麼最後一步又炸了？要理解這些問題，你需要知道 C++ 的<strong>編譯模型</strong> &mdash; 從原始碼到可執行檔，中間經歷了哪些階段，每個階段各自負責什麼。
+</p>
+
+<!-- ============ BOX: 本章範圍 ============ -->
+<div class="box box-blue">
+  <strong>本章範圍</strong> &mdash; 建立 C++ 編譯流水線的心智模型。你會學到預處理、編譯、連結三個階段各自做什麼，以及常見錯誤出現在哪個階段。我們會用你的渲染器專案作為貫穿全章的範例。
+</div>
+
+<!-- ============ SECTION 1 ============ -->
+<h2><span class="n">1</span> 一步到位的幻覺</h2>
+
+<p>
+如果你寫過 Python 或 JavaScript，你習慣的世界是這樣的：寫好一個 <code>.py</code> 檔，在終端打 <code>python main.py</code>，程式就跑了。沒有中間步驟，沒有等待，所見即所得。
+</p>
+<p>
+帶著這個經驗來到 C++，你很自然會這樣想：「寫好 <code>.cpp</code>，按一個按鈕，直接變成 <code>.exe</code>，結束。」好像整個過程是一個黑箱，一步到位。
+</p>
+<p>
+但真相是：<strong>C++ 的建構過程至少有三個截然不同的階段</strong>，每個階段由不同的程式負責，做完全不同的事。我喜歡用一個比喻：
+</p>
+
+<div class="two-col">
+  <div>
+    <div class="col-title">比喻：出版一本書</div>
+    <ul>
+      <li><strong>預處理</strong> = 寫信 &mdash; 把散落的草稿拼成完整手稿（純文字處理）</li>
+      <li><strong>編譯</strong> = 翻譯 &mdash; 把中文手稿翻譯成英文，每章獨立翻譯</li>
+      <li><strong>連結</strong> = 裝訂 &mdash; 把翻好的各章裝訂成一本書，解決跨章引用</li>
+    </ul>
+  </div>
+  <div>
+    <div class="col-title">C++ 實際流程</div>
+    <ul>
+      <li><strong>預處理器</strong>：展開 <code>#include</code>、<code>#define</code>，輸出 <code>.i</code> 檔</li>
+      <li><strong>編譯器</strong>：每個 <code>.cpp</code> 獨立翻譯成 <code>.o</code> 目的檔</li>
+      <li><strong>連結器</strong>：把所有 <code>.o</code> 拼成最終的 <code>.exe</code></li>
+    </ul>
+  </div>
+</div>
+
+<figure class="fig">
+<svg width="500" height="90" viewBox="0 0 500 90" xmlns="http://www.w3.org/2000/svg">
+  <!-- Stage boxes -->
+  <rect x="10" y="25" width="120" height="42" rx="6" fill="#89b4fa" fill-opacity="0.12" stroke="#89b4fa" stroke-width="1.2"/>
+  <text x="70" y="51" text-anchor="middle" font-family="Consolas,monospace" font-size="12" fill="#89b4fa">預處理 (Preprocess)</text>
+
+  <rect x="180" y="25" width="120" height="42" rx="6" fill="#cba6f7" fill-opacity="0.12" stroke="#cba6f7" stroke-width="1.2"/>
+  <text x="240" y="51" text-anchor="middle" font-family="Consolas,monospace" font-size="12" fill="#cba6f7">編譯 (Compile)</text>
+
+  <rect x="350" y="25" width="120" height="42" rx="6" fill="#a6e3a1" fill-opacity="0.12" stroke="#a6e3a1" stroke-width="1.2"/>
+  <text x="410" y="51" text-anchor="middle" font-family="Consolas,monospace" font-size="12" fill="#a6e3a1">連結 (Link)</text>
+
+  <!-- Arrows -->
+  <line x1="130" y1="46" x2="178" y2="46" stroke="#6c7086" stroke-width="1.2" marker-end="url(#arrowM)"/>
+  <line x1="300" y1="46" x2="348" y2="46" stroke="#6c7086" stroke-width="1.2" marker-end="url(#arrowM)"/>
+
+  <!-- Labels -->
+  <text x="70" y="82" text-anchor="middle" font-family="Consolas,monospace" font-size="10" fill="#6c7086">.cpp &rarr; .i</text>
+  <text x="240" y="82" text-anchor="middle" font-family="Consolas,monospace" font-size="10" fill="#6c7086">.i &rarr; .o</text>
+  <text x="410" y="82" text-anchor="middle" font-family="Consolas,monospace" font-size="10" fill="#6c7086">.o &rarr; .exe</text>
+
+  <!-- Input/output labels -->
+  <text x="70" y="18" text-anchor="middle" font-family="Consolas,monospace" font-size="10" fill="#fab387">原始碼</text>
+  <text x="410" y="18" text-anchor="middle" font-family="Consolas,monospace" font-size="10" fill="#fab387">可執行檔</text>
+
+  <defs>
+    <marker id="arrowM" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="none" stroke="#6c7086" stroke-width="1"/>
+    </marker>
+  </defs>
+</svg>
+<figcaption>Fig 1 &mdash; C++ 編譯的三階段流水線</figcaption>
+</figure>
+
+<p>
+接下來我們逐一拆解每個階段，用你的渲染器程式碼當作例子。
+</p>
+
+<!-- ============ SECTION 2 ============ -->
+<h2><span class="n">2</span> 預處理器：文字替換大師</h2>
+
+<p>
+預處理器是整個流程的第一步，它做的事情出奇地簡單：<strong>純文字替換</strong>。它不懂 C++ 語法，不知道什麼是類別或函式，它只是一台文字搜尋與取代的機器。
+</p>
+
+<h3>#include = 複製貼上</h3>
+<p>
+當預處理器看到 <code>#include "application.h"</code>，它做的事情就是：打開 <code>application.h</code> 這個檔案，把裡面的內容<strong>原封不動</strong>地貼到 <code>#include</code> 那一行的位置。沒有什麼魔法，就是複製貼上。
+</p>
+<p>
+看看你的 <code>main.cpp</code> 開頭：
+</p>
+
+<div class="code">
+<span class="kw">#include</span> <span class="val">"application.h"</span><br>
+<span class="kw">#include</span> <span class="tp">&lt;stdio.h&gt;</span><br>
+<br>
+<span class="kw">const</span> <span class="tp">int</span> WINDOW_WIDTH = <span class="val">800</span>;<br>
+<span class="kw">const</span> <span class="tp">int</span> WINDOW_HEIGHT = <span class="val">600</span>;<br>
+<span class="cmt">// ...</span>
+</div>
+
+<p>
+預處理器處理 <code>#include "application.h"</code> 時，會打開 <code>application.h</code>，發現裡面又有 <code>#include "screen_manager.h"</code> 和 <code>#include "render_device.h"</code>，於是繼續遞迴展開。最後，原本只有 45 行的 <code>main.cpp</code> 可能膨脹成數千行（因為 <code>screen_manager.h</code> 引入了 <code>&lt;windows.h&gt;</code>，那個檔案本身就有上萬行）。
+</p>
+
+<figure class="fig">
+<svg width="500" height="280" viewBox="0 0 500 280" xmlns="http://www.w3.org/2000/svg">
+  <!-- main.cpp box -->
+  <rect x="30" y="10" width="140" height="110" rx="6" fill="#89b4fa" fill-opacity="0.10" stroke="#89b4fa" stroke-width="1.2"/>
+  <text x="100" y="30" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="#89b4fa" font-weight="bold">main.cpp</text>
+  <text x="46" y="50" font-family="Consolas,monospace" font-size="10" fill="#cba6f7">#include</text>
+  <text x="109" y="50" font-family="Consolas,monospace" font-size="10" fill="#fab387">"application.h"</text>
+  <text x="46" y="66" font-family="Consolas,monospace" font-size="10" fill="#cba6f7">#include</text>
+  <text x="109" y="66" font-family="Consolas,monospace" font-size="10" fill="#89b4fa">&lt;stdio.h&gt;</text>
+  <text x="46" y="86" font-family="Consolas,monospace" font-size="10" fill="#6c7086">const int WIDTH=800;</text>
+  <text x="46" y="102" font-family="Consolas,monospace" font-size="10" fill="#6c7086">class MyApp ...</text>
+
+  <!-- application.h box -->
+  <rect x="220" y="10" width="140" height="90" rx="6" fill="#f9e2af" fill-opacity="0.10" stroke="#f9e2af" stroke-width="1.2"/>
+  <text x="290" y="30" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="#f9e2af" font-weight="bold">application.h</text>
+  <text x="236" y="50" font-family="Consolas,monospace" font-size="10" fill="#cba6f7">#include</text>
+  <text x="300" y="50" font-family="Consolas,monospace" font-size="10" fill="#fab387">"screen_manager.h"</text>
+  <text x="236" y="66" font-family="Consolas,monospace" font-size="10" fill="#cba6f7">#include</text>
+  <text x="300" y="66" font-family="Consolas,monospace" font-size="10" fill="#fab387">"render_device.h"</text>
+  <text x="236" y="86" font-family="Consolas,monospace" font-size="10" fill="#6c7086">class Application{...};</text>
+
+  <!-- Arrow main -> app.h -->
+  <line x1="170" y1="46" x2="218" y2="46" stroke="#f9e2af" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrowY)"/>
+
+  <!-- expanded result box -->
+  <rect x="80" y="140" width="340" height="126" rx="6" fill="#a6e3a1" fill-opacity="0.08" stroke="#a6e3a1" stroke-width="1.2"/>
+  <text x="250" y="160" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="#a6e3a1" font-weight="bold">main.i (展開後)</text>
+  <text x="96" y="180" font-family="Consolas,monospace" font-size="10" fill="#6c7086">// &lt;windows.h&gt; 的上萬行內容...</text>
+  <text x="96" y="196" font-family="Consolas,monospace" font-size="10" fill="#6c7086">class ScreenManager { ... };</text>
+  <text x="96" y="212" font-family="Consolas,monospace" font-size="10" fill="#6c7086">struct Vertex { ... };</text>
+  <text x="96" y="228" font-family="Consolas,monospace" font-size="10" fill="#6c7086">class RenderDevice { ... };</text>
+  <text x="96" y="244" font-family="Consolas,monospace" font-size="10" fill="#6c7086">class Application { ... };</text>
+  <text x="96" y="260" font-family="Consolas,monospace" font-size="10" fill="#89b4fa">class MyApp : public Application ...</text>
+
+  <!-- Arrow down -->
+  <line x1="100" y1="120" x2="100" y2="138" stroke="#a6e3a1" stroke-width="1.2" marker-end="url(#arrowG)"/>
+  <text x="120" y="134" font-family="Consolas,monospace" font-size="10" fill="#a6e3a1">展開</text>
+
+  <defs>
+    <marker id="arrowY" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="none" stroke="#f9e2af" stroke-width="1"/>
+    </marker>
+    <marker id="arrowG" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="none" stroke="#a6e3a1" stroke-width="1"/>
+    </marker>
+  </defs>
+</svg>
+<figcaption>Fig 2 &mdash; #include 的遞迴展開：main.cpp 經預處理後膨脹成巨大的 .i 檔</figcaption>
+</figure>
+
+<h3>Header Guards：防止重複貼上</h3>
+<p>
+這裡有個問題。你的 <code>application.h</code> 引入了 <code>screen_manager.h</code>，而 <code>render_device.h</code> 也引入了 <code>screen_manager.h</code>。如果預處理器老老實實地兩次把 <code>ScreenManager</code> 類別的定義貼進來，編譯器就會抱怨：「<code>class ScreenManager</code> 被定義了兩次！」
+</p>
+<p>
+解法就是你在每個 <code>.h</code> 開頭看到的那三行：
+</p>
+
+<div class="code">
+<span class="kw">#ifndef</span> <span class="val">SCREEN_MANAGER_H</span>    <span class="cmt">// 如果還沒定義過這個符號</span><br>
+<span class="kw">#define</span> <span class="val">SCREEN_MANAGER_H</span>    <span class="cmt">// 定義它（佔位用，值不重要）</span><br>
+<br>
+<span class="cmt">// ... 整個 header 的內容 ...</span><br>
+<br>
+<span class="kw">#endif</span>                       <span class="cmt">// 結束條件編譯</span>
+</div>
+
+<p>
+第一次遇到 <code>#include "screen_manager.h"</code>，<code>SCREEN_MANAGER_H</code> 還沒被定義，所以內容正常展開，同時定義了這個符號。第二次遇到時，符號已經存在，<code>#ifndef</code> 判斷為假，整塊內容被跳過。這就是所謂的 <strong>header guard（頭檔保護）</strong>。
+</p>
+<p>
+另一種更簡潔的寫法是 <code>#pragma once</code>，效果一樣，但不是 C++ 標準的一部分（雖然所有主流編譯器都支援）：
+</p>
+
+<div class="code">
+<span class="kw">#pragma once</span>    <span class="cmt">// 告訴預處理器：這個檔案只要引入一次就好</span>
+</div>
+
+<div class="box box-blue">
+<strong>重點</strong> &mdash; 預處理器不懂 C++。它做的全部事情就是文字替換：展開 <code>#include</code>、替換 <code>#define</code> 巨集、處理 <code>#ifdef</code> 條件。輸出的 <code>.i</code> 檔仍然是純 C++ 原始碼，只是所有 <code>#</code> 開頭的指令都被解決了。
+</div>
+
+<!-- ============ SECTION 3 ============ -->
+<h2><span class="n">3</span> 編譯器：翻譯成機器語言</h2>
+
+<p>
+預處理器把文字整理好之後，輪到編譯器上場。編譯器的工作是：把 C++ 原始碼翻譯成<strong>機器語言</strong>（目的碼，object code），產出 <code>.o</code>（或 Windows 上的 <code>.obj</code>）檔案。
+</p>
+<p>
+這裡有一個關鍵概念你必須記住：<strong>每個 .cpp 是獨立的編譯單元（translation unit）</strong>。編譯器一次只看一個 <code>.cpp</code>（準確說是它展開後的 <code>.i</code>），完全不知道其他 <code>.cpp</code> 裡寫了什麼。
+</p>
+
+<h3>宣告 vs 定義</h3>
+<p>
+這就是為什麼 <code>.h</code> 和 <code>.cpp</code> 要分開。Header 裡放的是<strong>宣告（declaration）</strong> &mdash; 告訴編譯器「這個東西存在，長這樣」。而 <code>.cpp</code> 裡放的是<strong>定義（definition）</strong> &mdash; 告訴編譯器「這個東西的實際內容在這裡」。
+</p>
+
+<div class="two-col">
+  <div>
+    <div class="col-title">render_device.h (宣告)</div>
+<div class="code" style="margin:0">
+<span class="kw">class</span> <span class="tp">RenderDevice</span> {<br>
+<span class="kw">public</span>:<br>
+&nbsp;&nbsp;<span class="tp">void</span> <span class="fn">Clear</span>(<span class="tp">uint32_t</span> color);<br>
+&nbsp;&nbsp;<span class="tp">void</span> <span class="fn">SetPixel</span>(<span class="tp">int</span> x, <span class="tp">int</span> y, <span class="tp">uint32_t</span> color);<br>
+&nbsp;&nbsp;<span class="tp">void</span> <span class="fn">DrawLine</span>(...);<br>
+&nbsp;&nbsp;<span class="tp">void</span> <span class="fn">DrawTriangle</span>(...);<br>
+};<br>
+<span class="cmt">// 只說「這些函式存在」，沒有實作</span>
+</div>
+  </div>
+  <div>
+    <div class="col-title">render_device.cpp (定義)</div>
+<div class="code" style="margin:0">
+<span class="kw">#include</span> <span class="val">"render_device.h"</span><br>
+<br>
+<span class="tp">void</span> <span class="tp">RenderDevice</span>::<span class="fn">Clear</span>(<span class="tp">uint32_t</span> c) {<br>
+&nbsp;&nbsp;<span class="cmt">// 實際清除 frame buffer</span><br>
+&nbsp;&nbsp;<span class="fn">memset</span>(frame_buffer, ...);<br>
+}<br>
+<span class="tp">void</span> <span class="tp">RenderDevice</span>::<span class="fn">DrawTriangle</span>(...) {<br>
+&nbsp;&nbsp;<span class="cmt">// 實際畫三角形的程式碼</span><br>
+}
+</div>
+  </div>
+</div>
+
+<p>
+當編譯器在處理 <code>main.cpp</code> 時，它看到 <code>device-&gt;DrawTriangle(...)</code> 這行呼叫。它翻開（展開後的）header，確認 <code>DrawTriangle</code> 的簽名正確，然後就安心了：「好，我相信這個函式在某個地方有實作，我先記下這裡需要呼叫它，等會兒連結器會幫我找到。」
+</p>
+<p>
+編譯器在 <code>main.o</code> 裡留下一個「待填」的記號：<em>「這裡要呼叫 RenderDevice::DrawTriangle，地址待定。」</em>
+</p>
+
+<figure class="fig">
+<svg width="520" height="200" viewBox="0 0 520 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Source files -->
+  <rect x="10" y="20" width="105" height="36" rx="5" fill="#89b4fa" fill-opacity="0.12" stroke="#89b4fa" stroke-width="1"/>
+  <text x="62" y="43" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="#89b4fa">main.cpp</text>
+
+  <rect x="10" y="70" width="105" height="36" rx="5" fill="#89b4fa" fill-opacity="0.12" stroke="#89b4fa" stroke-width="1"/>
+  <text x="62" y="93" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="#89b4fa">application.cpp</text>
+
+  <rect x="10" y="120" width="105" height="36" rx="5" fill="#89b4fa" fill-opacity="0.12" stroke="#89b4fa" stroke-width="1"/>
+  <text x="62" y="143" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="#89b4fa">screen_manager.cpp</text>
+
+  <rect x="10" y="170" width="105" height="36" rx="5" fill="#89b4fa" fill-opacity="0.12" stroke="#89b4fa" stroke-width="1"/>
+  <text x="62" y="193" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="#89b4fa">render_device.cpp</text>
+
+  <!-- Compiler box -->
+  <rect x="180" y="70" width="100" height="80" rx="8" fill="#cba6f7" fill-opacity="0.10" stroke="#cba6f7" stroke-width="1.2"/>
+  <text x="230" y="105" text-anchor="middle" font-family="Consolas,monospace" font-size="12" fill="#cba6f7">編譯器</text>
+  <text x="230" y="122" text-anchor="middle" font-family="Consolas,monospace" font-size="10" fill="#6c7086">(獨立處理)</text>
+
+  <!-- Arrows: src -> compiler -->
+  <line x1="115" y1="38" x2="178" y2="85" stroke="#6c7086" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="115" y1="88" x2="178" y2="100" stroke="#6c7086" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="115" y1="138" x2="178" y2="120" stroke="#6c7086" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="115" y1="188" x2="178" y2="135" stroke="#6c7086" stroke-width="1" stroke-dasharray="4,3"/>
+
+  <!-- Object files -->
+  <rect x="350" y="20" width="105" height="36" rx="5" fill="#a6e3a1" fill-opacity="0.12" stroke="#a6e3a1" stroke-width="1"/>
+  <text x="402" y="43" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="#a6e3a1">main.o</text>
+
+  <rect x="350" y="70" width="105" height="36" rx="5" fill="#a6e3a1" fill-opacity="0.12" stroke="#a6e3a1" stroke-width="1"/>
+  <text x="402" y="93" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="#a6e3a1">application.o</text>
+
+  <rect x="350" y="120" width="105" height="36" rx="5" fill="#a6e3a1" fill-opacity="0.12" stroke="#a6e3a1" stroke-width="1"/>
+  <text x="402" y="143" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="#a6e3a1">screen_manager.o</text>
+
+  <rect x="350" y="170" width="105" height="36" rx="5" fill="#a6e3a1" fill-opacity="0.12" stroke="#a6e3a1" stroke-width="1"/>
+  <text x="402" y="193" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="#a6e3a1">render_device.o</text>
+
+  <!-- Arrows: compiler -> obj -->
+  <line x1="280" y1="85" x2="348" y2="38" stroke="#6c7086" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="280" y1="100" x2="348" y2="88" stroke="#6c7086" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="280" y1="120" x2="348" y2="138" stroke="#6c7086" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="280" y1="135" x2="348" y2="188" stroke="#6c7086" stroke-width="1" stroke-dasharray="4,3"/>
+</svg>
+<figcaption>Fig 3 &mdash; 每個 .cpp 獨立編譯成 .o，互不相見</figcaption>
+</figure>
+
+<div class="box box-blue">
+<strong>為什麼要獨立編譯？</strong> &mdash; 想像你的渲染器專案越來越大，有幾十個 <code>.cpp</code>。如果你只改了 <code>render_device.cpp</code>，編譯器只需要重新編譯這一個檔案，其他的 <code>.o</code> 可以直接重用。這就是<strong>增量編譯</strong>的好處，也是 <code>make</code> 工具存在的意義。
+</p>
+</div>
+
+<!-- ============ SECTION 4 ============ -->
+<h2><span class="n">4</span> 連結器：拼圖的最後一步</h2>
+
+<p>
+現在我們有了四個 <code>.o</code> 檔案。每個檔案裡都有一些已翻譯好的機器碼，以及一些「待填」的空位。連結器的工作就是：<strong>把所有碎片拼在一起，填上所有空位</strong>。
+</p>
+<p>
+具體來說，連結器會建立一張<strong>符號表（symbol table）</strong>，列出每個 <code>.o</code> 檔提供了哪些符號（函式名、全域變數名），以及需要哪些符號。然後它進行配對：
+</p>
+
+<table>
+  <thead>
+    <tr><th>.o 檔案</th><th>提供的符號</th><th>需要的符號</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><em>main.o</em></td>
+      <td>main(), MyApp 類別</td>
+      <td>Application::Application(), Application::Run()</td>
+    </tr>
+    <tr>
+      <td><em>application.o</em></td>
+      <td>Application::Application(), Application::Run()</td>
+      <td>ScreenManager::Init(), RenderDevice::RenderDevice()</td>
+    </tr>
+    <tr>
+      <td><em>screen_manager.o</em></td>
+      <td>ScreenManager::Init(), ScreenManager::GetFrameBuffer(), ...</td>
+      <td>Windows API (由系統庫提供)</td>
+    </tr>
+    <tr>
+      <td><em>render_device.o</em></td>
+      <td>RenderDevice::Clear(), RenderDevice::DrawTriangle(), ...</td>
+      <td>ScreenManager::GetFrameBuffer(), memset()</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+如果每個「需要」都能在某個 <code>.o</code> 或系統庫中找到對應的「提供」，連結成功，輸出 <code>PixelRenderer.exe</code>。
+</p>
+
+<h3>undefined reference 的真相</h3>
+<p>
+現在你終於能理解那個恐怖的錯誤了。假設你在 <code>render_device.h</code> 宣告了一個新函式：
+</p>
+
+<div class="code">
+<span class="cmt">// render_device.h</span><br>
+<span class="kw">class</span> <span class="tp">RenderDevice</span> {<br>
+<span class="kw">public</span>:<br>
+&nbsp;&nbsp;<span class="tp">void</span> <span class="fn">DrawCircle</span>(<span class="tp">int</span> cx, <span class="tp">int</span> cy, <span class="tp">int</span> r, <span class="tp">uint32_t</span> color); <span class="cmt">// 新增！</span><br>
+&nbsp;&nbsp;<span class="cmt">// ...</span><br>
+};
+</div>
+
+<p>
+然後你在 <code>main.cpp</code> 裡開心地呼叫它：
+</p>
+
+<div class="code">
+device-&gt;<span class="fn">DrawCircle</span>(<span class="val">400</span>, <span class="val">300</span>, <span class="val">50</span>, <span class="val">0xFF0000</span>);
+</div>
+
+<p>
+但你忘了在 <code>render_device.cpp</code> 裡寫實作。會發生什麼事？
+</p>
+
+<ul>
+  <li><strong>預處理</strong>：完全沒問題。<code>#include</code> 正常展開。</li>
+  <li><strong>編譯</strong>：也沒問題！編譯器看到 header 裡有宣告，簽名吻合，它很滿意，在 <code>main.o</code> 裡留下一個「待填」記號：「這裡要呼叫 <code>RenderDevice::DrawCircle</code>」。</li>
+  <li><strong>連結</strong>：<span style="color:#f38ba8; font-weight:bold;">爆炸。</span>連結器翻遍所有 <code>.o</code> 檔，找不到 <code>DrawCircle</code> 的定義。</li>
+</ul>
+
+<div class="code" style="border-color:#f38ba8;">
+<span style="color:#f38ba8;">undefined reference to `RenderDevice::DrawCircle(int, int, int, unsigned int)'</span><br>
+<span style="color:#f38ba8;">collect2: error: ld returned 1 exit status</span>
+</div>
+
+<div class="box box-red">
+<strong>記住這個規則</strong> &mdash; 如果錯誤訊息出現在「編譯」階段（syntax error, type mismatch），那是你<strong>某一個檔案</strong>的語法或型別問題。如果錯誤出現在「連結」階段（undefined reference, multiple definition），那是<strong>跨檔案</strong>的問題 &mdash; 宣告和定義沒有對上。
+</div>
+
+<!-- ============ SECTION 5 ============ -->
+<h2><span class="n">5</span> 你的渲染器的編譯流程</h2>
+
+<p>
+把所有東西串起來，你的渲染器專案從原始碼到可執行檔的完整旅程長這樣：
+</p>
+
+<figure class="fig">
+<svg width="520" height="370" viewBox="0 0 520 370" xmlns="http://www.w3.org/2000/svg">
+  <!-- Phase 1: Preprocessing -->
+  <text x="16" y="18" font-family="Consolas,monospace" font-size="10" fill="#89b4fa" font-weight="bold">PHASE 1: 預處理</text>
+  <rect x="10" y="26" width="230" height="140" rx="6" fill="#89b4fa" fill-opacity="0.06" stroke="#89b4fa" stroke-width="0.8" stroke-dasharray="4,3"/>
+
+  <rect x="20" y="36" width="96" height="24" rx="4" fill="#89b4fa" fill-opacity="0.15" stroke="#89b4fa" stroke-width="0.8"/>
+  <text x="68" y="53" text-anchor="middle" font-family="Consolas,monospace" font-size="10" fill="#89b4fa">main.cpp</text>
+
+  <rect x="20" y="68" width="96" height="24" rx="4" fill="#89b4fa" fill-opacity="0.15" stroke="#89b4fa" stroke-width="0.8"/>
+  <text x="68" y="85" text-anchor="middle" font-family="Consolas,monospace" font-size="10" fill="#89b4fa">application.cpp</text>
+
+  <rect x="20" y="100" width="96" height="24" rx="4" fill="#89b4fa" fill-opacity="0.15" stroke="#89b4fa" stroke-width="0.8"/>
+  <text x="68" y="117" text-anchor="middle" font-family="Consolas,monospace" font-size="10" fill="#89b4fa">screen_manager.cpp</text>
+
+  <rect x="20" y="132" width="96" height="24" rx="4" fill="#89b4fa" fill-opacity="0.15" stroke="#89b4fa" stroke-width="0.8"/>
+  <text x="68" y="149" text-anchor="middle" font-family="Consolas,monospace" font-size="10" fill="#89b4fa">render_device.cpp</text>
+
+  <!-- Headers feeding in -->
+  <rect x="140" y="44" width="88" height="52" rx="4" fill="#f9e2af" fill-opacity="0.10" stroke="#f9e2af" stroke-width="0.8"/>
+  <text x="184" y="62" text-anchor="middle" font-family="Consolas,monospace" font-size="9" fill="#f9e2af">application.h</text>
+  <text x="184" y="74" text-anchor="middle" font-family="Consolas,monospace" font-size="9" fill="#f9e2af">screen_manager.h</text>
+  <text x="184" y="86" text-anchor="middle" font-family="Consolas,monospace" font-size="9" fill="#f9e2af">render_device.h</text>
+  <text x="184" y="110" font-family="Consolas,monospace" font-size="9" fill="#6c7086" text-anchor="middle">#include 展開</text>
+
+  <!-- Phase 2: Compilation -->
+  <text x="270" y="18" font-family="Consolas,monospace" font-size="10" fill="#cba6f7" font-weight="bold">PHASE 2: 編譯</text>
+  <rect x="260" y="26" width="110" height="140" rx="6" fill="#cba6f7" fill-opacity="0.06" stroke="#cba6f7" stroke-width="0.8" stroke-dasharray="4,3"/>
+
+  <rect x="270" y="36" width="88" height="24" rx="4" fill="#a6e3a1" fill-opacity="0.15" stroke="#a6e3a1" stroke-width="0.8"/>
+  <text x="314" y="53" text-anchor="middle" font-family="Consolas,monospace" font-size="10" fill="#a6e3a1">main.o</text>
+
+  <rect x="270" y="68" width="88" height="24" rx="4" fill="#a6e3a1" fill-opacity="0.15" stroke="#a6e3a1" stroke-width="0.8"/>
+  <text x="314" y="85" text-anchor="middle" font-family="Consolas,monospace" font-size="10" fill="#a6e3a1">application.o</text>
+
+  <rect x="270" y="100" width="88" height="24" rx="4" fill="#a6e3a1" fill-opacity="0.15" stroke="#a6e3a1" stroke-width="0.8"/>
+  <text x="314" y="117" text-anchor="middle" font-family="Consolas,monospace" font-size="10" fill="#a6e3a1">screen_manager.o</text>
+
+  <rect x="270" y="132" width="88" height="24" rx="4" fill="#a6e3a1" fill-opacity="0.15" stroke="#a6e3a1" stroke-width="0.8"/>
+  <text x="314" y="149" text-anchor="middle" font-family="Consolas,monospace" font-size="10" fill="#a6e3a1">render_device.o</text>
+
+  <!-- Arrows: phase1 -> phase2 -->
+  <line x1="116" y1="48" x2="268" y2="48" stroke="#6c7086" stroke-width="1" marker-end="url(#arrowP)"/>
+  <line x1="116" y1="80" x2="268" y2="80" stroke="#6c7086" stroke-width="1" marker-end="url(#arrowP)"/>
+  <line x1="116" y1="112" x2="268" y2="112" stroke="#6c7086" stroke-width="1" marker-end="url(#arrowP)"/>
+  <line x1="116" y1="144" x2="268" y2="144" stroke="#6c7086" stroke-width="1" marker-end="url(#arrowP)"/>
+
+  <!-- Phase 3: Linking -->
+  <text x="140" y="200" font-family="Consolas,monospace" font-size="10" fill="#a6e3a1" font-weight="bold">PHASE 3: 連結</text>
+  <rect x="130" y="208" width="260" height="100" rx="6" fill="#a6e3a1" fill-opacity="0.06" stroke="#a6e3a1" stroke-width="0.8" stroke-dasharray="4,3"/>
+
+  <!-- Linker box -->
+  <rect x="168" y="220" width="180" height="36" rx="6" fill="#cba6f7" fill-opacity="0.12" stroke="#cba6f7" stroke-width="1"/>
+  <text x="258" y="243" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="#cba6f7">連結器 (ld / link.exe)</text>
+
+  <!-- System libs -->
+  <rect x="168" y="264" width="80" height="24" rx="4" fill="#fab387" fill-opacity="0.12" stroke="#fab387" stroke-width="0.8"/>
+  <text x="208" y="281" text-anchor="middle" font-family="Consolas,monospace" font-size="9" fill="#fab387">系統庫</text>
+  <text x="208" y="298" text-anchor="middle" font-family="Consolas,monospace" font-size="9" fill="#6c7086">gdi32, user32</text>
+
+  <!-- arrows: .o -> linker -->
+  <line x1="314" y1="156" x2="314" y2="195" stroke="#6c7086" stroke-width="1"/>
+  <line x1="314" y1="195" x2="258" y2="195" stroke="#6c7086" stroke-width="1"/>
+  <line x1="258" y1="195" x2="258" y2="218" stroke="#6c7086" stroke-width="1" marker-end="url(#arrowP)"/>
+
+  <!-- Output exe -->
+  <rect x="330" y="260" width="130" height="36" rx="6" fill="#a6e3a1" fill-opacity="0.18" stroke="#a6e3a1" stroke-width="1.4"/>
+  <text x="395" y="283" text-anchor="middle" font-family="Consolas,monospace" font-size="12" fill="#a6e3a1" font-weight="bold">PixelRenderer.exe</text>
+
+  <!-- Arrow: linker -> exe -->
+  <line x1="348" y1="238" x2="395" y2="238" stroke="#6c7086" stroke-width="1"/>
+  <line x1="395" y1="238" x2="395" y2="258" stroke="#6c7086" stroke-width="1" marker-end="url(#arrowP)"/>
+
+  <!-- makefile note -->
+  <rect x="130" y="325" width="260" height="34" rx="5" fill="#11111b" stroke="#313244" stroke-width="0.8"/>
+  <text x="260" y="342" text-anchor="middle" font-family="Consolas,monospace" font-size="10" fill="#6c7086">makefile 控制以上所有步驟</text>
+  <text x="260" y="354" text-anchor="middle" font-family="Consolas,monospace" font-size="9" fill="#6c7086">g++ -c *.cpp &amp;&amp; g++ *.o -o PixelRenderer.exe</text>
+
+  <defs>
+    <marker id="arrowP" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="none" stroke="#6c7086" stroke-width="1"/>
+    </marker>
+  </defs>
+</svg>
+<figcaption>Fig 4 &mdash; 你的渲染器專案完整編譯流程</figcaption>
+</figure>
+
+<p>
+你的 <code>makefile</code> 正是在控制這個流程。當你執行 <code>make</code> 時，它會：
+</p>
+<ol>
+  <li>對每個 <code>.cpp</code> 執行 <code>g++ -c</code>（<code>-c</code> 表示「只編譯，不連結」），產出對應的 <code>.o</code></li>
+  <li>把所有 <code>.o</code> 加上系統庫（<code>-lgdi32 -luser32</code>）一起餵給連結器，產出 <code>PixelRenderer.exe</code></li>
+</ol>
+
+<p>
+如果你只改了 <code>render_device.cpp</code>，<code>make</code> 會聰明地只重新編譯這一個檔案，然後重新連結。這比每次都重新編譯所有檔案快得多。
+</p>
+
+<hr>
+
+<!-- ============ BOX: 常見陷阱 ============ -->
+<div class="box box-yellow">
+<strong>常見陷阱</strong>
+<ul>
+  <li><strong>循環引入（Circular Includes）</strong> &mdash; A.h 引入 B.h，B.h 又引入 A.h。預處理器會無限遞迴（實際上 header guard 會阻止它，但結果是其中一方的宣告不完整）。解法：使用<strong>前向宣告</strong>（forward declaration），例如 <code>class ScreenManager;</code>，只在 .cpp 裡才 <code>#include</code> 完整 header。</li>
+  <li><strong>忘記 Header Guard</strong> &mdash; 沒有 <code>#ifndef</code> / <code>#pragma once</code>，同一個類別被定義兩次，編譯器報 <code>redefinition of class</code>。</li>
+  <li><strong>在 Header 裡定義函式（ODR 違規）</strong> &mdash; 如果你在 <code>.h</code> 裡寫了非 <code>inline</code> 的函式定義，每個引入這個 header 的 <code>.cpp</code> 都會產生一份該函式的機器碼。連結時連結器看到多份相同的定義，報 <code>multiple definition of ...</code>。這就是 <strong>One Definition Rule (ODR)</strong> 被違反了。解法：在 header 裡只放宣告，定義放到 <code>.cpp</code>；或者加上 <code>inline</code> 關鍵字。</li>
+</ul>
+</div>
+
+<!-- ============ BOX: 三件事 ============ -->
+<div class="box box-green">
+<strong>本章學到的三件事</strong>
+<ol>
+  <li><strong>預處理是純文字替換</strong> &mdash; <code>#include</code> 就是複製貼上，<code>#define</code> 就是搜尋取代。預處理器完全不懂 C++ 語法。</li>
+  <li><strong>每個 .cpp 是獨立的編譯單元</strong> &mdash; 編譯器一次只處理一個檔案，它靠 header 裡的宣告來「相信」其他檔案會提供實作。這就是 .h / .cpp 分離的原因。</li>
+  <li><strong>連結器把 .o 碎片拼成最終程式</strong> &mdash; 它負責解決所有跨檔案的符號引用。<code>undefined reference</code> 是連結階段的錯誤，意味著某個宣告找不到對應的定義。</li>
+</ol>
+</div>
+
+<!-- ============ BOX: 前瞻 ============ -->
+<div class="box box-purple">
+<strong>下一步</strong> &mdash; 現在你知道原始碼如何變成可執行檔了。但當 <code>PixelRenderer.exe</code> 真正啟動時，記憶體裡發生了什麼？你的 <code>ScreenManager</code> 物件住在哪裡？<code>frame_buffer</code> 陣列住在哪裡？<code>new RenderDevice</code> 分配的空間又在哪裡？下一章我們進入<strong>記憶體佈局</strong>，看看 stack、heap、和 static 區各自的角色。
+</div>
+
+<!-- ============ NEXT CH CARD ============ -->
+<div class="next-ch">
+  <div>
+    <div class="next-label">NEXT CHAPTER</div>
+    <div class="next-title">Ch02 — 記憶體佈局</div>
+    <div class="next-desc">Stack vs Heap vs Static &mdash; 你的渲染器物件住在記憶體的哪裡？</div>
+  </div>
+  <a class="next-arrow" href="ch02_memory_layout.html">&rarr;</a>
+</div>
+
+</body>
+</html>

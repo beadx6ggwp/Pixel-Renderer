@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Ch02 — 記憶體四區</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:     #1e1e2e;
+  --bg1:    #181825;
+  --bg2:    #11111b;
+  --border: #313244;
+  --muted:  #6c7086;
+  --text:   #cdd6f4;
+  --blue:   #89b4fa;
+  --green:  #a6e3a1;
+  --yellow: #f9e2af;
+  --orange: #fab387;
+  --red:    #f38ba8;
+  --purple: #cba6f7;
+  --teal:   #94e2d5;
+}
+body {
+  background: var(--bg); color: var(--text);
+  font-family: 'Georgia', serif; font-size: 15px;
+  padding: 0 20px 80px; max-width: 900px; margin: 0 auto;
+  line-height: 1.9;
+}
+nav {
+  font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted);
+  padding: 14px 0; border-bottom: 1px solid var(--border);
+  margin-bottom: 36px; display: flex; align-items: center; gap: 10px;
+}
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--blue); }
+.nav-sep { color: var(--border); }
+.nav-cur { color: var(--text); }
+.nav-right { margin-left: auto; display: flex; gap: 16px; }
+.ch-header { margin-bottom: 40px; }
+.ch-label {
+  font-family: 'Consolas', monospace; font-size: 0.78em;
+  color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px;
+}
+.ch-title { color: var(--blue); font-size: 1.7em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub   { color: var(--muted); font-size: 0.88em; margin-bottom: 14px; }
+.ch-tags  { display: flex; gap: 6px; flex-wrap: wrap; }
+.ch-tag {
+  font-family: 'Consolas', monospace; font-size: 0.72em;
+  padding: 1px 7px; border-radius: 4px;
+  background: var(--bg2); color: var(--muted); border: 1px solid var(--border);
+}
+h2 {
+  color: var(--purple); font-size: 1em;
+  font-family: 'Consolas', monospace; letter-spacing: 0.05em;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+  margin: 44px 0 20px;
+  display: flex; align-items: center; gap: 12px;
+}
+h2 .n {
+  background: var(--purple); color: var(--bg2); font-weight: bold;
+  border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 0.85em;
+}
+h3 { color: var(--yellow); font-size: 0.95em; margin: 24px 0 10px; }
+p  { margin-bottom: 12px; }
+strong { color: var(--yellow); }
+em { color: var(--orange); font-style: normal; }
+ul, ol { margin: 8px 0 14px 26px; line-height: 2.2; }
+.box {
+  border-radius: 6px; padding: 14px 18px; margin: 16px 0;
+  font-size: 0.9em; line-height: 1.85;
+}
+.box-blue   { background: var(--bg1); border-left: 4px solid var(--blue); }
+.box-green  { background: var(--bg1); border-left: 4px solid var(--green); }
+.box-yellow { background: var(--bg1); border-left: 4px solid var(--yellow); }
+.box-red    { background: var(--bg1); border-left: 4px solid var(--red); }
+.box-purple { background: var(--bg1); border-left: 4px solid var(--purple); }
+.code {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em;
+  line-height: 2.1; margin: 14px 0;
+}
+.code .cmt { color: var(--muted); }
+.code .kw  { color: var(--purple); }
+.code .val { color: var(--orange); }
+.code .ok  { color: var(--green); }
+.code .tp  { color: var(--blue); }
+.code .fn  { color: var(--teal); }
+.fig { margin: 24px auto; text-align: center; }
+.fig figcaption { color: var(--muted); font-size: 0.88em; margin-top: 8px; font-style: italic; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+.two-col > div {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 8px;
+  padding: 16px 18px;
+}
+.col-title { font-family: 'Consolas', monospace; font-size: 0.85em; margin-bottom: 10px; color: var(--muted); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9em; }
+thead { background: var(--bg1); }
+th { color: var(--muted); font-family: 'Consolas', monospace; font-size: 0.85em;
+     padding: 8px 14px; text-align: left; border-bottom: 2px solid var(--border); }
+td { padding: 8px 14px; border-bottom: 1px solid var(--border); }
+hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+.next-ch {
+  margin-top: 56px; padding: 20px 24px;
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 8px;
+  display: flex; align-items: center; gap: 20px;
+}
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+.next-title { color: var(--blue); font-size: 1em; }
+.next-desc  { color: var(--muted); font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: var(--blue); font-size: 1.6em; text-decoration: none; }
+.next-arrow:hover { color: var(--purple); }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">C++ 複習</a>
+  <span class="nav-sep">/</span>
+  <span class="nav-cur">Ch02 — 記憶體四區</span>
+  <div class="nav-right">
+    <a href="ch01_compilation_model.html">&larr; Ch01</a>
+    <a href="ch03_pointer_reference.html">Ch03 &rarr;</a>
+  </div>
+</nav>
+
+<div class="ch-header">
+  <div class="ch-label">PART 1 &middot; CHAPTER 02</div>
+  <div class="ch-title">記憶體四區</div>
+  <div class="ch-sub">Stack、Heap、Static、Code</div>
+  <div class="ch-tags">
+    <span class="ch-tag">memory</span>
+    <span class="ch-tag">stack</span>
+    <span class="ch-tag">heap</span>
+  </div>
+</div>
+
+<!-- ═══════════════ Opening ═══════════════ -->
+
+<p>
+打開你的 <em>application.h</em>，你會看到兩行很不一樣的宣告：
+</p>
+
+<div class="code">
+<span class="tp">ScreenManager</span> screen;                        <span class="cmt">// 直接宣告</span><br>
+<span class="tp">RenderDevice</span>* device = <span class="kw">nullptr</span>;              <span class="cmt">// 指標，之後用 new</span>
+</div>
+
+<p>
+然後在 <em>application.cpp</em> 的建構函數裡：
+</p>
+
+<div class="code">
+<span class="kw">if</span> (running) device = <span class="kw">new</span> <span class="tp">RenderDevice</span>(&amp;screen);
+</div>
+
+<p>
+而在解構函數裡：
+</p>
+
+<div class="code">
+<span class="tp">Application</span>::~<span class="fn">Application</span>() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">delete</span> device;      <span class="cmt">// 手動釋放</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;screen.<span class="fn">Close</span>();     <span class="cmt">// screen 不需要 delete</span><br>
+}
+</div>
+
+<p>
+問題來了：<strong>為什麼 <em>screen</em> 不需要 delete，但 <em>device</em> 需要？</strong>
+它們不都是 Application 的成員嗎？差別在哪裡？
+</p>
+
+<p>
+答案藏在一個根本問題裡：<strong>這兩個物件住在記憶體的不同地方</strong>。
+而住在哪裡，決定了它的壽命由誰管理。
+</p>
+
+<div class="box box-blue">
+<strong>本章範圍</strong> &mdash; 理解程式執行時的四個記憶體區域（Stack、Heap、Static、Code），
+以及它們如何決定變數的壽命。當你搞清楚「東西住在哪裡」，很多 C++ 的奇怪規則就會瞬間合理。
+</div>
+
+<!-- ═══════════════ Section 1 ═══════════════ -->
+
+<h2><span class="n">1</span> 從 Ch01 到執行期</h2>
+
+<p>
+在 Ch01 裡，你看到了 <em>.cpp</em> 如何一步步變成 <em>.exe</em>：預處理、編譯、連結。
+但 <em>.exe</em> 只是一個靜靜躺在硬碟上的檔案。當你雙擊執行它，作業系統會做一件關鍵的事：
+<strong>把這個檔案載入記憶體，並為它分配一塊獨立的地址空間</strong>。
+</p>
+
+<p>
+你可以把這塊地址空間想像成一棟四層樓的建築。每一層有不同的用途和規則：
+</p>
+
+<figure class="fig">
+<svg width="500" height="340" viewBox="0 0 500 340" xmlns="http://www.w3.org/2000/svg">
+  <!-- background -->
+  <rect x="0" y="0" width="500" height="340" rx="10" fill="#11111b"/>
+  <!-- title -->
+  <text x="250" y="28" text-anchor="middle" font-family="Consolas" font-size="11" fill="#6c7086">Process Address Space (simplified)</text>
+  <!-- high address label -->
+  <text x="460" y="58" text-anchor="end" font-family="Consolas" font-size="9" fill="#6c7086">high addr</text>
+  <!-- Stack region -->
+  <rect x="60" y="48" width="360" height="58" rx="6" fill="#cba6f7" fill-opacity="0.12" stroke="#cba6f7" stroke-opacity="0.4"/>
+  <text x="80" y="72" font-family="Consolas" font-size="13" font-weight="bold" fill="#cba6f7">Stack</text>
+  <text x="80" y="92" font-family="Consolas" font-size="10" fill="#6c7086">local vars, params, return addr</text>
+  <text x="350" y="82" font-family="Consolas" font-size="10" fill="#6c7086">grows downward</text>
+  <!-- arrow down -->
+  <line x1="390" y1="86" x2="390" y2="100" stroke="#cba6f7" stroke-opacity="0.5" stroke-width="1.5" marker-end="url(#arrowPurple)"/>
+  <!-- free space -->
+  <rect x="60" y="114" width="360" height="34" rx="4" fill="#313244" fill-opacity="0.3" stroke="#313244" stroke-dasharray="4,3"/>
+  <text x="240" y="136" text-anchor="middle" font-family="Consolas" font-size="10" fill="#6c7086">... free space ...</text>
+  <!-- Heap region -->
+  <rect x="60" y="156" width="360" height="58" rx="6" fill="#a6e3a1" fill-opacity="0.12" stroke="#a6e3a1" stroke-opacity="0.4"/>
+  <text x="80" y="180" font-family="Consolas" font-size="13" font-weight="bold" fill="#a6e3a1">Heap</text>
+  <text x="80" y="200" font-family="Consolas" font-size="10" fill="#6c7086">new / malloc allocations</text>
+  <text x="350" y="190" font-family="Consolas" font-size="10" fill="#6c7086">grows upward</text>
+  <!-- arrow up -->
+  <line x1="390" y1="168" x2="390" y2="154" stroke="#a6e3a1" stroke-opacity="0.5" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
+  <!-- Static/Global region -->
+  <rect x="60" y="222" width="360" height="48" rx="6" fill="#f9e2af" fill-opacity="0.12" stroke="#f9e2af" stroke-opacity="0.4"/>
+  <text x="80" y="246" font-family="Consolas" font-size="13" font-weight="bold" fill="#f9e2af">Static / Global</text>
+  <text x="80" y="260" font-family="Consolas" font-size="10" fill="#6c7086">global vars, static vars, string literals</text>
+  <!-- Code region -->
+  <rect x="60" y="278" width="360" height="48" rx="6" fill="#89b4fa" fill-opacity="0.12" stroke="#89b4fa" stroke-opacity="0.4"/>
+  <text x="80" y="302" font-family="Consolas" font-size="13" font-weight="bold" fill="#89b4fa">Code (Text)</text>
+  <text x="80" y="316" font-family="Consolas" font-size="10" fill="#6c7086">compiled machine instructions (read-only)</text>
+  <!-- low address label -->
+  <text x="460" y="320" text-anchor="end" font-family="Consolas" font-size="9" fill="#6c7086">low addr</text>
+  <!-- arrow markers -->
+  <defs>
+    <marker id="arrowPurple" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="none" stroke="#cba6f7" stroke-width="1"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="none" stroke="#a6e3a1" stroke-width="1"/>
+    </marker>
+  </defs>
+</svg>
+<figcaption>Fig 2.1 &mdash; 程式的地址空間四大區域</figcaption>
+</figure>
+
+<p>
+這四層樓就是本章的主題。讓我們從最上面的 Stack 開始，一路往下走。
+</p>
+
+<!-- ═══════════════ Section 2 ═══════════════ -->
+
+<h2><span class="n">2</span> Stack：自動管理的快速記憶體</h2>
+
+<p>
+Stack（堆疊）是你最常接觸的記憶體區域，卻可能從來沒意識到它的存在。
+每當你在函數裡宣告一個區域變數，它就住在 Stack 上。
+</p>
+
+<h3>LIFO：後進先出</h3>
+
+<p>
+Stack 的運作方式像一疊盤子：<strong>最後放上去的，最先被拿走</strong>（Last In, First Out）。
+每次你呼叫一個函數，系統會在 Stack 頂端推上一個 <em>stack frame</em>（堆疊框架），
+裡面放著這個函數的所有區域變數、參數、和返回地址。
+函數結束時，整個 frame 被彈出（pop），裡面的變數全部自動消失。
+</p>
+
+<p>
+想像你的渲染器在跑一幀畫面。<em>OnRender()</em> 呼叫了 <em>DrawTriangle()</em>：
+</p>
+
+<div class="code">
+<span class="kw">void</span> <span class="tp">Application</span>::<span class="fn">OnRender</span>() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="tp">Vertex</span> v1 = {<span class="val">100</span>, <span class="val">50</span>, <span class="val">0</span>, <span class="val">0xFF0000</span>};<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="tp">Vertex</span> v2 = {<span class="val">200</span>, <span class="val">250</span>, <span class="val">0</span>, <span class="val">0x00FF00</span>};<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="tp">Vertex</span> v3 = {<span class="val">50</span>,  <span class="val">200</span>, <span class="val">0</span>, <span class="val">0x0000FF</span>};<br>
+&nbsp;&nbsp;&nbsp;&nbsp;device-&gt;<span class="fn">DrawTriangle</span>(v1, v2, v3, <span class="val">0xFFFFFF</span>);<br>
+}
+</div>
+
+<div class="code">
+<span class="kw">void</span> <span class="tp">RenderDevice</span>::<span class="fn">DrawTriangle</span>(<span class="kw">const</span> <span class="tp">Vertex</span>&amp; v1, <span class="kw">const</span> <span class="tp">Vertex</span>&amp; v2,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">const</span> <span class="tp">Vertex</span>&amp; v3, <span class="tp">uint32_t</span> color) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="tp">int</span> min_x = (<span class="tp">int</span>)(<span class="fn">std::min</span>)({(<span class="tp">int</span>)v1.x, (<span class="tp">int</span>)v2.x, (<span class="tp">int</span>)v3.x});<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="tp">int</span> max_x = (<span class="tp">int</span>)(<span class="fn">std::max</span>)({(<span class="tp">int</span>)v1.x, (<span class="tp">int</span>)v2.x, (<span class="tp">int</span>)v3.x});<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="tp">int</span> min_y = ...;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="tp">int</span> max_y = ...;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="cmt">// ... rasterization loop</span><br>
+}
+</div>
+
+<p>
+當這段程式碼在跑的時候，Stack 長這樣：
+</p>
+
+<figure class="fig">
+<svg width="480" height="350" viewBox="0 0 480 350" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="480" height="350" rx="10" fill="#11111b"/>
+  <text x="240" y="24" text-anchor="middle" font-family="Consolas" font-size="11" fill="#6c7086">Stack (grows downward)</text>
+  <!-- stack pointer arrow -->
+  <text x="36" y="60" font-family="Consolas" font-size="9" fill="#cba6f7">SP --></text>
+  <!-- DrawTriangle frame -->
+  <rect x="90" y="42" width="340" height="100" rx="6" fill="#cba6f7" fill-opacity="0.15" stroke="#cba6f7" stroke-opacity="0.5"/>
+  <text x="106" y="62" font-family="Consolas" font-size="12" font-weight="bold" fill="#cba6f7">DrawTriangle() frame</text>
+  <text x="106" y="82" font-family="Consolas" font-size="10" fill="#cdd6f4">min_x, max_x, min_y, max_y</text>
+  <text x="106" y="98" font-family="Consolas" font-size="10" fill="#cdd6f4">color (param copy)</text>
+  <text x="106" y="114" font-family="Consolas" font-size="10" fill="#cdd6f4">v1, v2, v3 refs (addresses)</text>
+  <text x="106" y="130" font-family="Consolas" font-size="10" fill="#6c7086">return address --> OnRender</text>
+  <!-- OnRender frame -->
+  <rect x="90" y="150" width="340" height="86" rx="6" fill="#89b4fa" fill-opacity="0.12" stroke="#89b4fa" stroke-opacity="0.4"/>
+  <text x="106" y="170" font-family="Consolas" font-size="12" font-weight="bold" fill="#89b4fa">OnRender() frame</text>
+  <text x="106" y="190" font-family="Consolas" font-size="10" fill="#cdd6f4">v1 {100, 50, 0, 0xFF0000}</text>
+  <text x="106" y="206" font-family="Consolas" font-size="10" fill="#cdd6f4">v2 {200, 250, 0, 0x00FF00}</text>
+  <text x="106" y="222" font-family="Consolas" font-size="10" fill="#cdd6f4">v3 {50, 200, 0, 0x0000FF}</text>
+  <!-- Run frame -->
+  <rect x="90" y="244" width="340" height="60" rx="6" fill="#a6e3a1" fill-opacity="0.10" stroke="#a6e3a1" stroke-opacity="0.35"/>
+  <text x="106" y="264" font-family="Consolas" font-size="12" font-weight="bold" fill="#a6e3a1">Application::Run() frame</text>
+  <text x="106" y="282" font-family="Consolas" font-size="10" fill="#cdd6f4">frequency, last_time, delta_time ...</text>
+  <text x="106" y="296" font-family="Consolas" font-size="10" fill="#6c7086">return address --> main</text>
+  <!-- main frame -->
+  <rect x="90" y="312" width="340" height="28" rx="6" fill="#f9e2af" fill-opacity="0.10" stroke="#f9e2af" stroke-opacity="0.35"/>
+  <text x="106" y="332" font-family="Consolas" font-size="12" font-weight="bold" fill="#f9e2af">main() frame</text>
+  <!-- bracket for pop -->
+  <text x="442" y="92" font-family="Consolas" font-size="9" fill="#cba6f7">first</text>
+  <text x="442" y="106" font-family="Consolas" font-size="9" fill="#cba6f7">to pop</text>
+</svg>
+<figcaption>Fig 2.2 &mdash; OnRender() 呼叫 DrawTriangle() 時的 Stack 狀態</figcaption>
+</figure>
+
+<p>
+當 <em>DrawTriangle()</em> 結束 return 時，它的整個 frame（包括 <em>min_x</em>、<em>max_x</em> 那些區域變數）
+被 pop 掉。記憶體並沒有真的被「清除」，只是 stack pointer 往回移了。
+這也是為什麼 Stack 這麼快：<strong>分配和釋放只是移動一個指標</strong>，不需要搜尋可用空間。
+</p>
+
+<h3>Stack 的限制：空間有限</h3>
+
+<p>
+Stack 很快，但它有一個致命的限制：<strong>大小固定</strong>。
+在 Windows 上預設通常是 <em>1 MB</em>，某些配置下可以到 8 MB，但就是這麼多。
+</p>
+
+<p>
+這意味著你不能在 Stack 上放太大的東西。想像你的渲染器是 800x600 的視窗：
+</p>
+
+<div class="code">
+<span class="kw">void</span> <span class="fn">bad_idea</span>() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="tp">uint32_t</span> buffer[<span class="val">800</span> * <span class="val">600</span>];  <span class="cmt">// 800*600*4 = 1,920,000 bytes = ~1.83 MB</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="cmt">// BOOM! Stack overflow -- 超過預設 1 MB</span><br>
+}
+</div>
+
+<p>
+這就是為什麼 frame buffer 絕對不能放在 Stack 上。
+你的 <em>ScreenManager</em> 用 <em>CreateDIBSection</em> 把 frame buffer 分配在別的地方（我們馬上會講）。
+</p>
+
+<div class="box box-blue">
+<strong>Stack 的三個特性：</strong><br>
+1. <strong>自動管理</strong> &mdash; 變數在函數結束時自動消失，不需要你手動釋放<br>
+2. <strong>速度極快</strong> &mdash; 分配只是移動 stack pointer，一個 CPU 指令<br>
+3. <strong>空間有限</strong> &mdash; 通常 1-8 MB，放不下大型資料結構
+</div>
+
+<!-- ═══════════════ Section 3 ═══════════════ -->
+
+<h2><span class="n">3</span> Heap：手動管理的大片土地</h2>
+
+<p>
+Stack 的限制把我們推向了 Heap（堆積）。Heap 是一大片自由的記憶體空間，
+理論上可以用到系統允許的上限（通常是幾 GB）。
+但自由是有代價的：<strong>你必須自己分配，也必須自己釋放</strong>。
+</p>
+
+<h3>new 和 delete</h3>
+
+<p>
+回到你的渲染器。在 <em>application.cpp</em> 裡：
+</p>
+
+<div class="code">
+device = <span class="kw">new</span> <span class="tp">RenderDevice</span>(&amp;screen);  <span class="cmt">// 在 Heap 上建立 RenderDevice 物件</span>
+</div>
+
+<p>
+這行程式碼做了兩件事：
+</p>
+
+<ol>
+<li>在 Heap 上找到一塊足夠放 <em>RenderDevice</em> 物件的空間，分配它</li>
+<li>在那塊空間上呼叫 <em>RenderDevice</em> 的建構函數，傳入 <em>&amp;screen</em></li>
+</ol>
+
+<p>
+<em>new</em> 回傳的是一個<strong>指標</strong>（地址），告訴你「你的物件住在 Heap 的這個位置」。
+這個指標本身（<em>device</em> 這個變數）存在 Application 物件裡，但它指向的 RenderDevice 實體在 Heap 上。
+</p>
+
+<p>
+然後在解構函數裡：
+</p>
+
+<div class="code">
+<span class="kw">delete</span> device;  <span class="cmt">// 呼叫 RenderDevice 解構函數，然後歸還 Heap 空間</span>
+</div>
+
+<p>
+<strong>如果你忘了 delete，那塊 Heap 記憶體就永遠不會被回收</strong> &mdash; 這就是所謂的 <em>memory leak</em>（記憶體洩漏）。
+你的程式每跑一次那段程式碼就少一塊可用記憶體，跑久了就會吃光系統資源。
+</p>
+
+<h3>Frame Buffer：Heap 的實際應用</h3>
+
+<p>
+你的 <em>screen_manager.cpp</em> 裡有這段：
+</p>
+
+<div class="code">
+<span class="kw">void</span>* ptr = <span class="kw">NULL</span>;<br>
+dib_bitmap = <span class="fn">CreateDIBSection</span>(mem_dc, &amp;bi, DIB_RGB_COLORS, &amp;ptr, <span class="kw">NULL</span>, <span class="val">0</span>);<br>
+frame_buffer = (<span class="tp">unsigned char</span>*)ptr;
+</div>
+
+<p>
+<em>CreateDIBSection</em> 是 Windows API，它在內部分配了一塊記憶體來放像素資料。
+這塊記憶體的行為跟 Heap 非常類似 &mdash; 它是由系統在背後分配的大塊空間，
+需要通過 <em>DeleteObject(dib_bitmap)</em> 來釋放（你的 <em>Close()</em> 有做這件事）。
+</p>
+
+<p>
+為什麼 frame buffer 要用這種方式？因為 800x600 的 32-bit 畫面需要
+<em>800 &times; 600 &times; 4 = 1,920,000 bytes</em>，將近 2 MB。
+Stack 放不下，只能放在 Heap（或類似的區域）。
+</p>
+
+<figure class="fig">
+<svg width="520" height="280" viewBox="0 0 520 280" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="520" height="280" rx="10" fill="#11111b"/>
+  <text x="260" y="24" text-anchor="middle" font-family="Consolas" font-size="11" fill="#6c7086">Heap: unstructured, manually managed</text>
+  <!-- heap boundary -->
+  <rect x="30" y="38" width="460" height="220" rx="8" fill="#a6e3a1" fill-opacity="0.06" stroke="#a6e3a1" stroke-opacity="0.25" stroke-dasharray="4,3"/>
+  <!-- RenderDevice block -->
+  <rect x="50" y="56" width="170" height="70" rx="6" fill="#a6e3a1" fill-opacity="0.15" stroke="#a6e3a1" stroke-opacity="0.5"/>
+  <text x="60" y="76" font-family="Consolas" font-size="11" font-weight="bold" fill="#a6e3a1">RenderDevice</text>
+  <text x="60" y="94" font-family="Consolas" font-size="9" fill="#cdd6f4">screen ptr, frame_buffer</text>
+  <text x="60" y="110" font-family="Consolas" font-size="9" fill="#cdd6f4">pitch, width, height</text>
+  <!-- frame buffer block -->
+  <rect x="260" y="56" width="210" height="120" rx="6" fill="#89b4fa" fill-opacity="0.15" stroke="#89b4fa" stroke-opacity="0.5"/>
+  <text x="270" y="76" font-family="Consolas" font-size="11" font-weight="bold" fill="#89b4fa">frame_buffer</text>
+  <text x="270" y="96" font-family="Consolas" font-size="9" fill="#cdd6f4">800 * 600 * 4 bytes</text>
+  <text x="270" y="112" font-family="Consolas" font-size="9" fill="#cdd6f4">= 1,920,000 bytes</text>
+  <text x="270" y="132" font-family="Consolas" font-size="9" fill="#6c7086">(via CreateDIBSection)</text>
+  <rect x="270" y="146" width="190" height="18" rx="3" fill="#89b4fa" fill-opacity="0.08"/>
+  <text x="280" y="160" font-family="Consolas" font-size="8" fill="#6c7086">pixel[0] pixel[1] pixel[2] ...</text>
+  <!-- free block -->
+  <rect x="50" y="146" width="170" height="40" rx="4" fill="#313244" fill-opacity="0.3" stroke="#313244" stroke-dasharray="4,3"/>
+  <text x="135" y="170" text-anchor="middle" font-family="Consolas" font-size="9" fill="#6c7086">(free)</text>
+  <!-- another allocated block -->
+  <rect x="50" y="202" width="100" height="40" rx="4" fill="#f9e2af" fill-opacity="0.12" stroke="#f9e2af" stroke-opacity="0.35"/>
+  <text x="60" y="222" font-family="Consolas" font-size="9" fill="#f9e2af">other alloc</text>
+  <!-- free -->
+  <rect x="170" y="202" width="300" height="40" rx="4" fill="#313244" fill-opacity="0.3" stroke="#313244" stroke-dasharray="4,3"/>
+  <text x="320" y="226" text-anchor="middle" font-family="Consolas" font-size="9" fill="#6c7086">(free)</text>
+</svg>
+<figcaption>Fig 2.3 &mdash; Heap 是一片非連續的自由空間，物件散落其中</figcaption>
+</figure>
+
+<p>
+注意 Heap 和 Stack 的根本差異：Stack 是整齊的一疊框架，而 Heap 像一塊空地，
+你想在哪裡蓋房子就在哪裡蓋。這帶來自由，也帶來麻煩 &mdash;
+碎片化、分配速度慢（需要搜尋可用空間）、容易忘記歸還。
+</p>
+
+<div class="two-col">
+<div>
+  <div class="col-title">Stack</div>
+  <ul style="margin-left:18px; font-size:0.9em">
+    <li>自動分配 &amp; 釋放</li>
+    <li>速度極快（移動指標）</li>
+    <li>大小固定（~1 MB）</li>
+    <li>LIFO，不能跳著用</li>
+  </ul>
+</div>
+<div>
+  <div class="col-title">Heap</div>
+  <ul style="margin-left:18px; font-size:0.9em">
+    <li>手動 <em>new</em> / <em>delete</em></li>
+    <li>速度較慢（搜尋空間）</li>
+    <li>幾乎無限大</li>
+    <li>自由分配，容易碎片化</li>
+  </ul>
+</div>
+</div>
+
+<!-- ═══════════════ Section 4 ═══════════════ -->
+
+<h2><span class="n">4</span> Static/Global 與 Code 區</h2>
+
+<p>
+剩下兩個區域你比較少直接打交道，但知道它們存在很重要。
+</p>
+
+<h3>Static / Global 區</h3>
+
+<p>
+全域變數和 <em>static</em> 區域變數住在這裡。它們的壽命是<strong>整個程式的執行期</strong> &mdash;
+程式啟動時分配，程式結束時才釋放。
+</p>
+
+<div class="code">
+<span class="cmt">// 全域變數 -- 住在 Static 區</span><br>
+<span class="tp">int</span> g_frame_count = <span class="val">0</span>;<br>
+<br>
+<span class="kw">void</span> <span class="fn">countFrames</span>() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">static</span> <span class="tp">int</span> call_count = <span class="val">0</span>;  <span class="cmt">// static 區域變數，也住在 Static 區</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;call_count++;               <span class="cmt">// 函數結束後 call_count 不會消失</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;g_frame_count++;<br>
+}
+</div>
+
+<p>
+注意 <em>static</em> 區域變數和一般區域變數的差異：一般區域變數住在 Stack，函數結束就消失；
+<em>static</em> 區域變數住在 Static 區，函數結束後值還在，下次呼叫時繼續用。
+</p>
+
+<p>
+字串字面值（string literals）也住在這裡：
+</p>
+
+<div class="code">
+<span class="kw">const</span> <span class="tp">wchar_t</span>* title = <span class="val">L"Pixel Renderer"</span>;  <span class="cmt">// "Pixel Renderer" 這串字住在 Static 區</span>
+</div>
+
+<h3>Code (Text) 區</h3>
+
+<p>
+你寫的所有函數 &mdash; <em>OnRender()</em>、<em>DrawTriangle()</em>、<em>SetPixel()</em> &mdash;
+在 Ch01 的編譯過程中被翻譯成機器指令。這些指令就存放在 Code 區。
+</p>
+
+<p>
+Code 區通常是<strong>唯讀的</strong>。CPU 從這裡讀取指令來執行，
+但你的程式不能（也不該）修改自己的機器碼。
+這也是為什麼函數名稱在 C++ 裡可以被取地址 &mdash; 函數本身就住在記憶體裡的一個位置。
+</p>
+
+<table>
+<thead>
+<tr><th>區域</th><th>內容</th><th>壽命</th><th>管理者</th></tr>
+</thead>
+<tbody>
+<tr><td style="color:#cba6f7">Stack</td><td>區域變數、函數參數</td><td>函數執行期間</td><td>自動（編譯器）</td></tr>
+<tr><td style="color:#a6e3a1">Heap</td><td>new/malloc 分配的物件</td><td>直到 delete/free</td><td>你（程式設計師）</td></tr>
+<tr><td style="color:#f9e2af">Static</td><td>全域變數、static 變數</td><td>整個程式執行期</td><td>自動（系統）</td></tr>
+<tr><td style="color:#89b4fa">Code</td><td>機器指令</td><td>整個程式執行期</td><td>唯讀（系統）</td></tr>
+</tbody>
+</table>
+
+<!-- ═══════════════ Section 5 ═══════════════ -->
+
+<h2><span class="n">5</span> 你的渲染器裡的記憶體地圖</h2>
+
+<p>
+理論說完了，讓我們把你的渲染器每個重要物件都標上它住在哪裡。
+回到 <em>application.h</em>：
+</p>
+
+<div class="code">
+<span class="kw">class</span> <span class="tp">Application</span> {<br>
+<span class="kw">protected</span>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="tp">ScreenManager</span> screen;              <span class="cmt">// 嵌入在 Application 物件裡</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="tp">RenderDevice</span>* device = <span class="kw">nullptr</span>;   <span class="cmt">// 指標嵌入在 Application 裡，指向 Heap</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="tp">bool</span> running = <span class="kw">false</span>;             <span class="cmt">// 嵌入在 Application 物件裡</span><br>
+};
+</div>
+
+<p>
+關鍵問題：<strong>Application 物件本身住在哪裡？</strong>
+</p>
+
+<p>
+如果你在 <em>main()</em> 裡這樣寫：
+</p>
+
+<div class="code">
+<span class="tp">int</span> <span class="fn">main</span>() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="tp">MyApp</span> app(<span class="val">800</span>, <span class="val">600</span>, <span class="val">L"Pixel Renderer"</span>);  <span class="cmt">// app 住在 Stack</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;app.<span class="fn">Run</span>();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> <span class="val">0</span>;<br>
+}
+</div>
+
+<p>
+那 <em>app</em> 整個物件就住在 Stack 的 main() frame 裡。
+而 <em>screen</em> 是 app 的一部分，所以 <em>screen 也住在 Stack</em>。
+<em>device</em> 這個指標變數也住在 Stack（因為它嵌在 app 裡），但它指向的 <em>RenderDevice 物件</em> 住在 Heap。
+</p>
+
+<p>
+這就是為什麼 <em>screen</em> 不需要 delete 而 <em>device</em> 需要：
+</p>
+
+<ul>
+<li><em>screen</em> 嵌在 Application 物件裡，Application 消滅時 screen 自動消滅（解構函數被自動呼叫）</li>
+<li><em>device</em> 指向 Heap 上的物件，Heap 不會自動清理，你必須手動 <em>delete</em></li>
+</ul>
+
+<figure class="fig">
+<svg width="520" height="420" viewBox="0 0 520 420" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="520" height="420" rx="10" fill="#11111b"/>
+  <text x="260" y="22" text-anchor="middle" font-family="Consolas" font-size="11" fill="#6c7086">Your Renderer's Memory Map</text>
+
+  <!-- ── STACK side ── -->
+  <text x="130" y="46" text-anchor="middle" font-family="Consolas" font-size="11" font-weight="bold" fill="#cba6f7">STACK</text>
+  <rect x="20" y="54" width="220" height="340" rx="8" fill="#cba6f7" fill-opacity="0.06" stroke="#cba6f7" stroke-opacity="0.25" stroke-dasharray="4,3"/>
+
+  <!-- main frame -->
+  <rect x="32" y="64" width="196" height="210" rx="6" fill="#cba6f7" fill-opacity="0.10" stroke="#cba6f7" stroke-opacity="0.35"/>
+  <text x="42" y="82" font-family="Consolas" font-size="10" font-weight="bold" fill="#cba6f7">main() frame</text>
+
+  <!-- Application object inside main -->
+  <rect x="42" y="92" width="176" height="170" rx="5" fill="#89b4fa" fill-opacity="0.10" stroke="#89b4fa" stroke-opacity="0.3"/>
+  <text x="52" y="110" font-family="Consolas" font-size="10" font-weight="bold" fill="#89b4fa">MyApp (Application)</text>
+
+  <!-- screen inside Application -->
+  <rect x="52" y="118" width="156" height="60" rx="4" fill="#f9e2af" fill-opacity="0.12" stroke="#f9e2af" stroke-opacity="0.35"/>
+  <text x="62" y="136" font-family="Consolas" font-size="9" font-weight="bold" fill="#f9e2af">ScreenManager screen</text>
+  <text x="62" y="152" font-family="Consolas" font-size="8" fill="#cdd6f4">window_handle, mem_dc</text>
+  <text x="62" y="166" font-family="Consolas" font-size="8" fill="#cdd6f4">frame_buffer ptr, keys ...</text>
+
+  <!-- device pointer -->
+  <rect x="52" y="186" width="156" height="28" rx="4" fill="#a6e3a1" fill-opacity="0.12" stroke="#a6e3a1" stroke-opacity="0.35"/>
+  <text x="62" y="204" font-family="Consolas" font-size="9" fill="#a6e3a1">device = 0x00A3F200</text>
+
+  <!-- running -->
+  <rect x="52" y="222" width="156" height="24" rx="4" fill="#313244" fill-opacity="0.5" stroke="#313244"/>
+  <text x="62" y="240" font-family="Consolas" font-size="9" fill="#cdd6f4">running = true</text>
+
+  <!-- DrawTriangle frame -->
+  <rect x="32" y="284" width="196" height="96" rx="6" fill="#cba6f7" fill-opacity="0.10" stroke="#cba6f7" stroke-opacity="0.35"/>
+  <text x="42" y="302" font-family="Consolas" font-size="10" font-weight="bold" fill="#cba6f7">DrawTriangle() frame</text>
+  <text x="42" y="320" font-family="Consolas" font-size="9" fill="#cdd6f4">min_x, max_x</text>
+  <text x="42" y="336" font-family="Consolas" font-size="9" fill="#cdd6f4">min_y, max_y</text>
+  <text x="42" y="352" font-family="Consolas" font-size="9" fill="#cdd6f4">w1, w2, w3</text>
+  <text x="42" y="368" font-family="Consolas" font-size="9" fill="#6c7086">x, y (loop vars)</text>
+
+  <!-- ── HEAP side ── -->
+  <text x="390" y="46" text-anchor="middle" font-family="Consolas" font-size="11" font-weight="bold" fill="#a6e3a1">HEAP</text>
+  <rect x="280" y="54" width="220" height="340" rx="8" fill="#a6e3a1" fill-opacity="0.06" stroke="#a6e3a1" stroke-opacity="0.25" stroke-dasharray="4,3"/>
+
+  <!-- RenderDevice on heap -->
+  <rect x="292" y="70" width="196" height="100" rx="6" fill="#a6e3a1" fill-opacity="0.15" stroke="#a6e3a1" stroke-opacity="0.5"/>
+  <text x="302" y="90" font-family="Consolas" font-size="10" font-weight="bold" fill="#a6e3a1">RenderDevice</text>
+  <text x="302" y="108" font-family="Consolas" font-size="9" fill="#cdd6f4">screen (ptr to Stack)</text>
+  <text x="302" y="124" font-family="Consolas" font-size="9" fill="#cdd6f4">frame_buffer (ptr)</text>
+  <text x="302" y="140" font-family="Consolas" font-size="9" fill="#cdd6f4">pitch, width, height</text>
+  <text x="302" y="158" font-family="Consolas" font-size="8" fill="#6c7086">addr: 0x00A3F200</text>
+
+  <!-- frame buffer on heap -->
+  <rect x="292" y="184" width="196" height="80" rx="6" fill="#89b4fa" fill-opacity="0.15" stroke="#89b4fa" stroke-opacity="0.5"/>
+  <text x="302" y="204" font-family="Consolas" font-size="10" font-weight="bold" fill="#89b4fa">frame_buffer data</text>
+  <text x="302" y="222" font-family="Consolas" font-size="9" fill="#cdd6f4">800*600*4 bytes</text>
+  <text x="302" y="240" font-family="Consolas" font-size="9" fill="#6c7086">(CreateDIBSection)</text>
+  <text x="302" y="256" font-family="Consolas" font-size="8" fill="#6c7086">addr: 0x01B00000</text>
+
+  <!-- arrows: device ptr -> RenderDevice -->
+  <line x1="208" y1="200" x2="290" y2="120" stroke="#a6e3a1" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrowG2)"/>
+
+  <!-- arrow: RenderDevice.frame_buffer -> frame buffer data -->
+  <line x1="390" y1="140" x2="390" y2="182" stroke="#89b4fa" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#arrowB2)"/>
+
+  <defs>
+    <marker id="arrowG2" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="none" stroke="#a6e3a1" stroke-width="1"/>
+    </marker>
+    <marker id="arrowB2" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="none" stroke="#89b4fa" stroke-width="1"/>
+    </marker>
+  </defs>
+</svg>
+<figcaption>Fig 2.4 &mdash; 你的渲染器在執行時的記憶體佈局</figcaption>
+</figure>
+
+<p>
+讓我們逐一確認每個元件住在哪裡：
+</p>
+
+<table>
+<thead>
+<tr><th>物件</th><th>住在哪裡</th><th>為什麼</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td style="font-family:Consolas; font-size:0.9em">app (MyApp)</td>
+  <td style="color:#cba6f7">Stack (main frame)</td>
+  <td>在 main() 裡直接宣告</td>
+</tr>
+<tr>
+  <td style="font-family:Consolas; font-size:0.9em">screen (ScreenManager)</td>
+  <td style="color:#cba6f7">Stack (嵌在 app 裡)</td>
+  <td>是 Application 的值成員，不是指標</td>
+</tr>
+<tr>
+  <td style="font-family:Consolas; font-size:0.9em">device (指標本身)</td>
+  <td style="color:#cba6f7">Stack (嵌在 app 裡)</td>
+  <td>指標變數是 Application 的成員</td>
+</tr>
+<tr>
+  <td style="font-family:Consolas; font-size:0.9em">*device (RenderDevice 實體)</td>
+  <td style="color:#a6e3a1">Heap</td>
+  <td>用 <em>new</em> 分配</td>
+</tr>
+<tr>
+  <td style="font-family:Consolas; font-size:0.9em">frame_buffer 資料</td>
+  <td style="color:#a6e3a1">Heap (系統分配)</td>
+  <td>CreateDIBSection 在內部分配</td>
+</tr>
+<tr>
+  <td style="font-family:Consolas; font-size:0.9em">DrawTriangle 的 min_x, w1 等</td>
+  <td style="color:#cba6f7">Stack (函數 frame)</td>
+  <td>區域變數，函數結束即消失</td>
+</tr>
+<tr>
+  <td style="font-family:Consolas; font-size:0.9em">L"Pixel Renderer"</td>
+  <td style="color:#f9e2af">Static</td>
+  <td>字串字面值在編譯時決定</td>
+</tr>
+<tr>
+  <td style="font-family:Consolas; font-size:0.9em">DrawTriangle() 的機器碼</td>
+  <td style="color:#89b4fa">Code</td>
+  <td>編譯產生的指令，唯讀</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+現在回頭看開頭的問題：<em>screen</em> 不需要 delete 因為它嵌在 Application 裡，
+跟著 Application 一起自動消滅。<em>device</em> 需要 delete 因為它指向 Heap 上獨立分配的物件，
+Heap 不會自動清理。
+</p>
+
+<hr>
+
+<!-- ═══════════════ Pitfalls ═══════════════ -->
+
+<div class="box box-yellow">
+<strong>常見陷阱</strong><br><br>
+<strong>1. Dangling pointer（懸空指標）</strong> &mdash; 回傳區域變數的指標。函數結束後那塊 Stack 記憶體已被回收，
+指標指向的是垃圾。<br><br>
+<strong>2. Stack overflow</strong> &mdash; 在 Stack 上放太大的陣列（例如 <span style="font-family:Consolas">int buf[1000000]</span>），
+或者無限遞迴，都會把 Stack 撐爆。<br><br>
+<strong>3. Memory leak</strong> &mdash; <span style="font-family:Consolas">new</span> 了卻忘記 <span style="font-family:Consolas">delete</span>。
+渲染器如果每幀都 leak 一點，跑幾分鐘就會吃光記憶體。
+</div>
+
+<!-- ═══════════════ Absolute Don't ═══════════════ -->
+
+<div class="box box-red">
+<strong>絕對不能做的事 &mdash; 回傳區域變數的地址</strong><br><br>
+<div class="code" style="margin:10px 0; border:none; background:#1e1e2e">
+<span class="tp">int</span>* <span class="fn">bad_function</span>() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="tp">int</span> local_value = <span class="val">42</span>;   <span class="cmt">// 住在 Stack</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> &amp;local_value;     <span class="cmt">// 回傳 Stack 上的地址</span><br>
+}   <span class="cmt">// local_value 在這裡消失，地址變成垃圾</span><br>
+<br>
+<span class="tp">int</span>* p = <span class="fn">bad_function</span>();  <span class="cmt">// p 現在指向已經被回收的記憶體</span><br>
+<span class="fn">printf</span>(<span class="val">"%d"</span>, *p);       <span class="cmt">// Undefined Behavior -- 可能印出 42，可能 crash，可能任何事</span>
+</div>
+<p style="margin-top:8px">
+編譯器通常會給你警告（<em>warning: address of local variable returned</em>），
+<strong>永遠不要忽略這個警告</strong>。如果你需要回傳一個物件，用值回傳（會複製）或用 <em>new</em> 分配在 Heap 上。
+</p>
+</div>
+
+<!-- ═══════════════ Three Things ═══════════════ -->
+
+<div class="box box-green">
+<strong>三件事帶走</strong><br><br>
+<strong>1. Stack 自動管理但空間有限</strong> &mdash; 區域變數住在 Stack，函數結束就自動消失。
+不需要手動釋放，但不能放太大的東西（frame buffer 就放不下）。<br><br>
+<strong>2. Heap 需要手動 new / delete</strong> &mdash; 大型物件和壽命需要超越函數範圍的物件放在 Heap。
+用 <em>new</em> 分配，用 <em>delete</em> 釋放，忘了就是 memory leak。<br><br>
+<strong>3. 變數住哪裡決定它的生命週期</strong> &mdash; <em>ScreenManager screen</em> 嵌在 Application 裡，
+跟著 Application 一起生滅。<em>RenderDevice* device</em> 指向 Heap，必須手動管理。
+理解住址就理解壽命。
+</div>
+
+<!-- ═══════════════ Forward Link ═══════════════ -->
+
+<div class="box box-purple">
+<strong>下一步</strong><br><br>
+現在你知道了物件住在哪裡 &mdash; Stack 或 Heap。但你有沒有注意到，
+我們一直在用「指標」來存 Heap 物件的地址？<em>device</em> 是一個指標，<em>frame_buffer</em> 也是一個指標。<br><br>
+Ch03 會深入講<strong>指標與參考</strong> &mdash; 它們是 C++ 用來「指向」和「參照」其他記憶體位置的兩種機制。
+搞懂指標，你才能真正理解為什麼 <span style="font-family:Consolas">DrawTriangle(const Vertex&amp; v1, ...)</span>
+用的是參考而不是值傳遞。
+</div>
+
+<!-- ═══════════════ Next Chapter ═══════════════ -->
+
+<div class="next-ch">
+  <div>
+    <div class="next-label">NEXT CHAPTER</div>
+    <div class="next-title">Ch03 — 指標與參考</div>
+    <div class="next-desc">地址、解引用、與別名 &mdash; C++ 最令人又愛又恨的核心機制</div>
+  </div>
+  <a class="next-arrow" href="ch03_pointer_reference.html">&rarr;</a>
+</div>
+
+</body>
+</html>
