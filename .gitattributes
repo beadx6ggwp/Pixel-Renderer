@@ -1,2 +1,2 @@
-doc/** linguist-documentation
-doc-cpp/** linguist-documentation
+doc/** linguist-detectable=false
+doc-cpp/** linguist-detectable=false
