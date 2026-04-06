@@ -14,6 +14,7 @@ class ScreenManager {
 
     bool Init(int width, int height, const wchar_t* title);
     void Close();
+    void Resize(int new_w, int new_h); // Handle window resizing
 
     void DispatchEvents();  // Dispatch window events
     void UpdateScreen();

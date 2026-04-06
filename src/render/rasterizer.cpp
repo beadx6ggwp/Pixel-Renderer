@@ -1,6 +1,7 @@
 #include "../render/rasterizer.h"
 
 #include "render_device.h"
+#include <algorithm>
 
 void Rasterizer::DrawLine(int x1, int y1, int x2, int y2, uint32_t color) {
     // Bresenham simple
@@ -67,7 +68,8 @@ void Rasterizer::DrawTriangle(const Vertex& v1, const Vertex& v2,
                 ((v3.y - v1.y) * (x - v3.x) + (v1.x - v3.x) * (y - v3.y)) /
                 ((v2.y - v3.y) * (v1.x - v3.x) + (v3.x - v2.x) * (v1.y - v3.y));
             float w3 = 1.0f - w1 - w2;
-            if (w1 >= 0 && w2 >= 0 && w3 >= 0) {
+            bool is_inside = (w1 >= 0 && w2 >= 0 && w3 >= 0);
+            if (is_inside) {
                 device->SetPixel(x, y, color);
             }
         }

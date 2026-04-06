@@ -1,12 +1,13 @@
 #include "render_device.h"
 
 #include <string.h>
+#include <algorithm>
 
-RenderDevice::RenderDevice(ScreenManager* s) : screen(s) {
-    frame_buffer = screen->GetFrameBuffer();
-    pitch = screen->GetPitch();
-    width = screen->GetWidth();
-    height = screen->GetHeight();
+RenderDevice::RenderDevice(const FramebufferConfig& config) {
+    frame_buffer = config.buffer;
+    pitch = config.pitch;
+    width = config.width;
+    height = config.height;
 }
 
 RenderDevice::~RenderDevice() {}

@@ -2,11 +2,18 @@
 
 #include <stdint.h>
 
-#include "screen_manager.h"
+
+// 定義純粹的數據結構，不需要包含 screen_manager.h
+struct FramebufferConfig {
+    unsigned char* buffer;
+    int width;
+    int height;
+    int pitch;
+};
 
 class RenderDevice {
    public:
-    RenderDevice(ScreenManager* screen);
+    RenderDevice(const FramebufferConfig& config);
     ~RenderDevice();
 
     void Clear(uint32_t color);
@@ -17,7 +24,6 @@ class RenderDevice {
     int GetHeight() const { return height; }
 
    private:
-    ScreenManager* screen;
     unsigned char* frame_buffer;
     int pitch;
     int width;

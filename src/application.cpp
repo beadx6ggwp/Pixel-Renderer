@@ -9,15 +9,21 @@ Application::Application(int w, int h, const wchar_t* t) {
     // Rasterizer depends on RenderDevice for drawing operations
     running = screen.Init(w, h, t);
     if (running) {
-        device = new RenderDevice(&screen);
+        
+        // 1. 從 screen 獲取數據並打包成 struct
+        FramebufferConfig config;
+        config.buffer = screen.GetFrameBuffer();
+        config.width  = screen.GetWidth();
+        config.height = screen.GetHeight();
+        config.pitch  = screen.GetPitch();
+
+        // 2. 注入給 RenderDevice
+        device = new RenderDevice(config);
+        
+        // 3. 建立 Rasterizer
         rasterizer = new Rasterizer(device);
 
-        if (!device || !rasterizer) {
-            running = false;
-            printf("Failed to initialize RenderDevice or Rasterizer\n");
-        }
-
-        printf("Application initialized\n");
+        printf("Application initialized: Data-driven HAL ready.\n");
     }
 }
 

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "render/rasterizer.h"
 #include "render_device.h"
 #include "screen_manager.h"
+#include "render/rasterizer.h"
 
 class Application {
    public:
