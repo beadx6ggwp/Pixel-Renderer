@@ -54,27 +54,27 @@ int main() {
 ## Directory Tree
 
 ```
-.
-├── src/
-│   ├── core/                # [Stable] 基礎設施層 (Infrastructure)
-│   │   ├── screen_manager.h/cpp   # Win32 視窗與事件循環
-│   │   ├── render_device.h/cpp    # 像素緩衝管理 (SetPixel, Swap) 待拆分 (Refactor Pending)
-│   │   └── application.h/cpp      # 應用生命週期與時鐘管理
-│   │
-│   ├── render/              # [In Progress] 渲染邏輯層 (Graphics Logic)
-│   │   ├── rasterizer.h/cpp       # ⏳ 規劃中: 三角形光柵化算法 從 RenderDevice 移入
-│   │   ├── shader.h/cpp           # ⏳ 規劃中: 著色器接口與頂點/片段處理
-│   │   ├── texture.h/cpp          # ⏳ 規劃中: 紋理加載與採樣器
-│   │   └── lighting.h/cpp         # ⏳ 預計: 光照模型與法線計算
-│   │
-│   ├── ui/                  # [Planned] 使用者界面層
-│   │   └── ui_context.h           # 整合 libiui/microui 
-│   │
-│   └── main.cpp             # 程式入口 (組合 Core 與 Render)
+Pixel-Renderer
+│   makefile                 # [Stable] 編譯自動化 (UCRT64/MSYS2)
+│   types.h                  # [Stable] 通用協議層: 頂點、顏色與畫布配置定義
+│   main.cpp                 # [Stable] 引擎組裝點: 繼承 Application 並實作自定義渲染邏輯
 │
-├── docs/                    # 開發筆記與圖形學原理
-├── CMakeLists.txt           # 全域構建配置
-└── .gitignore
+├─core/                      # [Stable] 基礎設施層 (Infrastructure)
+│   ├── screen_manager.h/cpp # Win32 視窗封裝、輸入事件、GDI 畫布初始化
+│   ├── render_device.h/cpp  # [Refactored] 純粹畫布管理: 像素寫入與清除
+│   └── application.h/cpp    # 高精度時鐘管理、生命週期 (OnInit/Update/Render)
+│
+├─render/                    # [Active] 渲染邏輯層 (Graphics Logic)
+│   ├── rasterizer.h/cpp     # [In Progress] 幾何處理核心: 線段與重心坐標三角形填充
+│   ├── shader.h/cpp         # ⏳ 規劃中: 軟體著色器介面 (Vertex/Fragment Shader)
+│   ├── texture.h/cpp        # ⏳ 規劃中: 紋理加載與雙線性過濾 (Bilinear Filtering)
+│   └── math_utils.h         # ⏳ 規劃中: 3D 數學庫 (Matrix4x4, Quaternions, Projection)
+│
+├─ui/                        # [Planned] 工具與調試層
+│   └── ui_context.h         # ⏳ 預計: 整合 microui/libiui/imgui
+│
+└─docs/                      # [Planned] 教學文件與筆記
+    └── index.html           # 導引地圖: 連結「程式碼」與「現代引擎原理」
 ```
 
 ## TODO

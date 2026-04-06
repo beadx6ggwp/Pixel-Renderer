@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#include "application.h"
+#include "core/application.h"
 
 const int WINDOW_WIDTH = 800;
 const int WINDOW_HEIGHT = 600;
