@@ -9,12 +9,12 @@ Pipeline, DOI: 10.15598/aeee.v13i1.1125](https://pdfs.semanticscholar.org/515d/9
 - [从零开始制作一个属于你自己的GPU | 基于FPGA的图形加速器实现原理](https://zhuanlan.zhihu.com/p/714400366)
 - [The Linux graphics stack in a nutshell 翻譯 & 筆記](https://mes0903.github.io/Linux/linux-graphic-stack)
 
-成大 VLSI System Design (VSD), NCTU/NTHU ICLAB
-Project1: RISC-V CPU
-Project2: +AXI(BUS) w/ syn and cadence tool for verification 
-Project3: +Cache w/ syn, apr, tool verification
-Project4: +I/O interrupt DMA w/ syn, apr
-Final: +ASIC（Proposed by yourself)
+- 成大 VLSI System Design (VSD), NCTU/NTHU ICLAB
+- Project1: RISC-V CPU
+- Project2: +AXI(BUS) w/ syn and cadence tool for verification 
+- Project3: +Cache w/ syn, apr, tool verification
+- Project4: +I/O interrupt DMA w/ syn, apr
+- Final: +ASIC（Proposed by yourself)
 
 - 上层C语言层面的软渲染器实现。
 - 上层渲染器的运算瓶颈问题，为什么使用FPGA可以为CPU实现图形加速。
