@@ -29,6 +29,9 @@ public:
     int GetPitch() const;
     int GetWidth() const;
     int GetHeight() const;
+    
+    // Update window title
+    void SetWindowTitle(const wchar_t* title);
 
 private:
     static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);

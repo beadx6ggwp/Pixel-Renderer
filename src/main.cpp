@@ -4,8 +4,6 @@
 const int WINDOW_WIDTH = 800;
 const int WINDOW_HEIGHT = 600;
 
-float count = 0;
-
 class MyApp : public Application {
 public:
 	MyApp() : Application(WINDOW_WIDTH, WINDOW_HEIGHT, L"PixelRenderer") {}
@@ -16,14 +14,13 @@ public:
 
 	void OnUpdate(float delta_time) override {
 		if (screen.IsKeyDown('A')) {
-			printf("A key pressed, delta: %.2f\n", delta_time);
+			printf("A key pressed, total_time: %f\n", total_time);
 		}
-		count += delta_time*100;
 	}
 
 	void OnRender() override {
 		device->Clear(0x000000);
-		RenderFrame(count);
+		RenderFrame(frame_count);
 		device->DrawLine(100, 100, 700, 500, 0x00FF00);
 	}
 
@@ -35,7 +32,6 @@ public:
 			}
 		}
 		device->DrawTriangle({400, 100}, {500, 300}, {300, 300}, 0xFF0000);
-		printf("Rendered frame %d\n", frame);
 	}
 
 	void OnClose() override {

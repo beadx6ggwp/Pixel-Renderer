@@ -97,6 +97,12 @@ void ScreenManager::UpdateScreen() {
     BitBlt(window_dc, 0, 0, width, height, mem_dc, 0, 0, SRCCOPY);
 }
 
+void ScreenManager::SetWindowTitle(const wchar_t* title) {
+    if (window_handle) {
+        SetWindowText(window_handle, title);
+    }
+}
+
 bool ScreenManager::IsKeyDown(int key) const {
     return keys[key];
 }

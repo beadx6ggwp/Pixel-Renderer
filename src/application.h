@@ -20,6 +20,8 @@ protected:
 	ScreenManager screen;
 	RenderDevice* device = nullptr;
 	bool running = false;
+	double total_time = 0.0; // Total elapsed time in seconds
+	uint64_t frame_count = 0; // Total frames rendered
 };
 
 #endif

@@ -19,25 +19,28 @@ void Application::Run() {
     LARGE_INTEGER frequency, last_time;
     QueryPerformanceFrequency(&frequency);
     QueryPerformanceCounter(&last_time);
-    double target_frame_time = 1000.0 / 60.0; // 60 FPS
+    float target_frame_time = 1.0 / 60.0; // 60 FPS
 
     while (running && !screen.IsKeyDown(VK_ESCAPE)) {
         LARGE_INTEGER current_time;
         QueryPerformanceCounter(&current_time);
-        double delta_time = (current_time.QuadPart - last_time.QuadPart) * 1000.0 / frequency.QuadPart;
+        // delta_time in seconds
+        float delta_time = (current_time.QuadPart - last_time.QuadPart) / (float)frequency.QuadPart;
 
         if (delta_time >= target_frame_time) {
             screen.DispatchEvents();
-            OnUpdate(static_cast<float>(delta_time / 1000.0)); // delta in seconds
+            OnUpdate(delta_time); // delta in seconds
             OnRender();
             screen.UpdateScreen();
             last_time = current_time;
-            printf("Frame time: %.2f ms\n", delta_time); // Debug
-            wchar_t strBuffer[100];
-            /*
-            swprintf(strBuffer, 100,
-                L"Pixel ver0.1, %dx%d, FPS:%4d, dt:%2dms",
-                screen.GetWidth(), screen.GetHeight(), 1000.0/ delta_time, delta_time);*/
+            total_time += delta_time;
+            frame_count++;
+            
+            wchar_t strBuffer[128];
+            swprintf(strBuffer, 128,
+                L"Pixel Renderer, %dx%d | FPS:%.1f | dt:%fs | t:%.2fs | frame:%llu",
+                screen.GetWidth(), screen.GetHeight(), 1.0 / delta_time, delta_time , total_time, frame_count);
+            screen.SetWindowTitle(strBuffer);
         }
     }
 
