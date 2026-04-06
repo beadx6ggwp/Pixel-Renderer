@@ -42,4 +42,5 @@
 
 # local AI settings folder
 .claude/
+.github/
 
