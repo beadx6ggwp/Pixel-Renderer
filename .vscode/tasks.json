@@ -7,7 +7,7 @@
       "command": "make",
       "args": ["debug"],
       "options": {
-        "cwd": "${workspaceFolder}/src",
+        "cwd": "${workspaceFolder}",
         "shell": {
           "executable": "C:\\Program Files\\Git\\bin\\bash.exe",
           "args": ["-c"]
@@ -25,7 +25,7 @@
       "command": "make",
       "args": ["release"],
       "options": {
-        "cwd": "${workspaceFolder}/src",
+        "cwd": "${workspaceFolder}",
         "shell": {
           "executable": "C:\\Program Files\\Git\\bin\\bash.exe",
           "args": ["-c"]

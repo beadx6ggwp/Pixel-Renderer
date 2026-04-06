@@ -6,7 +6,7 @@ CXXFLAGS = -fdiagnostics-color=always  # 添加更多旗標如 -Wall -Wextra -st
 
 # 新增資料夾修改這邊
 INCLUDES = -I. -Itool -Isrc  # 包含根目錄及子目錄的頭檔路徑（根據專案調整）
-SRCDIRS = . tool src  # 來源檔目錄：根目錄及子目錄（如 tool/ src/），wildcard 會自動處理不存在的
+SRCDIRS = . tool src src/core src/render  # 來源檔目錄：根目錄及子目錄（如 tool/ src/），wildcard 會自動處理不存在的
 
 VPATH = $(SRCDIRS)  # VPATH 告訴 Make 在這些目錄中尋找來源檔
 SOURCES = $(foreach dir,$(SRCDIRS),$(wildcard $(dir)/*.cpp))
