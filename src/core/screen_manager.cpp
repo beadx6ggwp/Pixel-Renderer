@@ -95,7 +95,20 @@ void ScreenManager::DispatchEvents() {
     }
 }
 
+/*
+[ CPU Memory (Back Buffer) ]          [ Window DC (Front Buffer) ]
+      |                                        |
+      |  1. Rasterizer 在這畫三角形               |
+      |     (使用者看不到過程)                    |
+      |                                        |
+      +-------------- BitBlt() ---------------->| 
+             (這就是物理意義上的 Swap)             2. 使用者看到結果
+*/
+// 已經透過mem_dc(frame_buffer)、window_dc 達成雙緩衝，現在要把準備好的 frame_buffer 顯示出來
 void ScreenManager::UpdateScreen() {
+    // Swap Buffers: 
+    // 原本的 frame_buffer 是在 mem_dc 上的 DIB，現在要把它複製到 window_dc 顯示出來
+    // 將整塊準備好的 DIBSection 內容，一次性地覆蓋到視窗的顯存上 但詳細底層運作還有待了解
     BitBlt(window_dc, 0, 0, width, height, mem_dc, 0, 0, SRCCOPY);
 }
 
