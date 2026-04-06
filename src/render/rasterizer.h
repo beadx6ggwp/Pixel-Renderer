@@ -1,18 +1,9 @@
 #pragma once
 
-#include <algorithm>
+#include "types.h"  // 拿到 Vertex, Vec3f 定義
 
-#include "../render_device.h"
-
-struct Vertex {
-    float x, y, z;
-    uint32_t color;
-};
-struct Vec3f {
-    float x, y, z;
-    Vec3f(float x = 0, float y = 0, float z = 0) : x(x), y(y), z(z) {}
-};
-
+// Forward Declaration: 告訴編譯器 RenderDevice 是一個類別，現在不需要知道細節
+class RenderDevice;
 class Rasterizer {
    public:
     Rasterizer(RenderDevice* _device) : device(_device) {}
@@ -22,5 +13,5 @@ class Rasterizer {
                       uint32_t color);
 
    private:
-    RenderDevice* device;  // 依賴 Core 層的接口
+    RenderDevice* device;  // 這裡存pointer，編譯器只需要知道 RenderDevice 存在即可
 };

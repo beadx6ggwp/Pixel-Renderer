@@ -1,5 +1,6 @@
 #pragma once
 
+#include "types.h"
 #include "render_device.h"
 #include "screen_manager.h"
 #include "render/rasterizer.h"
