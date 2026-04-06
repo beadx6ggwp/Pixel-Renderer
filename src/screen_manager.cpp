@@ -1,14 +1,15 @@
 #include "screen_manager.h"
+
 #include <stdio.h>
 
 ScreenManager::ScreenManager() {}
 ScreenManager::~ScreenManager() { Close(); }
 
 bool ScreenManager::Init(int w, int h, const wchar_t* title) {
-    Close(); // clear resources
+    Close();  // clear resources
 
     const wchar_t* class_name = L"RenderWindowClass";
-    WNDCLASS wc = { 0 };
+    WNDCLASS wc = {0};
     wc.lpfnWndProc = WindowProc;
     wc.hInstance = GetModuleHandle(NULL);
     wc.lpszClassName = class_name;
@@ -19,14 +20,15 @@ bool ScreenManager::Init(int w, int h, const wchar_t* title) {
         return false;
     }
 
-    RECT rect = { 0, 0, w, h };
+    RECT rect = {0, 0, w, h};
     AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, FALSE);
     int wx = rect.right - rect.left;
     int wy = rect.bottom - rect.top;
     int sx = (GetSystemMetrics(SM_CXSCREEN) - wx) / 2;
     int sy = (GetSystemMetrics(SM_CYSCREEN) - wy) / 2;
 
-    window_handle = CreateWindow(class_name, title, WS_OVERLAPPEDWINDOW, sx, sy, wx, wy, NULL, NULL, wc.hInstance, NULL);
+    window_handle = CreateWindow(class_name, title, WS_OVERLAPPEDWINDOW, sx, sy,
+                                 wx, wy, NULL, NULL, wc.hInstance, NULL);
     if (!window_handle) {
         printf("CreateWindow failed\n");
         return false;
@@ -40,10 +42,10 @@ bool ScreenManager::Init(int w, int h, const wchar_t* title) {
     window_dc = GetDC(window_handle);
     mem_dc = CreateCompatibleDC(window_dc);
 
-    BITMAPINFO bi = { 0 };
+    BITMAPINFO bi = {0};
     bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
     bi.bmiHeader.biWidth = w;
-    bi.bmiHeader.biHeight = -h; // Top-down DIB
+    bi.bmiHeader.biHeight = -h;  // Top-down DIB
     bi.bmiHeader.biPlanes = 1;
     bi.bmiHeader.biBitCount = 32;
     bi.bmiHeader.biCompression = BI_RGB;
@@ -103,9 +105,7 @@ void ScreenManager::SetWindowTitle(const wchar_t* title) {
     }
 }
 
-bool ScreenManager::IsKeyDown(int key) const {
-    return keys[key];
-}
+bool ScreenManager::IsKeyDown(int key) const { return keys[key]; }
 
 int ScreenManager::GetMouseX() const { return mouse_x; }
 int ScreenManager::GetMouseY() const { return mouse_y; }
@@ -118,42 +118,44 @@ int ScreenManager::GetPitch() const { return pitch; }
 int ScreenManager::GetWidth() const { return width; }
 int ScreenManager::GetHeight() const { return height; }
 
-LRESULT CALLBACK ScreenManager::WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+LRESULT CALLBACK ScreenManager::WindowProc(HWND hwnd, UINT msg, WPARAM wParam,
+                                           LPARAM lParam) {
     ScreenManager* self = (ScreenManager*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-    if (self == nullptr) return DefWindowProc(hwnd, msg, wParam, lParam); // Check for nullptr
+    if (self == nullptr)
+        return DefWindowProc(hwnd, msg, wParam, lParam);  // Check for nullptr
 
     switch (msg) {
-    case WM_DESTROY:
-        PostQuitMessage(0);
-        return 0;
-    case WM_KEYDOWN:
-        if (wParam < 256) self->keys[wParam] = true;
-        return 0;
-    case WM_KEYUP:
-        if (wParam < 256) self->keys[wParam] = false;
-        return 0;
-    case WM_MOUSEMOVE:
-        self->mouse_x = LOWORD(lParam);
-        self->mouse_y = HIWORD(lParam);
-        return 0;
-    case WM_LBUTTONDOWN:
-        self->mouse_buttons[0] = true;
-        return 0;
-    case WM_LBUTTONUP:
-        self->mouse_buttons[0] = false;
-        return 0;
-    case WM_RBUTTONDOWN:
-        self->mouse_buttons[1] = true;
-        return 0;
-    case WM_RBUTTONUP:
-        self->mouse_buttons[1] = false;
-        return 0;
-    case WM_MBUTTONDOWN:
-        self->mouse_buttons[2] = true;
-        return 0;
-    case WM_MBUTTONUP:
-        self->mouse_buttons[2] = false;
-        return 0;
+        case WM_DESTROY:
+            PostQuitMessage(0);
+            return 0;
+        case WM_KEYDOWN:
+            if (wParam < 256) self->keys[wParam] = true;
+            return 0;
+        case WM_KEYUP:
+            if (wParam < 256) self->keys[wParam] = false;
+            return 0;
+        case WM_MOUSEMOVE:
+            self->mouse_x = LOWORD(lParam);
+            self->mouse_y = HIWORD(lParam);
+            return 0;
+        case WM_LBUTTONDOWN:
+            self->mouse_buttons[0] = true;
+            return 0;
+        case WM_LBUTTONUP:
+            self->mouse_buttons[0] = false;
+            return 0;
+        case WM_RBUTTONDOWN:
+            self->mouse_buttons[1] = true;
+            return 0;
+        case WM_RBUTTONUP:
+            self->mouse_buttons[1] = false;
+            return 0;
+        case WM_MBUTTONDOWN:
+            self->mouse_buttons[2] = true;
+            return 0;
+        case WM_MBUTTONUP:
+            self->mouse_buttons[2] = false;
+            return 0;
     }
     return DefWindowProc(hwnd, msg, wParam, lParam);
 }

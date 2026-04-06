@@ -1,40 +1,41 @@
-#ifndef SCREEN_MANAGER_H
-#define SCREEN_MANAGER_H
+#pragma once
 
 #define UNICODE
 #define _UNICODE
 
 #include <windows.h>
+
 #include <bitset>
 
 class ScreenManager {
-public:
+   public:
     ScreenManager();
     ~ScreenManager();
 
     bool Init(int width, int height, const wchar_t* title);
     void Close();
 
-    void DispatchEvents(); // Dispatch window events
-    void UpdateScreen();  
+    void DispatchEvents();  // Dispatch window events
+    void UpdateScreen();
 
     // Input handling
-    bool IsKeyDown(int key) const; // e.g. VK_ESCAPE
+    bool IsKeyDown(int key) const;  // e.g. VK_ESCAPE
     int GetMouseX() const;
     int GetMouseY() const;
-    bool IsMouseButtonDown(int button) const; // 0: left, 1: right
+    bool IsMouseButtonDown(int button) const;  // 0: left, 1: right
 
     // Framebuffer access (for RenderDevice)
     unsigned char* GetFrameBuffer() const;
     int GetPitch() const;
     int GetWidth() const;
     int GetHeight() const;
-    
+
     // Update window title
     void SetWindowTitle(const wchar_t* title);
 
-private:
-    static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+   private:
+    static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam,
+                                       LPARAM lParam);
 
     HWND window_handle = NULL;
     HDC window_dc = NULL;
@@ -46,10 +47,8 @@ private:
     int height = 0;
     int pitch = 0;
 
-    std::bitset<256> keys; // Keyboard state
+    std::bitset<256> keys;  // Keyboard state
     int mouse_x = 0;
     int mouse_y = 0;
-    std::bitset<3> mouse_buttons; // 0: left, 1: right, 2: middle
+    std::bitset<3> mouse_buttons;  // 0: left, 1: right, 2: middle
 };
-
-#endif

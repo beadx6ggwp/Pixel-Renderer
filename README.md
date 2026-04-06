@@ -51,6 +51,34 @@ int main() {
 ```
 
 
+## Directory Tree
+
+```
+.
+├── src/
+│   ├── core/                # [Stable] 基礎設施層 (Infrastructure)
+│   │   ├── screen_manager.h/cpp   # Win32 視窗與事件循環
+│   │   ├── render_device.h/cpp    # 像素緩衝管理 (SetPixel, Swap) 待拆分 (Refactor Pending)
+│   │   └── application.h/cpp      # 應用生命週期與時鐘管理
+│   │
+│   ├── render/              # [In Progress] 渲染邏輯層 (Graphics Logic)
+│   │   ├── rasterizer.h/cpp       # ⏳ 規劃中: 三角形光柵化算法 從 RenderDevice 移入
+│   │   ├── shader.h/cpp           # ⏳ 規劃中: 著色器接口與頂點/片段處理
+│   │   ├── texture.h/cpp          # ⏳ 規劃中: 紋理加載與採樣器
+│   │   └── lighting.h/cpp         # ⏳ 預計: 光照模型與法線計算
+│   │
+│   ├── ui/                  # [Planned] 使用者界面層
+│   │   └── ui_context.h           # 整合 libiui/microui 
+│   │
+│   └── main.cpp             # 程式入口 (組合 Core 與 Render)
+│
+├── docs/                    # 開發筆記與圖形學原理
+├── CMakeLists.txt           # 全域構建配置
+└── .gitignore
+```
+
 ## TODO
 * [ ] Follow the tutorial
 * [ ] UI library like [libiui](https://github.com/sysprog21/libiui) / [microui](https://github.com/rxi/microui)
+
+
