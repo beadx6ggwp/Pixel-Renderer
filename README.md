@@ -1,6 +1,6 @@
 # Pixel-Renderer
 
-![](doc/img1.jpg)
+![](docs/img1.jpg)
 
 ## Overview
 Pixel-Renderer is a basic template for software rendering on Windows using the Win32 API. It provides a modular framework for drawing pixels, lines, and triangles efficiently, ideal for learning the fundamentals of computer graphics pipelines. The project uses Device-Independent Bitmaps (DIB) for high-performance pixel manipulation and supports a simple game loop with input handling.
