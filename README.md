@@ -2,6 +2,11 @@
 
 ![](docs/img1.jpg)
 
+A software rasterizer built from scratch in pure C++ with zero graphics-API dependencies.
+Starting from a single SetPixel(), the project derives and implements every stage of the GPU pipeline by hand — scan-line rasterization, barycentric coordinates, Z-buffer, MVP transforms, perspective-correct interpolation, and a pluggable IShader system mirroring GLSL vertex/fragment shaders.
+The long-term goal is a layered engine architecture: a Command Queue separating rendering frontend from backend, and a self-built immediate-mode UI system (inspired by microui and jserv/libiui) running entirely on the same software framebuffer.
+No OpenGL. No DirectX.
+
 ## Overview
 Pixel-Renderer is a basic template for software rendering on Windows using the Win32 API. It provides a modular framework for drawing pixels, lines, and triangles efficiently, ideal for learning the fundamentals of computer graphics pipelines. The project uses Device-Independent Bitmaps (DIB) for high-performance pixel manipulation and supports a simple game loop with input handling.
 
@@ -121,8 +126,11 @@ Pixel-Renderer
 
 **基礎設施補完(接下來第一步)**
 - [ ] 實作 `math_utils.h`(Vec4f、Mat4x4、矩陣運算)
-- [ ] `RenderDevice` 加入 Z-Buffer(`ClearDepth()`、SetPixel 深度測試)
+- [ ] `IShader` 抽象類別實作(`vertex()` / `fragment()`、uniforms / varyings 儲存)
+- [ ] `RenderDevice` 加入 Z-Buffer(`ClearDepth()`、SetPixel 加深度測試)
+- [ ] **Reverse-Z Buffer**(深度範圍改為 [1→0]，near plane 精度更好；矩陣推導 + Clear 改為 0.0f)
 - [ ] `Rasterizer::DrawTriangle` 重構為接受 `IShader&`
+- [ ] **透視正確插值實作**(`1/w trick`：插值時以 `attr/w` 線性插值再除回來，修正螢幕空間線性插值的錯誤)
 
 **Part 6 — 資源載入**
 - [ ] Ch22：TGA 格式解析(自製 `tga_image.h/cpp`)
@@ -178,6 +186,24 @@ Pixel-Renderer
 - [ ] 執行期不做任何邏輯決策(只執行，不判斷)
 - [ ] 後端統計：每幀 DrawCall 數量、Triangle 數量(debug overlay 用)
 
+*Near Plane Clipping 與三角形拆分(前端負責，後端只執行完整三角形)*
+- [ ] 偵測跨越 near plane 的三角形(頂點 w < near 的情況)
+- [ ] Sutherland-Hodgman 對 near plane 裁切：一個三角形裁後可能產生 0、1 或 2 個輸出三角形
+- [ ] 裁切後重新計算插值屬性(UV、法向量、顏色按比例重算)
+- [ ] 裁切結果打包成獨立的 `DrawTriangleCmd` 再進 Queue
+
+*UI Clip Rect 與三角形的交叉問題*
+- [ ] UI 視窗有 `ClipRect`；3D DrawTriangleCmd 與 UI DrawRectCmd 共用 Queue 時需處理 `SetClipCmd` 的影響範圍
+- [ ] 方案 A(軟體裁切)：前端偵測三角形與 ClipRect 交集，超出部分 Sutherland-Hodgman 裁成子三角形
+- [ ] 方案 B(後端邊界測試)：`SetPixel` 時直接判斷是否在 ClipRect 內(UI 三角形少，開銷可接受)
+- [ ] 推薦：3D Queue 不走 ClipRect；UI Queue 統一用方案 B
+
+*Queue 分層設計(解決 3D 與 UI 合流問題)*
+- [ ] 分為兩條獨立 Queue：`scene_queue`(3D)和 `ui_queue`(UI)
+- [ ] 執行順序：先 flush `scene_queue`，再 flush `ui_queue`(UI 永遠疊在最上層)
+- [ ] `ui_queue` 執行前插入 `ClearDepthCmd`(UI 不參與 Z-Test，永遠繪製)
+- [ ] 未來可擴充第三條 `overlay_queue`(fps counter、debug info)
+
 *未來多執行緒擴充路徑(設計時預留，不急著實作)*
 - [ ] 前端跑 Main Thread，後端跑獨立 Render Thread，Queue 作為橋樑
 - [ ] Tile-based 並行：把螢幕切成 N×N 的 Tile，多個 Worker Thread 各自光柵化不同區塊
@@ -185,15 +211,13 @@ Pixel-Renderer
 
 ---
 
-**架構擴充**
+**自製 UI 系統(參考 microui + libiui 設計)**
 
-**RenderDevice 擴充(UI 原子操作)**
+*RenderDevice 擴充(UI 原子操作)*
 - [ ] `DrawRect(x, y, w, h, color)`
 - [ ] `DrawRectAlpha(x, y, w, h, color, alpha)`(Alpha Blending)
 - [ ] `SetClipRect(x, y, w, h)` / `ClearClip()`(裁切區域)
 - [ ] `DrawSpan(x, y, w, color)`(水平線段快速填充，比逐像素快)
-
-**自製 UI 系統(參考 microui + libiui 設計)**
 
 *核心架構*
 - [ ] `UiContext`：固定大小 buffer 管理(參考 libiui zero heap allocation)
@@ -220,9 +244,9 @@ Pixel-Renderer
 
 *渲染後端橋接*
 - [ ] UI 後端 Execute：讀取 `UiCommandList` → 轉為 `RenderDevice` 呼叫
-- [ ] UI CommandList 最終也進 `CommandQueue`(統一由後端執行)
+- [ ] UI CommandList 最終進 `ui_queue`(統一由後端執行)
 
 **Application 層整合**
 - [ ] `OnUpdate`：先跑 3D 邏輯，再呼叫 `iui_begin_frame()` 宣告 UI
-- [ ] `OnRender`：先 flush 3D Queue，再 flush UI Queue(UI 永遠疊在最上層)
+- [ ] `OnRender`：先 flush `scene_queue`，再 flush `ui_queue`(UI 永遠疊在最上層)
 - [ ] 輸入消費優先順序：UI hover/active 時攔截，不傳給 3D 場景
