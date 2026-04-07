@@ -78,5 +78,151 @@ Pixel-Renderer
 ```
 
 ## TODO
-* [ ] Follow the tutorial
-* [ ] UI library like [libiui](https://github.com/sysprog21/libiui) / [microui](https://github.com/rxi/microui)
+
+**TODO List(從 Ch1 完整列出)**
+
+**Part 1 — 像素世界的基礎**
+- [x] Ch01：Framebuffer、座標系、SetPixel 原子操作
+- [ ] Ch02：DDA 直線演算法
+- [ ] I-01：Framebuffer 與 SetPixel 實作
+
+**Part 2 — Bresenham**
+- [ ] Ch04：Bresenham 最簡版
+- [ ] Ch05：d1/d2 推導
+- [ ] Ch06：八個方向
+- [ ] Ch07：理論總結
+- [ ] I-02：DrawLine 實作
+
+**Part 3 — 三角形光柵化**
+- [x] Ch08：2D 叉積
+- [ ] Ch09：Edge Function
+- [x] Ch10：重心座標
+- [ ] Ch11：Bounding Box
+- [ ] Ch12：Z-Buffer 理論
+- [ ] I-03：DrawTriangle 實作
+
+**Part 4 — 3D 空間數學**
+- [ ] Ch13：點積
+- [ ] Ch14：3D 叉積
+- [ ] Ch15：矩陣與線性變換
+- [ ] Ch16：齊次座標
+- [ ] Ch17：Model 矩陣
+
+**Part 5 — 投影與相機**
+- [ ] Ch18：透視投影推導
+- [ ] Ch19：Look At / View 矩陣
+- [ ] Ch20：視口變換
+- [ ] Ch21：MVP 管線串場
+
+**Part 7 — 可程式化管線(理論先行)**
+- [ ] Ch24：OpenGL 管線剖析
+- [ ] Ch25：IShader 介面設計
+- [ ] Ch26：DrawTriangle 重構 + 透視正確插值
+
+**基礎設施補完(接下來第一步)**
+- [ ] 實作 `math_utils.h`(Vec4f、Mat4x4、矩陣運算)
+- [ ] `RenderDevice` 加入 Z-Buffer(`ClearDepth()`、SetPixel 深度測試)
+- [ ] `Rasterizer::DrawTriangle` 重構為接受 `IShader&`
+
+**Part 6 — 資源載入**
+- [ ] Ch22：TGA 格式解析(自製 `tga_image.h/cpp`)
+- [ ] Ch23：OBJ 格式解析(自製 `obj_model.h/cpp`)
+
+**Part 8 — Shader 實作集**
+- [ ] Ch27：Flat Shader(驗證整條管線)
+- [ ] Ch28：Gouraud Shader(N·L 逐頂點)
+- [ ] Ch29：Texture Shader(diffuse 採樣 + 雙線性過濾)
+- [ ] Ch30：Phong Shader(逐像素光照)
+- [ ] Ch31：Normal Map Shader(TBN 矩陣)
+
+**Part 9 — 進階技術**
+- [ ] Ch32：裁剪(Cohen-Sutherland + Sutherland-Hodgman)
+- [ ] Ch33：Shadow Mapping(two-pass + PCF)
+- [ ] Ch34：Anti-Aliasing(MSAA)
+
+---
+
+**Command Queue — 渲染前後端分離**
+
+*資料結構設計*
+- [ ] 定義 `RenderCommand` variant 型別：
+  - `ClearCmd { color }`
+  - `DrawLineCmd { x1, y1, x2, y2, color }`
+  - `DrawTriangleCmd { verts[3], shader_id }`
+  - `DrawRectCmd { x, y, w, h, color, alpha }`
+  - `SetClipCmd { x, y, w, h }`
+  - `SetShaderCmd { shader_id }`
+  - `UpdateUniformCmd { key, value }`(傳 MVP 矩陣等全域參數)
+- [ ] 每筆 Command 儲存**數據快照**(矩陣、頂點值直接拷入)，不存指標(避免前後端資料競爭)
+
+*CommandQueue 實作*
+- [ ] `CommandQueue`：固定大小環形 buffer(避免動態 alloc)
+- [ ] `push(cmd)`：前端錄製期間呼叫
+- [ ] `execute_all()`：後端消費，依型別 dispatch 到 `Rasterizer` / `RenderDevice`
+- [ ] `clear()`：每幀執行完後重置
+
+*雙緩衝(Double Buffered Commands)*
+- [ ] 兩個 `CommandQueue`：Queue A(錄製中)、Queue B(執行中)
+- [ ] 每幀結束後 swap(前端繼續往 A 寫，後端同時消費 B)
+- [ ] swap 時機：`Application::OnRender()` 結束後、`BitBlt` 之前
+
+*渲染前端(Frontend / Producer)*
+- [ ] main.cpp 改為純錄製模式：只呼叫 `queue.push()`，不直接碰 `Rasterizer`
+- [ ] Frustum Culling(AABB vs Frustum 平面測試，剔除後不產生 DrawTriangleCmd)
+- [ ] 排序：Opaque 物件由近到遠(減少 Overdraw)；Transparent 由遠到近(正確 Alpha Blend)
+- [ ] Batching：相同 Shader + 相同 Texture 的三角形合併成一筆 `DrawBatchCmd`(減少 SetShaderCmd 切換次數)
+- [ ] State Deduplication：連續相同的 `SetShaderCmd` / `SetClipCmd` 自動去除
+
+*渲染後端(Backend / Consumer)*
+- [ ] Execute 迴圈：線性掃描 CommandQueue，switch dispatch 各型別
+- [ ] 執行期不做任何邏輯決策(只執行，不判斷)
+- [ ] 後端統計：每幀 DrawCall 數量、Triangle 數量(debug overlay 用)
+
+*未來多執行緒擴充路徑(設計時預留，不急著實作)*
+- [ ] 前端跑 Main Thread，後端跑獨立 Render Thread，Queue 作為橋樑
+- [ ] Tile-based 並行：把螢幕切成 N×N 的 Tile，多個 Worker Thread 各自光柵化不同區塊
+- [ ] Job System 雛形：`DrawBatchCmd` 拆分成多個 `TileJob` 並行執行
+
+---
+
+**架構擴充**
+
+**RenderDevice 擴充(UI 原子操作)**
+- [ ] `DrawRect(x, y, w, h, color)`
+- [ ] `DrawRectAlpha(x, y, w, h, color, alpha)`(Alpha Blending)
+- [ ] `SetClipRect(x, y, w, h)` / `ClearClip()`(裁切區域)
+- [ ] `DrawSpan(x, y, w, color)`(水平線段快速填充，比逐像素快)
+
+**自製 UI 系統(參考 microui + libiui 設計)**
+
+*核心架構*
+- [ ] `UiContext`：固定大小 buffer 管理(參考 libiui zero heap allocation)
+- [ ] `UiCommandList`：frame 期間收集 `UiDrawRectCmd` / `UiDrawTextCmd` / `UiClipCmd`(參考 microui command list)
+- [ ] `iui_begin_frame()` / `iui_end_frame()` 驅動一幀
+- [ ] 輸入狀態機(mouse pos / button pressed / released、key events)
+
+*Immediate Mode Widget 實作(參考 microui API 風格)*
+- [ ] `iui_button(ctx, label)` → 回傳 `bool`(點擊即回傳，無狀態物件)
+- [ ] `iui_checkbox(ctx, label, &value)`
+- [ ] `iui_slider(ctx, label, min, max, &value)`
+- [ ] `iui_text_input(ctx, &buf, buf_size)`
+- [ ] `iui_window_begin(ctx, title, x, y, w, h)` / `iui_window_end(ctx)`
+
+*Layout 系統(參考 libiui flex/grid)*
+- [ ] `iui_flex(ctx, cols, ratios[])` — 負值＝比例、正值＝固定 px
+- [ ] `iui_flex_next(ctx)` 切換欄
+- [ ] `iui_grid_begin(ctx, cols, cell_w, cell_h, gap)` / `iui_grid_end(ctx)`
+
+*字體渲染(參考 libiui built-in vector font，無外部依賴)*
+- [ ] 自製 bitmap font(8×8 或 6×8 點陣，燒進 `font_data.h`)
+- [ ] `draw_text(ctx, x, y, str, color)` 逐字元查表 → `DrawRect` 逐像素寫入
+- [ ] 或升級：參考 libiui 的 built-in vector font(Bézier 輪廓，無需字體檔)
+
+*渲染後端橋接*
+- [ ] UI 後端 Execute：讀取 `UiCommandList` → 轉為 `RenderDevice` 呼叫
+- [ ] UI CommandList 最終也進 `CommandQueue`(統一由後端執行)
+
+**Application 層整合**
+- [ ] `OnUpdate`：先跑 3D 邏輯，再呼叫 `iui_begin_frame()` 宣告 UI
+- [ ] `OnRender`：先 flush 3D Queue，再 flush UI Queue(UI 永遠疊在最上層)
+- [ ] 輸入消費優先順序：UI hover/active 時攔截，不傳給 3D 場景
