@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>UI 渲染架構與自動化測試 — 從渲染管線看 Poco / UIAutomator / DevTools</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:     #1e1e2e;
+  --bg1:    #181825;
+  --bg2:    #11111b;
+  --border: #313244;
+  --muted:  #6c7086;
+  --text:   #cdd6f4;
+  --blue:   #89b4fa;
+  --green:  #a6e3a1;
+  --yellow: #f9e2af;
+  --orange: #fab387;
+  --red:    #f38ba8;
+  --purple: #cba6f7;
+  --teal:   #94e2d5;
+}
+body {
+  background: var(--bg); color: var(--text);
+  font-family: 'Georgia', serif; font-size: 15px;
+  padding: 0 20px 80px; max-width: 900px; margin: 0 auto;
+  line-height: 1.9;
+}
+
+/* ── Header */
+.ch-header { margin: 36px 0 40px; }
+.ch-label {
+  font-family: 'Consolas', monospace; font-size: 0.78em;
+  color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px;
+}
+.ch-title { color: var(--blue); font-size: 1.7em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub   { color: var(--muted); font-size: 0.88em; margin-bottom: 14px; }
+.ch-tags  { display: flex; gap: 6px; flex-wrap: wrap; }
+.ch-tag {
+  font-family: 'Consolas', monospace; font-size: 0.72em;
+  padding: 1px 7px; border-radius: 4px;
+  background: var(--bg2); color: var(--muted); border: 1px solid var(--border);
+}
+
+/* ── Typography */
+h2 {
+  color: var(--purple); font-size: 1em;
+  font-family: 'Consolas', monospace; letter-spacing: 0.05em;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+  margin: 44px 0 20px;
+  display: flex; align-items: center; gap: 12px;
+}
+h2 .n {
+  background: var(--purple); color: var(--bg2); font-weight: bold;
+  border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 0.85em;
+}
+h3 { color: var(--yellow); font-size: 0.95em; margin: 24px 0 10px; }
+p  { margin-bottom: 12px; }
+strong { color: var(--yellow); }
+em { color: var(--orange); font-style: normal; }
+ul, ol { margin: 8px 0 14px 26px; line-height: 2.2; }
+
+/* ── Boxes */
+.box {
+  border-radius: 6px; padding: 14px 18px; margin: 16px 0;
+  font-size: 0.9em; line-height: 1.85;
+}
+.box-blue   { background: var(--bg1); border-left: 4px solid var(--blue); }
+.box-green  { background: var(--bg1); border-left: 4px solid var(--green); }
+.box-yellow { background: var(--bg1); border-left: 4px solid var(--yellow); }
+.box-red    { background: var(--bg1); border-left: 4px solid var(--red); }
+.box-purple { background: var(--bg1); border-left: 4px solid var(--purple); }
+
+/* ── Code */
+.code {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em;
+  line-height: 2.1; margin: 14px 0; overflow-x: auto;
+}
+.code .cmt { color: var(--muted); }
+.code .kw  { color: var(--purple); }
+.code .val { color: var(--orange); }
+.code .ok  { color: var(--green); }
+.code .tp  { color: var(--blue); }
+.code .fn  { color: var(--teal); }
+
+/* ── Figures */
+.fig { margin: 24px auto; text-align: center; }
+.fig figcaption { color: var(--muted); font-size: 0.88em; margin-top: 8px; font-style: italic; }
+
+/* ── Two-column */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+.two-col > div {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 8px;
+  padding: 16px 18px;
+}
+.col-title { font-family: 'Consolas', monospace; font-size: 0.85em; margin-bottom: 10px; color: var(--muted); }
+
+/* ── Three-column */
+.three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin: 16px 0; }
+.three-col > div {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 8px;
+  padding: 16px 18px;
+}
+
+/* ── Tables */
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9em; }
+thead { background: var(--bg1); }
+th { color: var(--muted); font-family: 'Consolas', monospace; font-size: 0.85em;
+     padding: 8px 14px; text-align: left; border-bottom: 2px solid var(--border); }
+td { padding: 8px 14px; border-bottom: 1px solid var(--border); }
+
+hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+</style>
+</head>
+<body>
+
+<div class="ch-header">
+  <div class="ch-label">BONUS NOTE · 2026-04-09</div>
+  <div class="ch-title">UI 渲染架構與自動化測試</div>
+  <div class="ch-sub">從渲染管線的視角，理解 Poco / UIAutomator / DevTools 為何長得不一樣</div>
+  <div class="ch-tags">
+    <span class="ch-tag">rendering-pipeline</span>
+    <span class="ch-tag">unity-ugui</span>
+    <span class="ch-tag">android-view</span>
+    <span class="ch-tag">browser-dom</span>
+    <span class="ch-tag">automation</span>
+    <span class="ch-tag">poco</span>
+    <span class="ch-tag">appium</span>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- 開場                                          -->
+<!-- ════════════════════════════════════════════ -->
+
+<p>
+你已經會寫 <em>SetPixel</em>，懂 framebuffer，知道 vertex &rarr; rasterize &rarr; fragment 的管線流程。
+現在讓我們把這套思維搬到 UI 的世界：當你面對 Unity、Android、瀏覽器三套 UI 系統時，它們各自的「渲染管線」長什麼樣？
+</p>
+<p>
+更重要的是 &mdash; 為什麼 Poco 需要嵌 SDK、UIAutomator 走 Accessibility Tree、而瀏覽器用 DevTools Protocol？
+答案藏在<strong>渲染架構的差異</strong>裡。
+</p>
+
+<div class="box box-blue">
+<strong>本篇的核心問題</strong><br>
+不同 UI 系統的渲染架構差異，如何決定自動化測試工具的設計策略？<br><br>
+我們會：(1) 拆解三套渲染管線的前後端 (2) 標示自動化工具的 hook point (3) 連回你的 IMGUI 架構和 hybrid testing 思路。
+</div>
+
+
+<!-- ════════════════════════════════════════════ -->
+<!-- Section 1：統一框架                             -->
+<!-- ════════════════════════════════════════════ -->
+
+<h2><span class="n">1</span> 所有 UI 渲染都是同一條管線</h2>
+
+<p>
+不管是 Unity、Android 還是瀏覽器，UI 渲染都遵循同一條邏輯管線。這跟你在軟體渲染器裡做的事完全一樣 &mdash; 只是抽象層級不同：
+</p>
+
+<div class="fig">
+<svg viewBox="0 0 520 70" width="520" xmlns="http://www.w3.org/2000/svg">
+  <!-- Boxes -->
+  <rect x="2" y="20" width="72" height="32" rx="4" fill="#cba6f7" fill-opacity="0.15" stroke="#cba6f7" stroke-width="1"/>
+  <text x="38" y="41" font-family="Consolas" font-size="11" fill="#cba6f7" text-anchor="middle">UI Tree</text>
+
+  <text x="85" y="40" font-family="Consolas" font-size="13" fill="#6c7086">&rarr;</text>
+
+  <rect x="98" y="20" width="72" height="32" rx="4" fill="#89b4fa" fill-opacity="0.15" stroke="#89b4fa" stroke-width="1"/>
+  <text x="134" y="41" font-family="Consolas" font-size="11" fill="#89b4fa" text-anchor="middle">Layout</text>
+
+  <text x="181" y="40" font-family="Consolas" font-size="13" fill="#6c7086">&rarr;</text>
+
+  <rect x="194" y="20" width="72" height="32" rx="4" fill="#f9e2af" fill-opacity="0.15" stroke="#f9e2af" stroke-width="1"/>
+  <text x="230" y="41" font-family="Consolas" font-size="11" fill="#f9e2af" text-anchor="middle">Paint</text>
+
+  <text x="277" y="40" font-family="Consolas" font-size="13" fill="#6c7086">&rarr;</text>
+
+  <rect x="290" y="20" width="72" height="32" rx="4" fill="#fab387" fill-opacity="0.15" stroke="#fab387" stroke-width="1"/>
+  <text x="326" y="41" font-family="Consolas" font-size="11" fill="#fab387" text-anchor="middle">Rasterize</text>
+
+  <text x="373" y="40" font-family="Consolas" font-size="13" fill="#6c7086">&rarr;</text>
+
+  <rect x="386" y="20" width="72" height="32" rx="4" fill="#94e2d5" fill-opacity="0.15" stroke="#94e2d5" stroke-width="1"/>
+  <text x="422" y="41" font-family="Consolas" font-size="11" fill="#94e2d5" text-anchor="middle">Composite</text>
+
+  <text x="469" y="40" font-family="Consolas" font-size="13" fill="#6c7086">&rarr;</text>
+
+  <rect x="482" y="20" width="36" height="32" rx="4" fill="#a6e3a1" fill-opacity="0.15" stroke="#a6e3a1" stroke-width="1"/>
+  <text x="500" y="41" font-family="Consolas" font-size="10" fill="#a6e3a1" text-anchor="middle">FB</text>
+
+  <!-- Labels -->
+  <text x="134" y="12" font-family="Consolas" font-size="9" fill="#6c7086" text-anchor="middle">Frontend</text>
+  <line x1="2" y1="16" x2="170" y2="16" stroke="#6c7086" stroke-width="0.5" stroke-dasharray="4,3"/>
+  <text x="374" y="12" font-family="Consolas" font-size="9" fill="#6c7086" text-anchor="middle">Backend</text>
+  <line x1="194" y1="16" x2="518" y2="16" stroke="#6c7086" stroke-width="0.5" stroke-dasharray="4,3"/>
+</svg>
+<figcaption>Fig 1 &mdash; UI 渲染的通用管線：結構 &rarr; 布局 &rarr; 繪製 &rarr; 光柵化 &rarr; 合成 &rarr; 顯示</figcaption>
+</div>
+
+<p>
+你在 Pixel-Renderer 裡的對照：<em>UI Tree</em> = 你的頂點資料、<em>Layout</em> = MVP 變換、<em>Paint</em> = Rasterizer 產生繪圖指令、<em>Rasterize</em> = SetPixel 寫入 framebuffer、<em>Composite</em> = BitBlt 到前台。
+</p>
+
+<p>關鍵差異在三個地方：<strong>Tree 的結構</strong>、<strong>誰做光柵化</strong>、以及<strong>Tree 能不能被外部存取</strong>。</p>
+
+
+<!-- ════════════════════════════════════════════ -->
+<!-- Section 2：三套管線的前後端                       -->
+<!-- ════════════════════════════════════════════ -->
+
+<h2><span class="n">2</span> 三套管線的前後端拆解</h2>
+
+<!-- ── 2a: Unity UGUI ── -->
+<h3>2a. Unity UGUI</h3>
+
+<div class="fig">
+<svg viewBox="0 0 520 160" width="520" xmlns="http://www.w3.org/2000/svg">
+  <!-- Frontend -->
+  <rect x="2" y="10" width="250" height="140" rx="6" fill="#cba6f7" fill-opacity="0.05" stroke="#cba6f7" stroke-width="0.5" stroke-dasharray="4,3"/>
+  <text x="12" y="28" font-family="Consolas" font-size="9" fill="#cba6f7">FRONTEND (C# Runtime)</text>
+
+  <rect x="14" y="40" width="100" height="28" rx="4" fill="#cba6f7" fill-opacity="0.12" stroke="#cba6f7" stroke-width="1"/>
+  <text x="64" y="58" font-family="Consolas" font-size="10" fill="#cba6f7" text-anchor="middle">Canvas</text>
+
+  <rect x="14" y="78" width="100" height="28" rx="4" fill="#89b4fa" fill-opacity="0.12" stroke="#89b4fa" stroke-width="1"/>
+  <text x="64" y="96" font-family="Consolas" font-size="10" fill="#89b4fa" text-anchor="middle">RectTransform</text>
+
+  <rect x="130" y="40" width="110" height="28" rx="4" fill="#f9e2af" fill-opacity="0.12" stroke="#f9e2af" stroke-width="1"/>
+  <text x="185" y="58" font-family="Consolas" font-size="10" fill="#f9e2af" text-anchor="middle">Dirty Flag Check</text>
+
+  <rect x="130" y="78" width="110" height="28" rx="4" fill="#fab387" fill-opacity="0.12" stroke="#fab387" stroke-width="1"/>
+  <text x="185" y="96" font-family="Consolas" font-size="10" fill="#fab387" text-anchor="middle">Rebuild &amp; Batch</text>
+
+  <rect x="130" y="116" width="110" height="28" rx="4" fill="#94e2d5" fill-opacity="0.12" stroke="#94e2d5" stroke-width="1"/>
+  <text x="185" y="134" font-family="Consolas" font-size="10" fill="#94e2d5" text-anchor="middle">Mesh Generation</text>
+
+  <!-- Arrow -->
+  <line x1="114" y1="54" x2="128" y2="54" stroke="#6c7086" stroke-width="1" marker-end="url(#arrow)"/>
+  <line x1="114" y1="92" x2="128" y2="92" stroke="#6c7086" stroke-width="1" marker-end="url(#arrow)"/>
+
+  <!-- Backend -->
+  <rect x="268" y="10" width="248" height="140" rx="6" fill="#a6e3a1" fill-opacity="0.05" stroke="#a6e3a1" stroke-width="0.5" stroke-dasharray="4,3"/>
+  <text x="278" y="28" font-family="Consolas" font-size="9" fill="#a6e3a1">BACKEND (GPU)</text>
+
+  <rect x="280" y="50" width="100" height="28" rx="4" fill="#a6e3a1" fill-opacity="0.12" stroke="#a6e3a1" stroke-width="1"/>
+  <text x="330" y="68" font-family="Consolas" font-size="10" fill="#a6e3a1" text-anchor="middle">Draw Calls</text>
+
+  <rect x="400" y="50" width="100" height="28" rx="4" fill="#a6e3a1" fill-opacity="0.12" stroke="#a6e3a1" stroke-width="1"/>
+  <text x="450" y="68" font-family="Consolas" font-size="10" fill="#a6e3a1" text-anchor="middle">GPU Framebuffer</text>
+
+  <line x1="380" y1="64" x2="398" y2="64" stroke="#6c7086" stroke-width="1" marker-end="url(#arrow)"/>
+  <line x1="252" y1="80" x2="278" y2="64" stroke="#6c7086" stroke-width="1" marker-end="url(#arrow)"/>
+
+  <!-- Poco hook -->
+  <rect x="14" y="118" width="100" height="24" rx="4" fill="#f38ba8" fill-opacity="0.18" stroke="#f38ba8" stroke-width="1.5"/>
+  <text x="64" y="134" font-family="Consolas" font-size="10" fill="#f38ba8" text-anchor="middle">Poco hooks here</text>
+
+  <defs>
+    <marker id="arrow" markerWidth="6" markerHeight="4" refX="5" refY="2" orient="auto">
+      <path d="M0,0 L6,2 L0,4" fill="#6c7086"/>
+    </marker>
+  </defs>
+</svg>
+<figcaption>Fig 2 &mdash; Unity UGUI 管線：Canvas hierarchy 在 C# runtime 中完全可見</figcaption>
+</div>
+
+<ul>
+  <li><strong>Frontend</strong>：Canvas 管理一棵 GameObject 樹。每個 UI 元素（Button、Text、Image）都是 GameObject + RectTransform。Canvas 用 <em>dirty flag</em> 追蹤哪些元素需要重新計算布局或頂點。</li>
+  <li><strong>Backend</strong>：Canvas Rebuild 階段遍歷整棵子樹，收集所有子元素的頂點、UV、顏色，做 <em>mesh batching</em>（合併同材質的 draw call），最後送 GPU 光柵化。</li>
+  <li><strong>關鍵特徵</strong>：UI 元素就是 GameObject &mdash; 它活在 C# runtime 裡，任何程式碼都可以透過 <em>Reflection</em> 或 API 直接遍歷整棵樹、讀取任何屬性。<strong>沒有 process boundary。</strong></li>
+</ul>
+
+<hr>
+
+<!-- ── 2b: Android View System ── -->
+<h3>2b. Android View System</h3>
+
+<div class="fig">
+<svg viewBox="0 0 520 160" width="520" xmlns="http://www.w3.org/2000/svg">
+  <!-- Frontend -->
+  <rect x="2" y="10" width="200" height="140" rx="6" fill="#cba6f7" fill-opacity="0.05" stroke="#cba6f7" stroke-width="0.5" stroke-dasharray="4,3"/>
+  <text x="12" y="28" font-family="Consolas" font-size="9" fill="#cba6f7">FRONTEND (App Process)</text>
+
+  <rect x="14" y="40" width="80" height="28" rx="4" fill="#cba6f7" fill-opacity="0.12" stroke="#cba6f7" stroke-width="1"/>
+  <text x="54" y="58" font-family="Consolas" font-size="10" fill="#cba6f7" text-anchor="middle">View Tree</text>
+
+  <rect x="110" y="40" width="80" height="24" rx="4" fill="#89b4fa" fill-opacity="0.12" stroke="#89b4fa" stroke-width="1"/>
+  <text x="150" y="56" font-family="Consolas" font-size="9" fill="#89b4fa" text-anchor="middle">measure()</text>
+
+  <rect x="110" y="70" width="80" height="24" rx="4" fill="#89b4fa" fill-opacity="0.12" stroke="#89b4fa" stroke-width="1"/>
+  <text x="150" y="86" font-family="Consolas" font-size="9" fill="#89b4fa" text-anchor="middle">layout()</text>
+
+  <rect x="110" y="100" width="80" height="24" rx="4" fill="#f9e2af" fill-opacity="0.12" stroke="#f9e2af" stroke-width="1"/>
+  <text x="150" y="116" font-family="Consolas" font-size="9" fill="#f9e2af" text-anchor="middle">draw()</text>
+
+  <line x1="94" y1="54" x2="108" y2="54" stroke="#6c7086" stroke-width="1" marker-end="url(#arrow)"/>
+
+  <!-- Process boundary -->
+  <line x1="214" y1="10" x2="214" y2="150" stroke="#f38ba8" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="218" y="155" font-family="Consolas" font-size="8" fill="#f38ba8">Process Boundary</text>
+
+  <!-- Backend -->
+  <rect x="228" y="10" width="288" height="140" rx="6" fill="#a6e3a1" fill-opacity="0.05" stroke="#a6e3a1" stroke-width="0.5" stroke-dasharray="4,3"/>
+  <text x="238" y="28" font-family="Consolas" font-size="9" fill="#a6e3a1">BACKEND (System)</text>
+
+  <rect x="240" y="45" width="80" height="24" rx="4" fill="#fab387" fill-opacity="0.12" stroke="#fab387" stroke-width="1"/>
+  <text x="280" y="61" font-family="Consolas" font-size="9" fill="#fab387" text-anchor="middle">DisplayList</text>
+
+  <rect x="336" y="45" width="56" height="24" rx="4" fill="#fab387" fill-opacity="0.12" stroke="#fab387" stroke-width="1"/>
+  <text x="364" y="61" font-family="Consolas" font-size="9" fill="#fab387" text-anchor="middle">Skia</text>
+
+  <rect x="408" y="45" width="96" height="24" rx="4" fill="#94e2d5" fill-opacity="0.12" stroke="#94e2d5" stroke-width="1"/>
+  <text x="456" y="61" font-family="Consolas" font-size="9" fill="#94e2d5" text-anchor="middle">SurfaceFlinger</text>
+
+  <rect x="408" y="80" width="96" height="24" rx="4" fill="#a6e3a1" fill-opacity="0.12" stroke="#a6e3a1" stroke-width="1"/>
+  <text x="456" y="96" font-family="Consolas" font-size="9" fill="#a6e3a1" text-anchor="middle">HWC &rarr; Display</text>
+
+  <line x1="320" y1="57" x2="334" y2="57" stroke="#6c7086" stroke-width="1" marker-end="url(#arrow)"/>
+  <line x1="392" y1="57" x2="406" y2="57" stroke="#6c7086" stroke-width="1" marker-end="url(#arrow)"/>
+  <line x1="456" y1="69" x2="456" y2="78" stroke="#6c7086" stroke-width="1" marker-end="url(#arrow)"/>
+
+  <!-- Accessibility Tree -->
+  <rect x="240" y="112" width="120" height="24" rx="4" fill="#f9e2af" fill-opacity="0.12" stroke="#f9e2af" stroke-width="1"/>
+  <text x="300" y="128" font-family="Consolas" font-size="9" fill="#f9e2af" text-anchor="middle">Accessibility Tree</text>
+  <text x="300" y="145" font-family="Consolas" font-size="8" fill="#6c7086" text-anchor="middle">(filtered subset of View Tree)</text>
+
+  <!-- UIAutomator hook -->
+  <rect x="376" y="112" width="128" height="24" rx="4" fill="#f38ba8" fill-opacity="0.18" stroke="#f38ba8" stroke-width="1.5"/>
+  <text x="440" y="128" font-family="Consolas" font-size="9" fill="#f38ba8" text-anchor="middle">UIAutomator hooks here</text>
+</svg>
+<figcaption>Fig 3 &mdash; Android View System：View Tree 被 process boundary 隔離，UIAutomator 只能透過 Accessibility Tree 存取</figcaption>
+</div>
+
+<ul>
+  <li><strong>Frontend</strong>：View hierarchy 是一棵由 ViewGroup / View 構成的樹。每幀經歷三階段遍歷：<em>measure()</em>（計算尺寸）、<em>layout()</em>（計算位置）、<em>draw()</em>（產生繪圖指令）。</li>
+  <li><strong>Backend</strong>：draw() 產出的指令被記錄為 <em>DisplayList</em>，交給 <em>Skia</em>（Google 的 2D 光柵化引擎）做光柵化。Skia 就像你的 Rasterizer &mdash; 它把向量指令轉成像素。最終由 <em>SurfaceFlinger</em>（系統合成器）把所有 App 的 Surface 合成到螢幕上。</li>
+  <li><strong>關鍵特徵</strong>：View Tree 活在 App 的 process 裡。Android 的安全模型<strong>不允許外部 process 直接存取另一個 App 的 View hierarchy</strong>。系統另外維護一棵<em>Accessibility Tree</em> &mdash; 它是 View Tree 的語意子集（過濾掉裝飾性元素，只保留有意義的節點），透過 Accessibility Service API 暴露給外部。</li>
+</ul>
+
+<hr>
+
+<!-- ── 2c: Browser ── -->
+<h3>2c. 瀏覽器</h3>
+
+<div class="fig">
+<svg viewBox="0 0 520 160" width="520" xmlns="http://www.w3.org/2000/svg">
+  <!-- Frontend -->
+  <rect x="2" y="10" width="260" height="140" rx="6" fill="#cba6f7" fill-opacity="0.05" stroke="#cba6f7" stroke-width="0.5" stroke-dasharray="4,3"/>
+  <text x="12" y="28" font-family="Consolas" font-size="9" fill="#cba6f7">FRONTEND (Renderer Process)</text>
+
+  <rect x="14" y="40" width="56" height="28" rx="4" fill="#cba6f7" fill-opacity="0.12" stroke="#cba6f7" stroke-width="1"/>
+  <text x="42" y="58" font-family="Consolas" font-size="10" fill="#cba6f7" text-anchor="middle">DOM</text>
+
+  <rect x="80" y="40" width="56" height="28" rx="4" fill="#89b4fa" fill-opacity="0.12" stroke="#89b4fa" stroke-width="1"/>
+  <text x="108" y="58" font-family="Consolas" font-size="10" fill="#89b4fa" text-anchor="middle">Style</text>
+
+  <rect x="146" y="40" width="56" height="28" rx="4" fill="#89b4fa" fill-opacity="0.12" stroke="#89b4fa" stroke-width="1"/>
+  <text x="174" y="58" font-family="Consolas" font-size="10" fill="#89b4fa" text-anchor="middle">Layout</text>
+
+  <rect x="212" y="40" width="42" height="28" rx="4" fill="#f9e2af" fill-opacity="0.12" stroke="#f9e2af" stroke-width="1"/>
+  <text x="233" y="58" font-family="Consolas" font-size="10" fill="#f9e2af" text-anchor="middle">Paint</text>
+
+  <line x1="70" y1="54" x2="78" y2="54" stroke="#6c7086" stroke-width="1" marker-end="url(#arrow)"/>
+  <line x1="136" y1="54" x2="144" y2="54" stroke="#6c7086" stroke-width="1" marker-end="url(#arrow)"/>
+  <line x1="202" y1="54" x2="210" y2="54" stroke="#6c7086" stroke-width="1" marker-end="url(#arrow)"/>
+
+  <!-- Backend -->
+  <rect x="268" y="10" width="248" height="140" rx="6" fill="#a6e3a1" fill-opacity="0.05" stroke="#a6e3a1" stroke-width="0.5" stroke-dasharray="4,3"/>
+  <text x="278" y="28" font-family="Consolas" font-size="9" fill="#a6e3a1">BACKEND (Compositor Thread + GPU)</text>
+
+  <rect x="280" y="45" width="76" height="24" rx="4" fill="#fab387" fill-opacity="0.12" stroke="#fab387" stroke-width="1"/>
+  <text x="318" y="61" font-family="Consolas" font-size="9" fill="#fab387" text-anchor="middle">Layer Tree</text>
+
+  <rect x="370" y="45" width="64" height="24" rx="4" fill="#fab387" fill-opacity="0.12" stroke="#fab387" stroke-width="1"/>
+  <text x="402" y="61" font-family="Consolas" font-size="9" fill="#fab387" text-anchor="middle">Rasterize</text>
+
+  <rect x="448" y="45" width="60" height="24" rx="4" fill="#94e2d5" fill-opacity="0.12" stroke="#94e2d5" stroke-width="1"/>
+  <text x="478" y="61" font-family="Consolas" font-size="9" fill="#94e2d5" text-anchor="middle">Compose</text>
+
+  <line x1="356" y1="57" x2="368" y2="57" stroke="#6c7086" stroke-width="1" marker-end="url(#arrow)"/>
+  <line x1="434" y1="57" x2="446" y2="57" stroke="#6c7086" stroke-width="1" marker-end="url(#arrow)"/>
+
+  <!-- CDP -->
+  <rect x="14" y="86" width="240" height="50" rx="4" fill="#a6e3a1" fill-opacity="0.08" stroke="#a6e3a1" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="24" y="102" font-family="Consolas" font-size="9" fill="#a6e3a1">Chrome DevTools Protocol (CDP)</text>
+  <text x="24" y="118" font-family="Consolas" font-size="9" fill="#6c7086">over WebSocket &mdash; exposes DOM, styles, layout, accessibility</text>
+
+  <!-- DevTools hook -->
+  <rect x="280" y="86" width="228" height="28" rx="4" fill="#f38ba8" fill-opacity="0.18" stroke="#f38ba8" stroke-width="1.5"/>
+  <text x="394" y="104" font-family="Consolas" font-size="9" fill="#f38ba8" text-anchor="middle">Selenium / Puppeteer / Playwright hook here</text>
+
+  <text x="134" y="145" font-family="Consolas" font-size="8" fill="#6c7086" text-anchor="middle">DOM 從設計之初就是公開標準規範 &rarr; 天然可遠端存取</text>
+</svg>
+<figcaption>Fig 4 &mdash; 瀏覽器管線：DOM 透過 CDP 標準化暴露，自動化工具直接操作 rendering frontend</figcaption>
+</div>
+
+<ul>
+  <li><strong>Frontend</strong>：DOM + CSSOM &rarr; Style calculation &rarr; Layout。DOM 就是 UI Tree，CSS 定義外觀，Layout 計算每個元素的幾何資訊（位置、尺寸）。</li>
+  <li><strong>Backend</strong>：Paint 產生繪圖指令，Compositor Thread 將頁面分層、獨立光柵化各層，最終 GPU 合成。</li>
+  <li><strong>關鍵特徵</strong>：DOM 從網路標準誕生之初就是一個<strong>公開的、可程式化的、有標準化遠端協議（CDP）的</strong>樹結構。Selenium/Puppeteer/Playwright 直接操作 DOM &mdash; 不需要嵌 SDK，不需要經過 accessibility 間接層。</li>
+</ul>
+
+
+<!-- ════════════════════════════════════════════ -->
+<!-- Section 3：Hook Points                         -->
+<!-- ════════════════════════════════════════════ -->
+
+<h2><span class="n">3</span> 自動化工具的 Hook Point</h2>
+
+<p>
+現在把三條管線並排，標示每個工具在哪裡 hook in。這張圖解釋了<strong>工具能力的上限</strong> &mdash; 你 hook 的位置越靠近 frontend，拿到的資訊越完整；越靠近 backend 或語意抽象層，資訊越受限。
+</p>
+
+<div class="fig">
+<svg viewBox="0 0 520 240" width="520" xmlns="http://www.w3.org/2000/svg">
+  <!-- Column labels -->
+  <text x="60" y="16" font-family="Consolas" font-size="10" fill="#cba6f7" text-anchor="middle">UI Tree</text>
+  <text x="170" y="16" font-family="Consolas" font-size="10" fill="#89b4fa" text-anchor="middle">Layout</text>
+  <text x="270" y="16" font-family="Consolas" font-size="10" fill="#f9e2af" text-anchor="middle">Paint</text>
+  <text x="370" y="16" font-family="Consolas" font-size="10" fill="#fab387" text-anchor="middle">Rasterize</text>
+  <text x="470" y="16" font-family="Consolas" font-size="10" fill="#a6e3a1" text-anchor="middle">Display</text>
+
+  <!-- Row 1: Unity UGUI + Poco -->
+  <text x="4" y="50" font-family="Consolas" font-size="10" fill="#6c7086">Unity</text>
+  <rect x="30" y="34" width="90" height="24" rx="3" fill="#cba6f7" fill-opacity="0.12" stroke="#cba6f7" stroke-width="1"/>
+  <text x="75" y="50" font-family="Consolas" font-size="9" fill="#cba6f7" text-anchor="middle">GameObject</text>
+  <rect x="140" y="34" width="80" height="24" rx="3" fill="#89b4fa" fill-opacity="0.12" stroke="#89b4fa" stroke-width="1"/>
+  <rect x="240" y="34" width="80" height="24" rx="3" fill="#f9e2af" fill-opacity="0.12" stroke="#f9e2af" stroke-width="1"/>
+  <rect x="340" y="34" width="80" height="24" rx="3" fill="#fab387" fill-opacity="0.08" stroke="#fab387" stroke-width="0.5"/>
+  <rect x="440" y="34" width="60" height="24" rx="3" fill="#a6e3a1" fill-opacity="0.08" stroke="#a6e3a1" stroke-width="0.5"/>
+
+  <!-- Poco arrow -->
+  <line x1="75" y1="62" x2="75" y2="78" stroke="#f38ba8" stroke-width="1.5" marker-end="url(#redarrow)"/>
+  <rect x="22" y="80" width="106" height="22" rx="3" fill="#f38ba8" fill-opacity="0.15" stroke="#f38ba8" stroke-width="1"/>
+  <text x="75" y="95" font-family="Consolas" font-size="10" fill="#f38ba8" text-anchor="middle">Poco (in-process)</text>
+
+  <!-- Row 2: Android + UIAutomator -->
+  <text x="4" y="132" font-family="Consolas" font-size="10" fill="#6c7086">Android</text>
+  <rect x="30" y="116" width="90" height="24" rx="3" fill="#cba6f7" fill-opacity="0.12" stroke="#cba6f7" stroke-width="1"/>
+  <text x="75" y="132" font-family="Consolas" font-size="9" fill="#cba6f7" text-anchor="middle">View Tree</text>
+  <rect x="140" y="116" width="80" height="24" rx="3" fill="#89b4fa" fill-opacity="0.12" stroke="#89b4fa" stroke-width="1"/>
+  <rect x="240" y="116" width="80" height="24" rx="3" fill="#f9e2af" fill-opacity="0.12" stroke="#f9e2af" stroke-width="1"/>
+  <rect x="340" y="116" width="80" height="24" rx="3" fill="#fab387" fill-opacity="0.08" stroke="#fab387" stroke-width="0.5"/>
+  <rect x="440" y="116" width="60" height="24" rx="3" fill="#a6e3a1" fill-opacity="0.08" stroke="#a6e3a1" stroke-width="0.5"/>
+
+  <!-- Process boundary line -->
+  <line x1="125" y1="114" x2="125" y2="142" stroke="#f38ba8" stroke-width="1" stroke-dasharray="3,2"/>
+
+  <!-- Accessibility tree branch -->
+  <line x1="75" y1="140" x2="75" y2="148" stroke="#6c7086" stroke-width="0.5"/>
+  <line x1="75" y1="148" x2="180" y2="148" stroke="#6c7086" stroke-width="0.5" stroke-dasharray="3,2"/>
+  <text x="130" y="146" font-family="Consolas" font-size="7" fill="#6c7086">filtered</text>
+  <line x1="180" y1="148" x2="180" y2="160" stroke="#f38ba8" stroke-width="1.5" marker-end="url(#redarrow)"/>
+  <rect x="126" y="162" width="150" height="22" rx="3" fill="#f38ba8" fill-opacity="0.15" stroke="#f38ba8" stroke-width="1"/>
+  <text x="201" y="177" font-family="Consolas" font-size="9" fill="#f38ba8" text-anchor="middle">UIAutomator (Accessibility)</text>
+
+  <!-- Row 3: Browser + DevTools -->
+  <text x="4" y="214" font-family="Consolas" font-size="10" fill="#6c7086">Browser</text>
+  <rect x="30" y="198" width="90" height="24" rx="3" fill="#cba6f7" fill-opacity="0.12" stroke="#cba6f7" stroke-width="1"/>
+  <text x="75" y="214" font-family="Consolas" font-size="9" fill="#cba6f7" text-anchor="middle">DOM</text>
+  <rect x="140" y="198" width="80" height="24" rx="3" fill="#89b4fa" fill-opacity="0.12" stroke="#89b4fa" stroke-width="1"/>
+  <rect x="240" y="198" width="80" height="24" rx="3" fill="#f9e2af" fill-opacity="0.12" stroke="#f9e2af" stroke-width="1"/>
+  <rect x="340" y="198" width="80" height="24" rx="3" fill="#fab387" fill-opacity="0.08" stroke="#fab387" stroke-width="0.5"/>
+  <rect x="440" y="198" width="60" height="24" rx="3" fill="#a6e3a1" fill-opacity="0.08" stroke="#a6e3a1" stroke-width="0.5"/>
+
+  <!-- DevTools arrow (spans frontend) -->
+  <line x1="75" y1="224" x2="75" y2="236" stroke="#f38ba8" stroke-width="1.5"/>
+  <line x1="75" y1="236" x2="260" y2="236" stroke="#f38ba8" stroke-width="1.5"/>
+  <text x="168" y="234" font-family="Consolas" font-size="9" fill="#f38ba8" text-anchor="middle">Selenium / Playwright (CDP, full frontend access)</text>
+
+  <defs>
+    <marker id="redarrow" markerWidth="6" markerHeight="4" refX="5" refY="2" orient="auto">
+      <path d="M0,0 L6,2 L0,4" fill="#f38ba8"/>
+    </marker>
+  </defs>
+</svg>
+<figcaption>Fig 5 &mdash; Hook Point 對照：越靠近 UI Tree 端，自動化能力越強</figcaption>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>工具</th>
+      <th>Hook 位置</th>
+      <th>存取方式</th>
+      <th>取得的資訊</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Poco</td>
+      <td>Rendering Frontend<br>(GameObject hierarchy)</td>
+      <td>C# Reflection<br>in-process / socket</td>
+      <td>完整 hierarchy、所有屬性<br>RectTransform 世界座標</td>
+    </tr>
+    <tr>
+      <td>UIAutomator</td>
+      <td>Semantic Abstraction<br>(Accessibility Tree)</td>
+      <td>Accessibility Service API<br>cross-process</td>
+      <td>過濾後的語意資訊<br>node bounds、text、states</td>
+    </tr>
+    <tr>
+      <td>Selenium / Playwright</td>
+      <td>Rendering Frontend<br>(DOM + computed styles)</td>
+      <td>Chrome DevTools Protocol<br>network (WebSocket)</td>
+      <td>完整 DOM、computed styles<br>bounding box、JS 執行</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<div class="box box-yellow">
+<strong>三個「為什麼」</strong><br><br>
+<strong>Poco 為什麼要嵌 SDK？</strong><br>
+Unity 的 GameObject hierarchy 沒有標準化的遠端存取協議（不像 DOM 有 CDP）。Poco 必須注入一個 C# agent 到遊戲 process 裡，用 Reflection 遍歷 hierarchy，再透過 socket 把結果回傳。<br><br>
+<strong>UIAutomator 為什麼資訊比較少？</strong><br>
+Android 的安全模型不允許跨 process 直接存取另一個 App 的 View Tree。你只能透過 Accessibility Service &mdash; 一個系統級的語意抽象層 &mdash; 拿到過濾後的 tree。這就像你的渲染器只暴露「有哪些可見的三角形」，但不暴露頂點資料和 shader 參數。<br><br>
+<strong>瀏覽器為什麼最方便？</strong><br>
+DOM 從 1998 年 W3C 標準化開始就是「公開的、可程式化的」。CDP 讓外部工具可以透過 WebSocket 完整存取 DOM、styles、layout &mdash; 相當於遠端存取整個 rendering frontend。這是設計哲學的差異，不是技術限制。
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- Section 4：深入差異                             -->
+<!-- ════════════════════════════════════════════ -->
+
+<h2><span class="n">4</span> 渲染前後端差異的具體影響</h2>
+
+<h3>4a. 元素定位：為什麼同一顆按鈕要用不同方式找？</h3>
+
+<div class="three-col">
+  <div>
+    <div class="col-title" style="color: var(--purple);">Unity + Poco</div>
+    <p style="font-size: 0.85em;">
+      直接用 <em>hierarchy path</em> 定位：<br>
+      <code style="color: var(--teal); font-size: 0.9em;">poco("Canvas/Panel/BtnStart")</code><br><br>
+      等同於 <code style="color: var(--muted);">GameObject.Find()</code> 遍歷樹。<br>
+      拿到的是 RectTransform 的<strong>世界座標</strong> &mdash; 解析度無關。
+    </p>
+  </div>
+  <div>
+    <div class="col-title" style="color: var(--yellow);">Android + UIAutomator</div>
+    <p style="font-size: 0.85em;">
+      用 <em>accessibility 屬性</em>定位：<br>
+      <code style="color: var(--teal); font-size: 0.9em;">UiSelector().resourceId("btn_start")</code><br><br>
+      只能找到 View 暴露給 Accessibility 的屬性。<br>
+      如果開發者忘了設 <code>contentDescription</code>，<strong>UIAutomator 看不到這個元素</strong>。
+    </p>
+  </div>
+  <div>
+    <div class="col-title" style="color: var(--blue);">Browser + Selenium</div>
+    <p style="font-size: 0.85em;">
+      用 <em>CSS selector / XPath</em> 定位：<br>
+      <code style="color: var(--teal); font-size: 0.9em;">driver.find_element(By.CSS, "#btn-start")</code><br><br>
+      直接查 DOM tree &mdash; 任何元素都能找到，可以讀 computed style、bounding rect、執行 JS。
+    </p>
+  </div>
+</div>
+
+<h3>4b. 事件注入：點擊一個按鈕，底層發生什麼？</h3>
+
+<div class="three-col">
+  <div>
+    <div class="col-title" style="color: var(--purple);">Poco</div>
+    <p style="font-size: 0.85em;">
+      透過 Reflection 取得元素的世界座標 &rarr; 轉換為螢幕座標 &rarr; 注入 <em>touch event</em> 到 Unity 的 EventSystem。<br><br>
+      等同於模擬一個真實的觸控事件經過 <em>Raycast &rarr; EventSystem &rarr; Button.onClick</em> 的完整路徑。
+    </p>
+  </div>
+  <div>
+    <div class="col-title" style="color: var(--yellow);">UIAutomator</div>
+    <p style="font-size: 0.85em;">
+      透過 Accessibility Service 對 node 執行 <em>performAction(ACTION_CLICK)</em>。<br><br>
+      這是語意級的操作 &mdash; 系統告訴 View 「你被點了」，但不經過觸控事件的完整路徑。某些自定義 View 可能不回應。
+    </p>
+  </div>
+  <div>
+    <div class="col-title" style="color: var(--blue);">Selenium</div>
+    <p style="font-size: 0.85em;">
+      透過 CDP 發送 <em>Input.dispatchMouseEvent</em>，模擬完整的 mousedown &rarr; mouseup &rarr; click 事件序列。<br><br>
+      或直接執行 JS：<code style="color: var(--teal); font-size: 0.9em;">element.click()</code>。兩種路徑都走完整的 DOM event bubbling。
+    </p>
+  </div>
+</div>
+
+<h3>4c. 為什麼 Unity Inspector 有時「抓不到」UI 元素？</h3>
+
+<div class="box box-yellow">
+<strong>Inspector 抓不到 ≠ 元素不存在</strong><br><br>
+Unity UGUI 的元素可能因為以下原因對外部工具不可見：<br>
+<ul style="margin-top: 6px;">
+  <li><strong>Canvas.renderMode = WorldSpace</strong>：UI 元素被當作 3D 物件渲染，它的座標在世界空間而非螢幕空間 &mdash; Poco 的螢幕座標轉換可能失準。</li>
+  <li><strong>CanvasGroup.alpha = 0</strong>：元素完全透明但仍存在於 hierarchy &mdash; 有些自動化工具會過濾 alpha=0 的元素。</li>
+  <li><strong>動態生成 / Object Pool</strong>：元素在 test 開始時不存在，需要等待 instantiate。</li>
+  <li><strong>第三方 UI 框架</strong>（如 FairyGUI、NGUI）：它們用自己的渲染管線繞過了 UGUI 的 Canvas 系統 &mdash; Poco 的 UGUI dumper 遍歷的是 Canvas hierarchy，所以看不到這些元素。</li>
+</ul>
+這就是你提到的「persona、world 有內嵌 Unity 的部分，Inspector 抓不到元件」的根本原因 &mdash; 那些元件可能不在標準的 UGUI Canvas tree 裡。
+</div>
+
+
+<!-- ════════════════════════════════════════════ -->
+<!-- Section 5：連回你的渲染器                        -->
+<!-- ════════════════════════════════════════════ -->
+
+<h2><span class="n">5</span> 連回你的渲染器：Retained Mode vs. IMGUI</h2>
+
+<p>
+這裡有一個你正在學的概念，恰好是所有差異的根源：<strong>Retained Mode vs. Immediate Mode</strong>。
+</p>
+
+<div class="two-col">
+  <div>
+    <div class="col-title" style="color: var(--blue);">Retained Mode（UGUI / DOM / Android View）</div>
+    <p style="font-size: 0.85em;">
+      系統維護一棵<strong>持久化的 UI Tree</strong>。你建立一個 Button，它就一直存在於 tree 裡，直到你銷毀它。<br><br>
+      <strong>自動化友好</strong>：工具可以隨時遍歷 tree、定位元素、等待元素出現。Tree 在幀與幀之間是穩定的。
+    </p>
+  </div>
+  <div>
+    <div class="col-title" style="color: var(--orange);">Immediate Mode（microui / Dear ImGui / 你的未來 UI）</div>
+    <p style="font-size: 0.85em;">
+      <strong>沒有持久化的 UI Tree</strong>。每幀你呼叫 <code style="color: var(--teal);">if(button("Start")) {}</code>，UI 在那一幀被「畫出來」然後消失。<br><br>
+      <strong>自動化困難</strong>：沒有穩定的 tree 可以遍歷。自動化工具必須在同一幀內抓取狀態，或者靠 screenshot + vision 做影像辨識。
+    </p>
+  </div>
+</div>
+
+<div class="box box-purple">
+<strong>你的 Pixel-Renderer 的 UI 階段（Part 4）</strong><br><br>
+你計畫用 microui 風格的 IMGUI。如果將來想對這個 UI 做自動化測試，hook point 在哪？<br><br>
+<ul>
+  <li><strong>方案 A</strong>：在 IMGUI 的 render loop 中插入一個 <em>snapshot 機制</em> &mdash; 每幀把所有 UI 元素的 ID、位置、狀態記錄下來。這等同於在 immediate mode 上模擬出一棵 retained tree。</li>
+  <li><strong>方案 B</strong>：直接用 framebuffer output 做影像辨識 &mdash; 就像 AirTest 的 template matching。但你已經知道這條路的問題：解析度、縮放、UI 變動。</li>
+</ul>
+這就是為什麼商業遊戲引擎（Unity、Unreal）最終都選擇了 Retained Mode UI（UGUI、UMG） &mdash; 它在工具鏈支持（Inspector、自動化測試、accessibility）上有結構性優勢。
+</div>
+
+
+<!-- ════════════════════════════════════════════ -->
+<!-- Section 6：Hybrid Testing                      -->
+<!-- ════════════════════════════════════════════ -->
+
+<h2><span class="n">6</span> Hybrid Testing 的渲染視角</h2>
+
+<p>
+你之前提出的 hybrid case（帳號註冊 &rarr; Agent 處理新手引導 &rarr; 串回腳本），用渲染架構的語言重新描述：
+</p>
+
+<div class="code">
+<span class="cmt">// 混合測試的三段式架構</span><br><br>
+<span class="cmt">// 1. 固定腳本段：操作 retained tree 的確定性路徑</span><br>
+<span class="kw">playwright</span>.fill(<span class="val">"#email"</span>, <span class="val">"test@example.com"</span>)  <span class="cmt">// DOM 是 retained → XPath 穩定</span><br>
+<span class="kw">playwright</span>.click(<span class="val">"#btn-register"</span>)<br><br>
+<span class="cmt">// 2. Agent 段：UI tree 結構不可預測 → 動態 tree traversal</span><br>
+<span class="kw">agent</span>.goal = <span class="val">"navigate to main screen"</span>  <span class="cmt">// Agent 讀取當前 tree/screenshot</span><br>
+<span class="kw">agent</span>.run()                                <span class="cmt">// 自行決定如何遍歷未知的 UI tree</span><br><br>
+<span class="cmt">// 3. 驗證段：比對 render output vs 預期狀態</span><br>
+<span class="fn">assert</span>(<span class="kw">agent</span>.current_screen == <span class="val">"main_lobby"</span>)  <span class="cmt">// 語意驗證 或 snapshot 比對</span><br>
+<span class="kw">script</span>.resume()  <span class="cmt">// 串回確定性腳本</span>
+</div>
+
+<p>
+從渲染架構的角度看，這三段分別對應：
+</p>
+<ul>
+  <li><strong>固定腳本</strong> = 依賴 <em>UI Tree 結構穩定</em>的前提。XPath / CSS selector 能精確命中，因為 tree 不變。</li>
+  <li><strong>Agent</strong> = 面對<em>未知或變動的 UI Tree</em>。Agent 必須在 runtime 讀取 tree（DOM dump / screenshot），用 LLM 做即時的 tree traversal 決策。</li>
+  <li><strong>驗證</strong> = 比對 <em>render output</em>（最終的 framebuffer / DOM snapshot / screenshot）vs 預期狀態。可以是 pixel-level 也可以是 semantic-level。</li>
+</ul>
+
+<div class="box box-yellow">
+<strong>Agent 的本質：動態 UI Tree Traversal</strong><br><br>
+傳統腳本 = 寫死的 tree 遍歷路徑（XPath）。<br>
+Agent = 讓 LLM 在 runtime 根據當前 tree 狀態動態決定遍歷路徑。<br><br>
+差異不在「智能」，而在<strong>遍歷策略是編譯期還是運行期決定的</strong>。就像你的渲染器：固定管線 vs. 可程式化管線。Agent 就是 UI 測試的「可程式化管線」。
+</div>
+
+
+<!-- ════════════════════════════════════════════ -->
+<!-- 總結                                           -->
+<!-- ════════════════════════════════════════════ -->
+
+<h2><span class="n">7</span> 本篇總結</h2>
+
+<div class="box box-green">
+<strong>三件事：</strong><br><br>
+<strong>1. UI 渲染管線都是 Tree &rarr; Layout &rarr; Paint &rarr; Display</strong>，差異在於 tree 的存取方式和 process boundary。Unity 的 GameObject tree 在 process 內可見（Poco hooks here）；Android 的 View tree 被 process boundary 隔離，只暴露 Accessibility Tree（UIAutomator hooks here）；瀏覽器的 DOM 透過 CDP 標準化暴露（Selenium hooks here）。<br><br>
+<strong>2. 自動化工具的能力上限由 hook point 決定</strong>：hook 在 rendering frontend（Poco / DevTools）→ 資訊完整；hook 在 semantic abstraction（UIAutomator）→ 資訊受限。Hook 越深入渲染系統，能力越強但耦合越高。<br><br>
+<strong>3. Retained mode 天然支持自動化</strong>（持久化 tree 可遍歷），IMGUI 需要額外機制。這解釋了為什麼商業引擎選擇 retained mode，也暗示了你在 Pixel-Renderer 做 UI 系統時要考慮的 trade-off。
+</div>
+
+</body>
+</html>
