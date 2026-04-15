@@ -82,6 +82,10 @@ Pixel-Renderer
     └── index.html           # 導引地圖: 連結「程式碼」與「現代引擎原理」
 ```
 
+瀏覽器發現沒有 GPU 時，它會被迫啟動軟體渲染 (Software Rendering)
+Google SwiftShader: https://github.com/google/swiftshader
+Linux OSMesa: https://mesa3d.org/
+
 ## TODO
 
 **TODO List(從 Ch1 完整列出)**
