@@ -636,8 +636,11 @@ Bresenham 把它做成了 O(1) 每像素的演算法。</p>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
   onload="renderMathInElement(document.body, {
+    throwOnError: false,
+    strict: 'ignore',
     delimiters: [
       {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: true},
       {left: '\\(', right: '\\)', display: false}
     ]
   });"></script>

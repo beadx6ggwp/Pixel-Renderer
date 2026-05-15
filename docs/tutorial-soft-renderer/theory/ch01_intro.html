@@ -148,6 +148,8 @@ ul, ol { margin: 8px 0 12px 24px; line-height: 2.2; }
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
   onload="renderMathInElement(document.body, {
+    throwOnError: false,
+    strict: 'ignore',
     delimiters: [
       {left: '$', right: '$', display: true},
       {left: '\\(', right: '\\)', display: false}
