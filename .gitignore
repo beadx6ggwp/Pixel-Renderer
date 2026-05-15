@@ -44,3 +44,5 @@
 .claude/
 .github/
 
+# macOS metadata
+.DS_Store
