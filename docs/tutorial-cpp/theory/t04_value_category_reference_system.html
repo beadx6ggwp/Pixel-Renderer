@@ -44,6 +44,9 @@ table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9em
 thead { background: var(--bg1); }
 th { color: var(--muted); font-family: 'Consolas', monospace; font-size: 0.85em; padding: 8px 14px; text-align: left; border-bottom: 2px solid var(--border); }
 td { padding: 8px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.fig { margin: 22px 0; text-align: center; }
+.fig svg { max-width: 100%; height: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--bg2); }
+.fig-caption { color: var(--muted); font-size: 0.82em; margin-top: 8px; font-family: 'Consolas', monospace; }
 .next-ch { margin-top: 56px; padding: 20px 24px; background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 20px; }
 .next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
 .next-title { color: var(--orange); font-size: 1em; }
@@ -134,6 +137,39 @@ x = <span class="val">2</span>;                 <span class="cmt">// x 是 lvalu
   |
   +-- value category
         e.g. lvalue, xvalue, prvalue</pre>
+
+<div class="fig">
+<svg viewBox="0 0 860 470" role="img" aria-label="Expression type and value category two-axis model">
+  <line x1="110" y1="380" x2="760" y2="380" stroke="#6c7086" stroke-width="2"/>
+  <line x1="160" y1="420" x2="160" y2="70" stroke="#6c7086" stroke-width="2"/>
+  <text x="760" y="407" fill="#6c7086" font-family="Consolas" font-size="13" text-anchor="end">value category</text>
+  <text x="95" y="82" fill="#6c7086" font-family="Consolas" font-size="13" transform="rotate(-90 95 82)">expression type</text>
+
+  <rect x="210" y="110" width="150" height="82" rx="8" fill="#1a2a3d" stroke="#89b4fa" stroke-width="2"/>
+  <text x="285" y="142" fill="#89b4fa" font-family="Consolas" font-size="16" text-anchor="middle">b</text>
+  <text x="285" y="166" fill="#cdd6f4" font-family="Consolas" font-size="12" text-anchor="middle">type: Buffer</text>
+  <text x="285" y="184" fill="#cdd6f4" font-family="Consolas" font-size="12" text-anchor="middle">category: lvalue</text>
+
+  <rect x="390" y="110" width="170" height="82" rx="8" fill="#2f2018" stroke="#fab387" stroke-width="2"/>
+  <text x="475" y="142" fill="#fab387" font-family="Consolas" font-size="16" text-anchor="middle">std::move(b)</text>
+  <text x="475" y="166" fill="#cdd6f4" font-family="Consolas" font-size="12" text-anchor="middle">type: Buffer</text>
+  <text x="475" y="184" fill="#cdd6f4" font-family="Consolas" font-size="12" text-anchor="middle">category: xvalue</text>
+
+  <rect x="590" y="110" width="150" height="82" rx="8" fill="#1a2d1a" stroke="#a6e3a1" stroke-width="2"/>
+  <text x="665" y="142" fill="#a6e3a1" font-family="Consolas" font-size="16" text-anchor="middle">Buffer{}</text>
+  <text x="665" y="166" fill="#cdd6f4" font-family="Consolas" font-size="12" text-anchor="middle">type: Buffer</text>
+  <text x="665" y="184" fill="#cdd6f4" font-family="Consolas" font-size="12" text-anchor="middle">category: prvalue</text>
+
+  <rect x="210" y="255" width="530" height="68" rx="8" fill="#181825" stroke="#313244" stroke-width="2"/>
+  <text x="475" y="284" fill="#f9e2af" font-family="Consolas" font-size="14" text-anchor="middle">same type can appear with different value categories</text>
+  <text x="475" y="307" fill="#cdd6f4" font-family="Consolas" font-size="12" text-anchor="middle">category tells overload resolution whether you are borrowing, consuming, or forming a value</text>
+
+  <text x="285" y="398" fill="#89b4fa" font-family="Consolas" font-size="13" text-anchor="middle">lvalue</text>
+  <text x="475" y="398" fill="#fab387" font-family="Consolas" font-size="13" text-anchor="middle">xvalue</text>
+  <text x="665" y="398" fill="#a6e3a1" font-family="Consolas" font-size="13" text-anchor="middle">prvalue</text>
+</svg>
+<div class="fig-caption">SVG：expression 不是只有 type。value category 是第二軸，決定它在 overload resolution 中像 borrowed object、expiring object，還是 result value。</div>
+</div>
 
 <p>
 同一個 object 可以被不同 expression 指到：

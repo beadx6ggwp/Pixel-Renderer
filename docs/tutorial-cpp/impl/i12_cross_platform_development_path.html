@@ -59,6 +59,7 @@ td { padding: 8px 14px; border-bottom: 1px solid var(--border); vertical-align: 
   <span class="nav-cur">I-12 — Cross-platform Development Path</span>
   <div class="nav-right">
     <a href="i11_sdl_display_backend.html">&larr; I-11</a>
+    <a href="i13_renderer_frontend_backend_boundary.html">I-13 &rarr;</a>
   </div>
 </nav>
 
@@ -598,16 +599,16 @@ std::<span class="tp">unique_ptr</span>&lt;<span class="tp">DisplayBackend</span
 </div>
 
 <p>
-下一章回到 Theory Track：<code>std::vector</code>、<code>std::array</code>、<code>std::span</code>、iterator invalidation、contiguous storage。這些不是 STL 速查，而是 framebuffer、vertex buffer、UI command buffer 的資料結構地基。
+下一章會把前面幾章收束成完整工程架構：Rendering Frontend、Software Rendering Backend、Owned Framebuffer、DisplayBackend 到底各自負責什麼，以及 UI / ImGui / shader pipeline 未來應該接在哪一層。
 </p>
 
 <div class="next-ch">
   <div>
-    <div class="next-label">NEXT THEORY</div>
-    <div class="next-title">T-09 &mdash; STL / Containers / Iterators</div>
-    <div class="next-desc">下一章從 storage ownership、contiguous memory、iterator validity 重新理解 STL containers，並連到 framebuffer、command buffer、vertex buffer。</div>
+    <div class="next-label">NEXT IMPL</div>
+    <div class="next-title">I-13 &mdash; Renderer Frontend / Backend Boundary</div>
+    <div class="next-desc">下一章用架構地圖分清 rendering frontend、software renderer、owned framebuffer、display backend，以及 UI/ImGui 未來的接入位置。</div>
   </div>
-  <a class="next-arrow" href="../theory/t09_stl_containers_iterators_allocator.html">&rarr;</a>
+  <a class="next-arrow" href="i13_renderer_frontend_backend_boundary.html">&rarr;</a>
 </div>
 
 </body>

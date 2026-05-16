@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>I-14 — Immediate-mode UI Integration Boundary</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#1e1e2e; --bg1:#181825; --bg2:#11111b; --border:#313244;
+  --muted:#6c7086; --text:#cdd6f4; --blue:#89b4fa; --green:#a6e3a1;
+  --yellow:#f9e2af; --orange:#fab387; --red:#f38ba8; --purple:#cba6f7; --teal:#94e2d5;
+}
+body { background: var(--bg); color: var(--text); font-family: 'Georgia', serif; font-size: 15px; padding: 0 20px 80px; max-width: 900px; margin: 0 auto; line-height: 1.9; }
+nav { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); padding: 14px 0; border-bottom: 1px solid var(--border); margin-bottom: 36px; display: flex; align-items: center; gap: 10px; }
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--orange); }
+.nav-sep { color: var(--border); }
+.nav-cur { color: var(--text); }
+.nav-right { margin-left: auto; display: flex; gap: 16px; }
+.ch-header { margin-bottom: 40px; }
+.ch-label { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px; }
+.ch-title { color: var(--orange); font-size: 1.7em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub { color: var(--muted); font-size: 0.88em; margin-bottom: 14px; }
+.ch-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.ch-tag { font-family: 'Consolas', monospace; font-size: 0.72em; padding: 1px 7px; border-radius: 4px; background: var(--bg2); color: var(--muted); border: 1px solid var(--border); }
+h2 { color: var(--purple); font-size: 1em; font-family: 'Consolas', monospace; letter-spacing: 0.05em; padding: 10px 0; border-bottom: 1px solid var(--border); margin: 44px 0 20px; display: flex; align-items: center; gap: 12px; }
+h2 .n { background: var(--purple); color: var(--bg2); font-weight: bold; border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.85em; }
+h3 { color: var(--yellow); font-size: 0.95em; margin: 24px 0 10px; }
+p { margin-bottom: 12px; }
+strong { color: var(--yellow); }
+em { color: var(--orange); font-style: normal; }
+code { font-family: 'Consolas', monospace; color: var(--teal); }
+ul, ol { margin: 8px 0 14px 26px; line-height: 2.2; }
+.box { border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 0.9em; line-height: 1.85; background: var(--bg1); }
+.box-blue { border-left: 4px solid var(--blue); }
+.box-green { border-left: 4px solid var(--green); }
+.box-yellow { border-left: 4px solid var(--yellow); }
+.box-red { border-left: 4px solid var(--red); }
+.box-purple { border-left: 4px solid var(--purple); }
+.code { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em; line-height: 2.1; margin: 14px 0; overflow-x: auto; }
+.code .cmt { color: var(--muted); } .code .kw { color: var(--purple); } .code .val { color: var(--orange); } .code .tp { color: var(--blue); } .code .fn { color: var(--teal); }
+.ascii { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.82em; line-height: 1.55; margin: 14px 0; overflow-x: auto; color: var(--text); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9em; }
+thead { background: var(--bg1); }
+th { color: var(--muted); font-family: 'Consolas', monospace; font-size: 0.85em; padding: 8px 14px; text-align: left; border-bottom: 2px solid var(--border); }
+td { padding: 8px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.fig { margin: 22px 0; text-align: center; }
+.fig svg { max-width: 100%; height: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--bg2); }
+.fig-caption { color: var(--muted); font-size: 0.82em; margin-top: 8px; font-family: 'Consolas', monospace; }
+.next-ch { margin-top: 56px; padding: 20px 24px; background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 20px; }
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+.next-title { color: var(--orange); font-size: 1em; }
+.next-desc { color: var(--muted); font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: var(--orange); font-size: 1.6em; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">C++ for Pixel-Renderer</a>
+  <span class="nav-sep">/</span>
+  <span class="nav-cur">I-14 — Immediate-mode UI Integration Boundary</span>
+  <div class="nav-right">
+    <a href="i13_renderer_frontend_backend_boundary.html">&larr; I-13</a>
+    <a href="i15_shader_pipeline_interface_boundary.html">I-15 &rarr;</a>
+  </div>
+</nav>
+
+<div class="ch-header">
+  <div class="ch-label">IMPLEMENTATION TRACK &middot; I-14</div>
+  <div class="ch-title">Immediate-mode UI Integration Boundary</div>
+  <div class="ch-sub">UI 不直接畫到 SDL/Win32，而是產生 draw data，交給 software renderer 寫 owned framebuffer</div>
+  <div class="ch-tags">
+    <span class="ch-tag">UI</span>
+    <span class="ch-tag">ImGui</span>
+    <span class="ch-tag">draw-data</span>
+    <span class="ch-tag">software-backend</span>
+  </div>
+</div>
+
+<p>
+I-13 把 Pixel-Renderer 切成 frontend、software renderer、owned framebuffer、display backend。現在要把 UI 放進這張圖。你前面提過未來想自己寫 UI，甚至接 ImGui；這件事的關鍵不是「UI 長什麼樣」，而是 UI 的 state、draw data、font resource、clip rect、alpha blend 要站在哪一層。
+</p>
+
+<p>
+Immediate-mode UI 很容易被誤解成「沒有 state」。真正比較精準的說法是：每 frame 重新呼叫 widget function 建立互動與 draw list，但有些 state 仍然存在，只是它們有明確 owner 和 lifetime。
+</p>
+
+<div class="box box-blue">
+<strong>本章範圍</strong> &mdash; 建立 UI integration 的工程模型：input state、widget ID、hot/active/focused state、app-owned value、layout cursor、draw list、font atlas、clip rect、alpha blend。核心結論是 UI frontend 只決定 widget 與 draw data；UI software backend 把 draw data rasterize 到 owned framebuffer；DisplayBackend 仍然只做 window/input/present。
+</div>
+
+<h2><span class="n">1</span> naive model：UI 直接呼叫平台 draw API</h2>
+
+<p>
+最直接的做法會長這樣：
+</p>
+
+<pre class="ascii">Button()
+  if hovered:
+    SDL_SetRenderDrawColor(...)
+    SDL_RenderFillRect(...)
+
+or:
+
+Button()
+  GDI Rectangle(...)
+  TextOut(...)</pre>
+
+<p>
+這個模型看起來很快能做出畫面，但它把 UI、platform backend、renderer core 綁死在一起。結果是：
+</p>
+
+<ul>
+  <li>SDL 版 UI、Win32 版 UI、macOS 版 UI 都要各寫一套。</li>
+  <li>UI rasterization 繞過你自己的 software renderer。</li>
+  <li>UI 不能跟 scene 共用 clipping、alpha blend、debug dump、golden image 測試。</li>
+  <li>DisplayBackend 不再只是 present，它被迫知道 UI drawing semantics。</li>
+</ul>
+
+<div class="box box-red">
+<strong>不要接錯層</strong> &mdash; SDL 在這裡應該處理 window/input/present。UI 不應直接呼叫 <code>SDL_RenderFillRect</code> 或 <code>SDL_RenderGeometry</code>，否則你把 UI rasterization 交給 SDL/GPU，而不是 Pixel-Renderer。
+</div>
+
+<h2><span class="n">2</span> 正確資料流：UI frontend 到 framebuffer</h2>
+
+<div class="fig">
+<svg viewBox="0 0 860 520" role="img" aria-label="Immediate UI data flow">
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#89b4fa"/>
+    </marker>
+  </defs>
+  <rect x="70" y="35" width="720" height="62" rx="8" fill="#2f2018" stroke="#fab387" stroke-width="2"/>
+  <text x="430" y="72" fill="#fab387" font-family="Consolas" font-size="18" text-anchor="middle">DisplayBackend polls input</text>
+  <text x="430" y="92" fill="#cdd6f4" font-family="Consolas" font-size="12" text-anchor="middle">mouse, keyboard, text input, window size</text>
+
+  <rect x="70" y="135" width="720" height="76" rx="8" fill="#1a2a3d" stroke="#89b4fa" stroke-width="2"/>
+  <text x="430" y="170" fill="#89b4fa" font-family="Consolas" font-size="18" text-anchor="middle">UI Frontend / UiContext</text>
+  <text x="430" y="194" fill="#cdd6f4" font-family="Consolas" font-size="12" text-anchor="middle">widget calls, ID stack, hot/active/focused, layout cursor</text>
+
+  <rect x="70" y="250" width="720" height="76" rx="8" fill="#2a1a3d" stroke="#cba6f7" stroke-width="2"/>
+  <text x="430" y="285" fill="#cba6f7" font-family="Consolas" font-size="18" text-anchor="middle">UIDrawList</text>
+  <text x="430" y="309" fill="#cdd6f4" font-family="Consolas" font-size="12" text-anchor="middle">rects, text, images, triangles, clip rect, layer/order</text>
+
+  <rect x="70" y="365" width="340" height="76" rx="8" fill="#1a2d1a" stroke="#a6e3a1" stroke-width="2"/>
+  <text x="240" y="400" fill="#a6e3a1" font-family="Consolas" font-size="18" text-anchor="middle">UI Software Renderer</text>
+  <text x="240" y="424" fill="#cdd6f4" font-family="Consolas" font-size="12" text-anchor="middle">clip, rasterize, sample font atlas, blend</text>
+
+  <rect x="450" y="365" width="340" height="76" rx="8" fill="#181825" stroke="#f9e2af" stroke-width="2"/>
+  <text x="620" y="400" fill="#f9e2af" font-family="Consolas" font-size="18" text-anchor="middle">Owned Framebuffer</text>
+  <text x="620" y="424" fill="#cdd6f4" font-family="Consolas" font-size="12" text-anchor="middle">same CPU pixels as scene rendering</text>
+
+  <path d="M430 97 L430 130" stroke="#89b4fa" stroke-width="3" marker-end="url(#arrow)"/>
+  <path d="M430 211 L430 244" stroke="#89b4fa" stroke-width="3" marker-end="url(#arrow)"/>
+  <path d="M430 326 C390 345, 320 350, 240 365" stroke="#89b4fa" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+  <path d="M410 403 L444 403" stroke="#89b4fa" stroke-width="3" marker-end="url(#arrow)"/>
+</svg>
+<div class="fig-caption">SVG：UI frontend 產生 draw data；UI software renderer 寫 owned framebuffer；DisplayBackend 只負責 input/present。</div>
+</div>
+
+<pre class="ascii">InputState
+  |
+  v
+UiContext
+  widget calls, ID stack, hot/active/focused state, layout
+  |
+  v
+UIDrawList
+  rectangles, text, images, triangles, clip rects
+  |
+  v
+UI Software Renderer
+  rasterize + alpha blend into Framebuffer
+  |
+  v
+DisplayBackend::Present(framebuffer)</pre>
+
+<h2><span class="n">3</span> Immediate-mode UI 的 state 不是不存在</h2>
+
+<p>
+Immediate-mode 的重點不是沒有 state，而是 state 被拆成幾種不同 lifetime：
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>State</th>
+      <th>Owner</th>
+      <th>生命週期</th>
+      <th>用途</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>InputState</code></td>
+      <td><code>DisplayBackend</code> 填入，app/UI 借用</td>
+      <td>per frame</td>
+      <td>mouse position、button down、key、text input。</td>
+    </tr>
+    <tr>
+      <td><code>hot</code></td>
+      <td><code>UiContext</code></td>
+      <td>通常 per frame</td>
+      <td>滑鼠目前 hover 的 widget ID。</td>
+    </tr>
+    <tr>
+      <td><code>active</code></td>
+      <td><code>UiContext</code></td>
+      <td>跨 frame 短期</td>
+      <td>正在 press、drag、text edit 的 widget ID。</td>
+    </tr>
+    <tr>
+      <td><code>focused</code></td>
+      <td><code>UiContext</code></td>
+      <td>跨 frame</td>
+      <td>鍵盤輸入目前送到哪個 widget。</td>
+    </tr>
+    <tr>
+      <td>widget value</td>
+      <td>application</td>
+      <td>由資料本身決定</td>
+      <td>checkbox bool、slider float、selected index。</td>
+    </tr>
+    <tr>
+      <td><code>UIDrawList</code></td>
+      <td><code>UiContext</code> 或 frame arena</td>
+      <td>per frame</td>
+      <td>本幀要畫的 UI commands。</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="box box-yellow">
+<strong>常見誤解</strong> &mdash; Immediate-mode UI 不是「每 frame 忘記所有事情」。它是每 frame 重新描述 UI，並用穩定 ID 把跨 frame 的 interaction state 接回來。
+</div>
+
+<h2><span class="n">4</span> Widget ID：為什麼 button 需要身份</h2>
+
+<p>
+如果 UI 裡有兩個同名 button，或 button 在 list 裡重複出現，UI system 不能只靠文字判斷誰是誰。你需要 <strong>widget ID</strong>：
+</p>
+
+<pre class="ascii">BeginPanel("Inspector")
+  Button("Reset")      -> ID hash("Inspector/Reset")
+  Slider("Roughness")  -> ID hash("Inspector/Roughness")
+EndPanel()
+
+BeginPanel("Material")
+  Button("Reset")      -> ID hash("Material/Reset")
+EndPanel()</pre>
+
+<p>
+ID 的用途不是只為了 debug；它是 hot/active/focused state 的 key：
+</p>
+
+<div class="code">
+<span class="kw">struct</span> <span class="tp">UiContext</span> {<br>
+&nbsp;&nbsp;<span class="tp">UiId</span> hot = <span class="val">0</span>;<br>
+&nbsp;&nbsp;<span class="tp">UiId</span> active = <span class="val">0</span>;<br>
+&nbsp;&nbsp;<span class="tp">UiId</span> focused = <span class="val">0</span>;<br>
+&nbsp;&nbsp;<span class="tp">Rect</span> clip_rect;<br>
+&nbsp;&nbsp;<span class="tp">Vec2</span> cursor;<br>
+&nbsp;&nbsp;std::<span class="tp">vector</span>&lt;<span class="tp">UiCommand</span>&gt; draw_list;<br>
+};
+</div>
+
+<h2><span class="n">5</span> Layout cursor：UI 不只是在畫矩形</h2>
+
+<p>
+一個簡單 button 看起來只是 rect + text，但它背後其實做了：
+</p>
+
+<pre class="ascii">Button(label):
+  id = make_id(label)
+  rect = layout_reserve(size)
+  hovered = rect_contains(mouse)
+  update hot/active based on input
+  clicked = mouse_released_inside_active_item
+  push draw commands:
+    background rect
+    border rect
+    text
+  return clicked</pre>
+
+<p>
+所以 UI frontend 的責任是「互動 + layout + draw data」。它不該知道 <code>SDL_Texture</code> 或 <code>HDC</code>；它只需要知道輸入狀態、目前 layout cursor、clip rect、要輸出的 draw command。
+</p>
+
+<h2><span class="n">6</span> Draw command 設計：不要急著存任意 callback</h2>
+
+<p>
+第一版 UI draw list 可以用 value commands。這呼應 T-11：UI commands 是 per-frame artifact，適合排序、dump、回放、測試。
+</p>
+
+<div class="code">
+<span class="kw">struct</span> <span class="tp">UiRectCommand</span> {<br>
+&nbsp;&nbsp;<span class="tp">Rect</span> rect;<br>
+&nbsp;&nbsp;<span class="tp">Color</span> color;<br>
+&nbsp;&nbsp;<span class="tp">Rect</span> clip;<br>
+};<br>
+<br>
+<span class="kw">struct</span> <span class="tp">UiTextCommand</span> {<br>
+&nbsp;&nbsp;std::<span class="tp">string_view</span> text;<br>
+&nbsp;&nbsp;<span class="tp">Vec2</span> pos;<br>
+&nbsp;&nbsp;<span class="tp">Color</span> color;<br>
+&nbsp;&nbsp;<span class="tp">Rect</span> clip;<br>
+};<br>
+<br>
+<span class="kw">struct</span> <span class="tp">UiImageCommand</span> {<br>
+&nbsp;&nbsp;<span class="tp">Rect</span> rect;<br>
+&nbsp;&nbsp;<span class="tp">TextureId</span> texture;<br>
+&nbsp;&nbsp;<span class="tp">Rect</span> uv_rect;<br>
+&nbsp;&nbsp;<span class="tp">Rect</span> clip;<br>
+};<br>
+<br>
+<span class="kw">using</span> <span class="tp">UiCommand</span> = std::<span class="tp">variant</span>&lt;<span class="tp">UiRectCommand</span>, <span class="tp">UiTextCommand</span>, <span class="tp">UiImageCommand</span>&gt;;
+</div>
+
+<div class="box box-yellow">
+<strong><code>string_view</code> lifetime</strong> &mdash; 如果 draw list 會延後到本 frame 後面才執行，<code>UiTextCommand::text</code> 不能 view 一段已經失效的 temporary string。第一版可以要求文字來源活到 frame 結束；更穩的做法是 frame string arena 或把文字複製進 UI frame storage。
+</div>
+
+<h2><span class="n">7</span> clipping 與 alpha blending</h2>
+
+<p>
+UI 幾乎一定需要 clipping。Panel 裡的內容不能畫出 panel；scroll region 裡的 widget 不能溢出可視範圍。這可以先用每個 command 帶 <code>clip</code>：
+</p>
+
+<pre class="ascii">current clip = intersect(parent clip, widget/panel clip)
+
+for command:
+  visible_rect = intersect(command.rect, command.clip)
+  rasterize only visible_rect</pre>
+
+<p>
+Alpha blending 則是 UI 與 scene 共用 framebuffer 時一定會遇到的問題：
+</p>
+
+<pre class="ascii">src = UI pixel color with alpha
+dst = framebuffer pixel
+
+out.rgb = src.rgb * src.a + dst.rgb * (1 - src.a)
+out.a   = 1 or composited alpha policy</pre>
+
+<p>
+第一版可以先用 8-bit alpha、straight alpha，並明確定義 color format。不要讓 UI renderer 和 scene renderer 對 <code>0xAARRGGBB</code> / <code>0xRRGGBBAA</code> 有不同理解。
+</p>
+
+<h2><span class="n">8</span> Font atlas：文字不是平台功能</h2>
+
+<p>
+如果 UI renderer 要完全走 software path，文字也不能靠 Win32 <code>TextOut</code> 或 SDL_ttf 直接畫到 window。更乾淨的模型是：
+</p>
+
+<pre class="ascii">font file / bitmap font
+  |
+  v
+FontAtlas
+  glyph bitmap + metrics + texture/image storage
+  |
+  v
+UiTextCommand
+  text + position + style
+  |
+  v
+UI Software Renderer
+  glyph lookup
+  blit/sample atlas
+  alpha blend into framebuffer</pre>
+
+<p>
+第一版可以先用 bitmap font 或簡單 font atlas；重點不是立刻做漂亮 typography，而是讓文字也成為 renderer 可測的 draw data。
+</p>
+
+<h2><span class="n">9</span> ImGui 接入時，你實作的是 software backend</h2>
+
+<p>
+ImGui core 的工作是產生 <code>ImDrawData</code>。常見 backend 是 OpenGL/D3D/Metal，但那只是把 draw data 送去 GPU。對 Pixel-Renderer，你要做的是 software backend：
+</p>
+
+<pre class="ascii">ImGui widgets
+  |
+  v
+ImDrawData
+  command lists
+  indexed triangles
+  clip rects
+  texture ids
+  font atlas
+  |
+  v
+imgui_software_backend
+  iterate cmd lists
+  apply clip rect
+  rasterize indexed triangles
+  sample font atlas
+  alpha blend
+  |
+  v
+owned Framebuffer</pre>
+
+<table>
+  <thead>
+    <tr>
+      <th>ImGui concept</th>
+      <th>Pixel-Renderer 對應</th>
+      <th>注意</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td><code>ImDrawVert</code></td><td>UI vertex input</td><td>包含 pos、uv、color。</td></tr>
+    <tr><td><code>ImDrawIdx</code></td><td>indexed triangles</td><td>要走自己的 triangle rasterizer 或 UI rasterizer。</td></tr>
+    <tr><td><code>ClipRect</code></td><td>scissor / clip rect</td><td>必須在 CPU rasterizer 實作。</td></tr>
+    <tr><td><code>TextureId</code></td><td>font atlas / image handle</td><td>不能是裸平台 texture pointer。</td></tr>
+  </tbody>
+</table>
+
+<h2><span class="n">10</span> Verification：UI 也要能回歸測試</h2>
+
+<p>
+UI 如果只是看 window，很快會變成難以維護。比較好的測試層次是：
+</p>
+
+<ul>
+  <li>給固定 <code>InputState</code>，檢查 <code>Button()</code> 是否回傳 clicked。</li>
+  <li>給固定 layout，檢查 draw list 裡 command 數量、rect、clip 是否正確。</li>
+  <li>給固定 draw list，render 到小 framebuffer，做 golden image compare。</li>
+  <li>ImGui software backend 可以用固定 <code>ImDrawData</code> fixture 測 rasterization。</li>
+</ul>
+
+<pre class="ascii">Input fixture
+  -> UiContext widget calls
+  -> UIDrawList
+  -> UI software renderer
+  -> framebuffer
+  -> golden image / command dump</pre>
+
+<p>
+這也讓 UI 不只是「能畫」。它變成 renderer pipeline 的一部分，可以被 dump、比較、回歸測試。
+</p>
+
+<h2><span class="n">11</span> 最小實作順序</h2>
+
+<ol>
+  <li>建立 platform-neutral <code>InputState</code>，由 DisplayBackend 填入。</li>
+  <li>建立 <code>UiContext</code>：ID stack、hot/active/focused、cursor layout、clip stack、draw list。</li>
+  <li>先支援 <code>Button</code>、<code>Checkbox</code>、<code>Slider</code> 的 rect drawing。</li>
+  <li>加入 clip rect stack 與 alpha blending。</li>
+  <li>加入 bitmap font atlas 與 <code>UiTextCommand</code>。</li>
+  <li>把 UI draw list 接到 golden image tests。</li>
+  <li>最後才接 ImGui <code>ImDrawData</code>。</li>
+</ol>
+
+<div class="box box-green">
+<strong>本章學到的三件事：</strong>
+<ol>
+  <li>Immediate-mode UI 不是沒有 state，而是把 app-owned value、UiContext interaction state、per-frame draw list 分清楚。</li>
+  <li>UI frontend 應產生 draw data；UI software backend 才負責 clip、rasterize、sample font atlas、alpha blend 到 owned framebuffer。</li>
+  <li>ImGui 接入時應消費 <code>ImDrawData</code> 寫 software backend，DisplayBackend 仍然只做 window/input/present。</li>
+</ol>
+</div>
+
+<p>
+下一章會把 shader pipeline interface 補深。UI draw list 和 shader draw calls 最後都會碰到同一個問題：資料要如何進入 renderer pipeline，stage input/output 如何定義，錯了又如何驗證。
+</p>
+
+<div class="next-ch">
+  <div>
+    <div class="next-label">NEXT IMPL</div>
+    <div class="next-title">I-15 — Shader Pipeline Interface Boundary</div>
+    <div class="next-desc">下一章整理 vertex/fragment shader、draw call、pipeline state、command buffer 與 verification 的工程邊界。</div>
+  </div>
+  <a class="next-arrow" href="i15_shader_pipeline_interface_boundary.html">&rarr;</a>
+</div>
+
+</body>
+</html>

@@ -40,6 +40,9 @@ ul, ol { margin: 8px 0 14px 26px; line-height: 2.2; }
 .code { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em; line-height: 2.1; margin: 14px 0; overflow-x: auto; }
 .code .cmt { color: var(--muted); } .code .kw { color: var(--purple); } .code .val { color: var(--orange); } .code .tp { color: var(--blue); } .code .fn { color: var(--teal); }
 .ascii { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.82em; line-height: 1.55; margin: 14px 0; overflow-x: auto; color: var(--text); }
+.fig { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin: 18px 0; overflow-x: auto; }
+.fig svg { width: 100%; min-width: 720px; height: auto; display: block; font-family: 'Consolas', monospace; }
+.fig-caption { color: var(--muted); font-size: 0.84em; margin-top: 10px; line-height: 1.7; }
 table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9em; }
 thead { background: var(--bg1); }
 th { color: var(--muted); font-family: 'Consolas', monospace; font-size: 0.85em; padding: 8px 14px; text-align: left; border-bottom: 2px solid var(--border); }
@@ -141,6 +144,49 @@ object lifetime:
 <p>
 對 framebuffer，最簡單的 RAII member 是 <code>std::vector</code>：
 </p>
+
+<div class="fig">
+<svg viewBox="0 0 860 360" role="img" aria-label="RAII object lifetime and stack unwinding">
+  <defs>
+    <marker id="arrow-t06" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#89b4fa"/>
+    </marker>
+  </defs>
+  <rect x="45" y="50" width="160" height="72" rx="8" fill="#181825" stroke="#313244"/>
+  <text x="125" y="80" fill="#cdd6f4" text-anchor="middle" font-size="14">constructor</text>
+  <text x="125" y="103" fill="#6c7086" text-anchor="middle" font-size="12">acquire + invariant</text>
+
+  <rect x="270" y="50" width="160" height="72" rx="8" fill="#181825" stroke="#a6e3a1"/>
+  <text x="350" y="80" fill="#a6e3a1" text-anchor="middle" font-size="14">object alive</text>
+  <text x="350" y="103" fill="#6c7086" text-anchor="middle" font-size="12">resource valid</text>
+
+  <rect x="495" y="50" width="160" height="72" rx="8" fill="#181825" stroke="#f9e2af"/>
+  <text x="575" y="80" fill="#f9e2af" text-anchor="middle" font-size="14">scope exit</text>
+  <text x="575" y="103" fill="#6c7086" text-anchor="middle" font-size="12">normal return</text>
+
+  <rect x="495" y="190" width="160" height="72" rx="8" fill="#181825" stroke="#f38ba8"/>
+  <text x="575" y="220" fill="#f38ba8" text-anchor="middle" font-size="14">unwinding</text>
+  <text x="575" y="243" fill="#6c7086" text-anchor="middle" font-size="12">exception path</text>
+
+  <rect x="700" y="118" width="120" height="82" rx="8" fill="#181825" stroke="#cba6f7"/>
+  <text x="760" y="150" fill="#cba6f7" text-anchor="middle" font-size="14">destructor</text>
+  <text x="760" y="174" fill="#6c7086" text-anchor="middle" font-size="12">release once</text>
+
+  <line x1="205" y1="86" x2="268" y2="86" stroke="#89b4fa" stroke-width="2" marker-end="url(#arrow-t06)"/>
+  <line x1="430" y1="86" x2="493" y2="86" stroke="#89b4fa" stroke-width="2" marker-end="url(#arrow-t06)"/>
+  <line x1="655" y1="86" x2="731" y2="120" stroke="#89b4fa" stroke-width="2" marker-end="url(#arrow-t06)"/>
+  <line x1="430" y1="102" x2="494" y2="203" stroke="#f38ba8" stroke-width="2" marker-end="url(#arrow-t06)"/>
+  <line x1="655" y1="226" x2="731" y2="197" stroke="#f38ba8" stroke-width="2" marker-end="url(#arrow-t06)"/>
+
+  <rect x="70" y="205" width="315" height="95" rx="8" fill="#11111b" stroke="#313244"/>
+  <text x="228" y="235" fill="#cdd6f4" text-anchor="middle" font-size="14">member destruction order</text>
+  <text x="228" y="260" fill="#6c7086" text-anchor="middle" font-size="12">constructed: A -> B -> C</text>
+  <text x="228" y="283" fill="#f9e2af" text-anchor="middle" font-size="12">destroyed: C -> B -> A</text>
+
+  <text x="430" y="330" fill="#94e2d5" text-anchor="middle" font-size="13">RAII makes cleanup a consequence of object lifetime, not a remembered branch.</text>
+</svg>
+<div class="fig-caption">SVG：RAII 的重點是把 cleanup 放進 destructor，所以 normal return、early return、exception unwinding、partial construction failure 都會走同一個 ownership 規則；設計時要同時看 constructor invariant、destructor safety 和 member destruction order。</div>
+</div>
 
 <div class="code">
 <span class="kw">class</span> <span class="tp">Framebuffer</span> {<br>

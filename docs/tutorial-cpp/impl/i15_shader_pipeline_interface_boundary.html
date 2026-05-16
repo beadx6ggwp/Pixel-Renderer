@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>I-15 — Shader Pipeline Interface Boundary</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#1e1e2e; --bg1:#181825; --bg2:#11111b; --border:#313244;
+  --muted:#6c7086; --text:#cdd6f4; --blue:#89b4fa; --green:#a6e3a1;
+  --yellow:#f9e2af; --orange:#fab387; --red:#f38ba8; --purple:#cba6f7; --teal:#94e2d5;
+}
+body { background: var(--bg); color: var(--text); font-family: 'Georgia', serif; font-size: 15px; padding: 0 20px 80px; max-width: 900px; margin: 0 auto; line-height: 1.9; }
+nav { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); padding: 14px 0; border-bottom: 1px solid var(--border); margin-bottom: 36px; display: flex; align-items: center; gap: 10px; }
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--orange); }
+.nav-sep { color: var(--border); }
+.nav-cur { color: var(--text); }
+.nav-right { margin-left: auto; display: flex; gap: 16px; }
+.ch-header { margin-bottom: 40px; }
+.ch-label { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px; }
+.ch-title { color: var(--orange); font-size: 1.7em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub { color: var(--muted); font-size: 0.88em; margin-bottom: 14px; }
+.ch-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.ch-tag { font-family: 'Consolas', monospace; font-size: 0.72em; padding: 1px 7px; border-radius: 4px; background: var(--bg2); color: var(--muted); border: 1px solid var(--border); }
+h2 { color: var(--purple); font-size: 1em; font-family: 'Consolas', monospace; letter-spacing: 0.05em; padding: 10px 0; border-bottom: 1px solid var(--border); margin: 44px 0 20px; display: flex; align-items: center; gap: 12px; }
+h2 .n { background: var(--purple); color: var(--bg2); font-weight: bold; border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.85em; }
+h3 { color: var(--yellow); font-size: 0.95em; margin: 24px 0 10px; }
+p { margin-bottom: 12px; }
+strong { color: var(--yellow); }
+em { color: var(--orange); font-style: normal; }
+code { font-family: 'Consolas', monospace; color: var(--teal); }
+ul, ol { margin: 8px 0 14px 26px; line-height: 2.2; }
+.box { border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 0.9em; line-height: 1.85; background: var(--bg1); }
+.box-blue { border-left: 4px solid var(--blue); }
+.box-green { border-left: 4px solid var(--green); }
+.box-yellow { border-left: 4px solid var(--yellow); }
+.box-red { border-left: 4px solid var(--red); }
+.box-purple { border-left: 4px solid var(--purple); }
+.code { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em; line-height: 2.1; margin: 14px 0; overflow-x: auto; }
+.code .cmt { color: var(--muted); } .code .kw { color: var(--purple); } .code .val { color: var(--orange); } .code .tp { color: var(--blue); } .code .fn { color: var(--teal); }
+.ascii { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.82em; line-height: 1.55; margin: 14px 0; overflow-x: auto; color: var(--text); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9em; }
+thead { background: var(--bg1); }
+th { color: var(--muted); font-family: 'Consolas', monospace; font-size: 0.85em; padding: 8px 14px; text-align: left; border-bottom: 2px solid var(--border); }
+td { padding: 8px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.fig { margin: 22px 0; text-align: center; }
+.fig svg { max-width: 100%; height: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--bg2); }
+.fig-caption { color: var(--muted); font-size: 0.82em; margin-top: 8px; font-family: 'Consolas', monospace; }
+.next-ch { margin-top: 56px; padding: 20px 24px; background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 20px; }
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+.next-title { color: var(--orange); font-size: 1em; }
+.next-desc { color: var(--muted); font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: var(--orange); font-size: 1.6em; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">C++ for Pixel-Renderer</a>
+  <span class="nav-sep">/</span>
+  <span class="nav-cur">I-15 — Shader Pipeline Interface Boundary</span>
+  <div class="nav-right">
+    <a href="i14_immediate_mode_ui_integration_boundary.html">&larr; I-14</a>
+    <a href="i16_verification_golden_image_regression_testing.html">I-16 &rarr;</a>
+  </div>
+</nav>
+
+<div class="ch-header">
+  <div class="ch-label">IMPLEMENTATION TRACK &middot; I-15</div>
+  <div class="ch-title">Shader Pipeline Interface Boundary</div>
+  <div class="ch-sub">shader 不是外部 API，而是 software renderer 內部可測、可替換的 stage policy</div>
+  <div class="ch-tags">
+    <span class="ch-tag">shader</span>
+    <span class="ch-tag">pipeline</span>
+    <span class="ch-tag">draw-call</span>
+    <span class="ch-tag">verification</span>
+  </div>
+</div>
+
+<p>
+I-14 把 UI draw data 接到 owned framebuffer。現在要處理 renderer pipeline 的另一條主線：如果未來 Pixel-Renderer 要有 vertex shader、fragment shader、varying interpolation、depth/blend state，C++ interface 要怎麼設計，才不會變成 OpenGL/D3D wrapper，也不會把一切塞成一個 per-pixel callback。
+</p>
+
+<p>
+這章不重推圖學數學；edge function、barycentric、perspective-correct interpolation 會屬於 rendering 筆記。這裡只處理工程邊界：哪些資料在 stage 之間流動，哪些 state 屬於 draw call，shader dispatch 該用 virtual、template、variant 還是 command，失敗時又怎麼驗證。
+</p>
+
+<div class="box box-blue">
+<strong>本章範圍</strong> &mdash; 建立 shader pipeline 的工程邊界：DrawCall、vertex input/output、varying interpolation boundary、fragment input/output、PipelineState、resource binding、depth/blend output merger、command buffer、verification dump。目標是讓 CPU software renderer 成為可測、可替換、可 debug 的 reference pipeline，而不是把 shader interface 過早綁死在某個 graphics API。
+</div>
+
+<h2><span class="n">1</span> naive model：shader 就是一個 callback</h2>
+
+<p>
+最直接的模型是：
+</p>
+
+<pre class="ascii">for each pixel:
+  color = fragment_callback(x, y)
+  SetPixel(x, y, color)</pre>
+
+<p>
+這可以做出 demo，但很快會失效：
+</p>
+
+<ul>
+  <li>vertex shader 的輸出不只是 color，還有 position、varyings、depth。</li>
+  <li>rasterizer 需要知道哪些資料要被 interpolated。</li>
+  <li>fragment shader 不應直接決定是否寫 framebuffer；depth/blend/scissor 還在後面。</li>
+  <li>如果 callback 裡什麼都能做，測試很難定位問題出在哪個 stage。</li>
+</ul>
+
+<div class="box box-yellow">
+<strong>naive model 失敗點</strong> &mdash; callback 只描述「某處可以呼叫一段程式」，但沒有描述 pipeline stage 的 input/output contract。shader pipeline 的重點是資料邊界，不只是 function pointer。
+</div>
+
+<h2><span class="n">2</span> Pipeline 資料流</h2>
+
+<div class="fig">
+<svg viewBox="0 0 860 560" role="img" aria-label="Software shader pipeline stage boundaries">
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#89b4fa"/>
+    </marker>
+  </defs>
+  <rect x="70" y="35" width="720" height="62" rx="8" fill="#2f2018" stroke="#fab387" stroke-width="2"/>
+  <text x="430" y="72" fill="#fab387" font-family="Consolas" font-size="18" text-anchor="middle">DrawCall</text>
+  <text x="430" y="92" fill="#cdd6f4" font-family="Consolas" font-size="12" text-anchor="middle">mesh, indices, shader, uniforms, resources, PipelineState</text>
+
+  <rect x="70" y="130" width="720" height="62" rx="8" fill="#1a2a3d" stroke="#89b4fa" stroke-width="2"/>
+  <text x="430" y="167" fill="#89b4fa" font-family="Consolas" font-size="18" text-anchor="middle">Vertex stage</text>
+  <text x="430" y="187" fill="#cdd6f4" font-family="Consolas" font-size="12" text-anchor="middle">VertexIn -> VertexOut: clip position + varyings</text>
+
+  <rect x="70" y="225" width="720" height="62" rx="8" fill="#2a1a3d" stroke="#cba6f7" stroke-width="2"/>
+  <text x="430" y="262" fill="#cba6f7" font-family="Consolas" font-size="18" text-anchor="middle">Primitive setup / rasterizer</text>
+  <text x="430" y="282" fill="#cdd6f4" font-family="Consolas" font-size="12" text-anchor="middle">triangle setup, coverage, barycentric, interpolation boundary</text>
+
+  <rect x="70" y="320" width="720" height="62" rx="8" fill="#1a2d1a" stroke="#a6e3a1" stroke-width="2"/>
+  <text x="430" y="357" fill="#a6e3a1" font-family="Consolas" font-size="18" text-anchor="middle">Fragment stage</text>
+  <text x="430" y="377" fill="#cdd6f4" font-family="Consolas" font-size="12" text-anchor="middle">FragmentIn -> FragmentOut: color, alpha, optional depth/discard</text>
+
+  <rect x="70" y="415" width="720" height="62" rx="8" fill="#181825" stroke="#f9e2af" stroke-width="2"/>
+  <text x="430" y="452" fill="#f9e2af" font-family="Consolas" font-size="18" text-anchor="middle">Output merger</text>
+  <text x="430" y="472" fill="#cdd6f4" font-family="Consolas" font-size="12" text-anchor="middle">scissor, depth test, blend, write color/depth framebuffer</text>
+
+  <path d="M430 97 L430 124" stroke="#89b4fa" stroke-width="3" marker-end="url(#arrow)"/>
+  <path d="M430 192 L430 219" stroke="#89b4fa" stroke-width="3" marker-end="url(#arrow)"/>
+  <path d="M430 287 L430 314" stroke="#89b4fa" stroke-width="3" marker-end="url(#arrow)"/>
+  <path d="M430 382 L430 409" stroke="#89b4fa" stroke-width="3" marker-end="url(#arrow)"/>
+</svg>
+<div class="fig-caption">SVG：shader pipeline 的工程重點是 stage input/output 清楚，這樣才有辦法測試、dump、替換 policy。</div>
+</div>
+
+<pre class="ascii">DrawCall
+  vertices / indices / shader / uniforms / state / resources
+      |
+      v
+Vertex stage
+  object data -> clip position + varyings
+      |
+      v
+Primitive setup / clipping / rasterization
+  covered pixels + barycentric + interpolated varyings
+      |
+      v
+Fragment stage
+  interpolated inputs -> color/depth/discard
+      |
+      v
+Output merger
+  scissor + depth test + blend -> framebuffer</pre>
+
+<h2><span class="n">3</span> Stage data types：先定義資料，不要先定義 API 名稱</h2>
+
+<p>
+第一版可以從幾個資料邊界開始：
+</p>
+
+<div class="code">
+<span class="kw">struct</span> <span class="tp">VertexIn</span> {<br>
+&nbsp;&nbsp;<span class="tp">Vec3</span> position;<br>
+&nbsp;&nbsp;<span class="tp">Color</span> color;<br>
+&nbsp;&nbsp;<span class="tp">Vec2</span> uv;<br>
+};<br>
+<br>
+<span class="kw">struct</span> <span class="tp">VertexOut</span> {<br>
+&nbsp;&nbsp;<span class="tp">Vec4</span> clip_position;<br>
+&nbsp;&nbsp;<span class="tp">float</span> inv_w;<br>
+&nbsp;&nbsp;<span class="tp">Vec3</span> color;<br>
+&nbsp;&nbsp;<span class="tp">Vec2</span> uv;<br>
+};<br>
+<br>
+<span class="kw">struct</span> <span class="tp">FragmentIn</span> {<br>
+&nbsp;&nbsp;<span class="tp">Vec3</span> color;<br>
+&nbsp;&nbsp;<span class="tp">Vec2</span> uv;<br>
+&nbsp;&nbsp;<span class="tp">float</span> depth;<br>
+};<br>
+<br>
+<span class="kw">struct</span> <span class="tp">FragmentOut</span> {<br>
+&nbsp;&nbsp;<span class="tp">Color</span> color;<br>
+&nbsp;&nbsp;<span class="tp">float</span> depth;<br>
+&nbsp;&nbsp;<span class="tp">bool</span> discard = <span class="kw">false</span>;<br>
+};
+</div>
+
+<p>
+這些型別不是最終答案，但它們先把每個 stage 的 contract 寫出來。後面要改 interpolation、加 texture、加 normal、加 material，都能看到是哪個 stage 的資料邊界在變。
+</p>
+
+<h2><span class="n">4</span> Shader dispatch：hot path 和 runtime boundary 要分開</h2>
+
+<p>
+T-11 已經講過，抽象工具要看變化點。Shader pipeline 裡常有兩種需求：
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>需求</th>
+      <th>適合工具</th>
+      <th>理由</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>內層 fragment shader 呼叫</td>
+      <td>template / concept</td>
+      <td>高頻 hot path，希望 inline、避免 per-pixel virtual dispatch。</td>
+    </tr>
+    <tr>
+      <td>frame-level material/shader selection</td>
+      <td>command / variant / registry</td>
+      <td>低頻選擇，把選到的 shader 送進具體 draw path。</td>
+    </tr>
+    <tr>
+      <td>tooling 或 demo callback</td>
+      <td>type erasure 可接受</td>
+      <td>不在 hot loop 時，便利性可能比極限性能重要。</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="code">
+<span class="kw">template</span> &lt;<span class="kw">class</span> <span class="tp">Shader</span>&gt;<br>
+<span class="kw">void</span> <span class="fn">DrawIndexed</span>(<span class="kw">const</span> <span class="tp">MeshView</span>&amp; mesh,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span class="tp">Shader</span>&amp; shader,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span class="kw">const</span> <span class="tp">PipelineState</span>&amp; state,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span class="tp">RenderTarget</span>&amp; target);
+</div>
+
+<p>
+這不是說所有 shader 都永遠要 template 化。第一版可先用 concrete shader function。重點是不要把 per-fragment hot path 一開始就塞進 <code>virtual Fragment()</code> 或 <code>std::function</code>，否則後面要優化很痛苦。
+</p>
+
+<h2><span class="n">5</span> PipelineState：不要把 state 散在 global flags</h2>
+
+<p>
+Pipeline state 應該跟 draw call 的語意一起保存，否則 command buffer replay、debug dump、golden image 測試都會失去上下文。
+</p>
+
+<div class="code">
+<span class="kw">struct</span> <span class="tp">PipelineState</span> {<br>
+&nbsp;&nbsp;<span class="tp">DepthMode</span> depth_mode = <span class="tp">DepthMode</span>::Less;<br>
+&nbsp;&nbsp;<span class="tp">BlendMode</span> blend_mode = <span class="tp">BlendMode</span>::Opaque;<br>
+&nbsp;&nbsp;<span class="tp">CullMode</span> cull_mode = <span class="tp">CullMode</span>::Back;<br>
+&nbsp;&nbsp;<span class="tp">Rect</span> viewport;<br>
+&nbsp;&nbsp;<span class="tp">Rect</span> scissor;<br>
+};
+</div>
+
+<table>
+  <thead><tr><th>State</th><th>用途</th><th>第一版建議</th></tr></thead>
+  <tbody>
+    <tr><td>depth test</td><td>決定 fragment 是否覆蓋舊 depth。</td><td>off / less。</td></tr>
+    <tr><td>blend mode</td><td>UI/text/alpha 合成。</td><td>opaque / alpha blend。</td></tr>
+    <tr><td>cull mode</td><td>背面剔除。</td><td>none / back。</td></tr>
+    <tr><td>viewport</td><td>clip space 到 screen mapping。</td><td>先用整個 framebuffer。</td></tr>
+    <tr><td>scissor</td><td>限制輸出區域。</td><td>接 UI clip rect 時會用到。</td></tr>
+  </tbody>
+</table>
+
+<h2><span class="n">6</span> Resource binding：不要讓 command 存 raw pointer</h2>
+
+<p>
+Shader 後面會需要 texture、uniform、material。第一版最容易的做法是 command 直接存 pointer，但這會把 lifetime 問題塞進 command buffer。
+</p>
+
+<pre class="ascii">fragile:
+  DrawCommand {
+    Texture* texture;
+    Shader* shader;
+  }
+
+problem:
+  command may outlive pointed object
+  debug dump cannot serialize pointer meaningfully
+  tests become order/lifetime dependent</pre>
+
+<p>
+比較穩的方向是先用 handle/id 或明確的 borrowed view：
+</p>
+
+<div class="code">
+<span class="kw">struct</span> <span class="tp">DrawMeshCommand</span> {<br>
+&nbsp;&nbsp;<span class="tp">MeshId</span> mesh;<br>
+&nbsp;&nbsp;<span class="tp">MaterialId</span> material;<br>
+&nbsp;&nbsp;<span class="tp">PipelineState</span> state;<br>
+&nbsp;&nbsp;<span class="tp">Mat4</span> transform;<br>
+};
+</div>
+
+<p>
+早期可以更簡單，直接把 mesh/span/shader 借進 <code>DrawIndexed</code>。但一旦要保存 command buffer、做 debug dump 或跨 frame replay，就要避免 command 內藏難以驗證的 raw pointer。
+</p>
+
+<h2><span class="n">7</span> Output merger：fragment shader 不應直接寫 framebuffer</h2>
+
+<p>
+Fragment shader 產生的是 candidate output，不是最終 memory write。最終是否寫入 framebuffer，應該由 output merger 根據 state 決定：
+</p>
+
+<pre class="ascii">FragmentOut candidate
+  |
+  +-- scissor test
+  +-- depth test
+  +-- blend with old color
+  +-- write color buffer
+  +-- write depth buffer</pre>
+
+<p>
+這個邊界非常重要。否則 shader 可以任意呼叫 <code>SetPixel</code>，depth/blend/scissor 就會散落在各種 shader 裡，renderer 也很難做一致測試。
+</p>
+
+<div class="box box-purple">
+<strong>工程規則</strong> &mdash; Shader stage 應該回傳資料，output merger 才寫 framebuffer。這讓 depth/blend/scissor 成為 pipeline state，而不是每個 shader 各自實作一次。
+</div>
+
+<h2><span class="n">8</span> Command buffer：frontend 與 renderer 的合約</h2>
+
+<p>
+Scene frontend 不應直接進入 inner rasterizer loop。它可以產生 draw command，renderer 再把 command 轉成具體 draw：
+</p>
+
+<pre class="ascii">Scene / UI frontend builds:
+  DrawMeshCommand
+  DrawUiCommand
+  ClearCommand
+
+Renderer executes:
+  sort / validate commands
+  bind resources
+  dispatch pipeline
+  write framebuffer</pre>
+
+<p>
+這讓 frontend/backend boundary 變得可測：
+</p>
+
+<ul>
+  <li>固定 command buffer，可以測 renderer output。</li>
+  <li>dump command buffer，可以重播 bug。</li>
+  <li>不同 DisplayBackend 不會改變 command semantics。</li>
+  <li>UI draw list 和 scene draw call 最後都能進同一個 output merger。</li>
+</ul>
+
+<h2><span class="n">9</span> Verification：每個 stage 都要能 dump</h2>
+
+<p>
+I-16 會講 golden image，但 shader pipeline 不能只靠最後一張圖。你還要能把 stage artifact 拿出來：
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Stage</th>
+      <th>可 dump 的資料</th>
+      <th>能定位什麼錯</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>Vertex stage</td><td><code>VertexOut</code> positions / varyings</td><td>transform、matrix order、w component。</td></tr>
+    <tr><td>Primitive setup</td><td>screen-space triangle、area、edge equations</td><td>backface、winding、coverage rule。</td></tr>
+    <tr><td>Rasterizer</td><td>covered pixel set、barycentric weights</td><td>off-by-one、top-left rule、precision。</td></tr>
+    <tr><td>Fragment stage</td><td><code>FragmentIn</code> / <code>FragmentOut</code></td><td>interpolation、texture sampling、color conversion。</td></tr>
+    <tr><td>Output merger</td><td>depth before/after、blend result</td><td>depth compare、alpha blend、write mask。</td></tr>
+  </tbody>
+</table>
+
+<pre class="ascii">test failure:
+  final image mismatch
+
+debug path:
+  compare VertexOut
+  compare covered pixels
+  compare FragmentIn at x,y
+  compare FragmentOut
+  compare depth/blend write</pre>
+
+<p>
+這就是為什麼 stage boundary 要先清楚。沒有邊界，就沒有中間 artifact；沒有中間 artifact，golden image 失敗時只能猜。
+</p>
+
+<h2><span class="n">10</span> 最小演進順序</h2>
+
+<ol>
+  <li>先定義 <code>VertexIn</code>、<code>VertexOut</code>、<code>FragmentIn</code>、<code>FragmentOut</code>。</li>
+  <li>讓 triangle rasterizer 產生 barycentric，先插值 color/depth。</li>
+  <li>加入 <code>DepthBuffer</code> 和 output merger。</li>
+  <li>加入 simple fragment shader，先 flat color，再 interpolated color。</li>
+  <li>加入 texture sampling 和 alpha blend。</li>
+  <li>把 draw call 收進 command buffer。</li>
+  <li>加入 stage-level dump 與 golden image test。</li>
+  <li>最後才設計 shader/material registry。</li>
+</ol>
+
+<div class="box box-green">
+<strong>本章學到的三件事：</strong>
+<ol>
+  <li>Shader pipeline interface 要描述 stage input/output，不只是把 fragment callback 塞進 loop。</li>
+  <li>Shader hot path 可用 template/concept，PipelineState/DrawCommand 則應明確保存 depth、blend、cull、resource binding。</li>
+  <li>清楚的 stage boundary 是 renderer verification 的基礎：每個 stage 都能單獨 dump、比較、回歸測試。</li>
+</ol>
+</div>
+
+<p>
+到這裡，Implementation Track 的第一輪工程地圖已經完整：current architecture、toolchain、build/debug、framebuffer ownership、display backend、SDL/cross-platform、UI、shader、verification、header hygiene。接下來可以繼續加深 T-13/T-14，或開始把 owned <code>Framebuffer</code> / <code>DisplayBackend</code> 落到 <code>src</code>。
+</p>
+
+<div class="next-ch">
+  <div>
+    <div class="next-label">NEXT IMPL</div>
+    <div class="next-title">I-16 — Verification / Golden Image / Regression Testing</div>
+    <div class="next-desc">下一章把這裡的 stage dump 與 CPU framebuffer，整理成可回歸測試的 renderer verification workflow。</div>
+  </div>
+  <a class="next-arrow" href="i16_verification_golden_image_regression_testing.html">&rarr;</a>
+</div>
+
+</body>
+</html>
