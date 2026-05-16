@@ -138,7 +138,11 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
 <!-- ===== Opening ===== -->
 
 <p>
-打開你的渲染器程式碼，隨便看一眼就能找到這些東西：<code>RenderDevice* device</code>、<code>ScreenManager* screen</code>、<code>unsigned char* frame_buffer</code>、<code>const Vertex&amp; v1</code>。星號和 ampersand 到處都是。你可能已經隱約知道它們跟「地址」有關，但如果有人問你：<code>*</code> 在宣告時和在使用時意思一不一樣？<code>&amp;</code> 在宣告時和在使用時呢？你可能會猶豫。
+上一章談的是 object 住在哪裡。這一章談的是：<strong>別的程式碼怎麼碰到它？</strong> 在 C++ 裡，這件事主要靠 pointer 和 reference 表達。它們不是單純「語法很難」，而是 C++ 對 memory access、aliasing、borrowing、optional ownership 的基礎語言。
+</p>
+
+<p>
+在 renderer 裡你會一直看到這些形式：<code>RenderDevice* device</code>、<code>Rasterizer* rasterizer</code>、<code>unsigned char* frame_buffer</code>、<code>const Vertex&amp; v1</code>。星號和 ampersand 到處都是。你可能已經隱約知道它們跟「地址」有關，但如果有人問你：<code>*</code> 在宣告時和在使用時意思一不一樣？<code>&amp;</code> 在宣告時和在使用時呢？你可能會猶豫。
 </p>
 
 <p>
@@ -146,7 +150,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
 </p>
 
 <div class="box box-blue">
-<strong>本章範圍</strong> &mdash; 徹底搞懂 <code>*</code> 和 <code>&amp;</code> 的四種含義（宣告指標、解引用、宣告參考、取地址），以及指標和參考各自的使用場景。你會看到你的渲染器裡每一個 <code>*</code> 和 <code>&amp;</code> 背後的設計意圖。
+<strong>本章範圍</strong> &mdash; 徹底搞懂 <code>*</code> 和 <code>&amp;</code> 的四種含義（宣告指標、解引用、宣告參考、取地址），以及 pointer/reference 各自的語意：可為空或不可為空、可重新指向或不可重新綁定、擁有或借用、可修改或唯讀。
 </div>
 
 <!-- ===== Section 1 ===== -->
@@ -270,7 +274,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
 </figure>
 
 <p>
-看你的渲染器裡的 <code>application.h</code>：
+在 renderer 這種程式裡，常見的寫法會長這樣：
 </p>
 
 <div class="code">
@@ -280,7 +284,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
 </div>
 
 <p>
-<code>RenderDevice*</code> 裡的 <code>*</code> 是宣告時的意思 &mdash; 告訴編譯器「device 不是一個 RenderDevice 物件，而是一個<em>存放 RenderDevice 地址</em>的變數」。當你在 <code>application.cpp</code> 裡寫 <code>device = new RenderDevice(&amp;screen)</code> 時，<code>new</code> 在 heap 上建立物件並傳回它的地址，這個地址被存進 <code>device</code>。
+<code>RenderDevice*</code> 裡的 <code>*</code> 是宣告時的意思 &mdash; 告訴編譯器「device 不是一個 RenderDevice 物件，而是一個<em>存放 RenderDevice 地址</em>的變數」。當你在 <code>application.cpp</code> 裡寫 <code>device = new RenderDevice(config)</code> 時，<code>new</code> 在 heap 上建立物件並傳回它的地址，這個地址被存進 <code>device</code>。
 </p>
 
 <!-- ===== Section 3 ===== -->
@@ -295,25 +299,29 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
 
 <div class="code">
 <span class="cmt">// 以下兩行完全等價</span><br>
-(*device).<span class="fn">DrawTriangle</span>(v1, v2, v3, color);<br>
-device-&gt;<span class="fn">DrawTriangle</span>(v1, v2, v3, color); <span class="cmt">// 更常用的寫法</span>
+(*rasterizer).<span class="fn">DrawTriangle</span>(v1, v2, v3, color);<br>
+rasterizer-&gt;<span class="fn">DrawTriangle</span>(v1, v2, v3, color); <span class="cmt">// 更常用的寫法</span>
 </div>
 
 <p>
-你的 <code>main.cpp</code> 裡正是這樣呼叫的：<code>device-&gt;DrawTriangle({400, 100}, {500, 300}, {300, 300}, 0xFF0000)</code>。因為 <code>device</code> 是指標，所以用 <code>-&gt;</code>，不能用 <code>.</code>。
+如果 <code>rasterizer</code> 是指標，就用 <code>-&gt;</code>，不能直接用 <code>.</code>。這不是 style 問題，而是語意問題：你手上拿到的是地址，不是物件本身。
 </p>
 
 <h3>nullptr：空指標</h3>
 
 <p>
-指標可以不指向任何東西，這時候它的值是 <code>nullptr</code>（C++11 以前用 <code>NULL</code> 或 <code>0</code>）。你的 <code>Application</code> 就是這樣初始化的：
+指標可以不指向任何東西，這時候它的值是 <code>nullptr</code>（C++11 以前用 <code>NULL</code> 或 <code>0</code>）。這讓 pointer 可以表達「現在還沒有物件」：
 </p>
 
 <div class="code">
 <span class="tp">RenderDevice</span>* device = <span class="kw">nullptr</span>; <span class="cmt">// 還沒建立，先指向「沒有」</span><br>
+<span class="tp">Rasterizer</span>* rasterizer = <span class="kw">nullptr</span>; <span class="cmt">// 一樣先指向「沒有」</span><br>
 <br>
 <span class="cmt">// 在建構子裡才真正建立：</span><br>
-<span class="kw">if</span> (running) device = <span class="kw">new</span> <span class="tp">RenderDevice</span>(&amp;screen);
+<span class="kw">if</span> (running) {<br>
+&nbsp;&nbsp;device = <span class="kw">new</span> <span class="tp">RenderDevice</span>(config);<br>
+&nbsp;&nbsp;rasterizer = <span class="kw">new</span> <span class="tp">Rasterizer</span>(device);<br>
+}
 </div>
 
 <p>
@@ -323,7 +331,7 @@ device-&gt;<span class="fn">DrawTriangle</span>(v1, v2, v3, color); <span class=
 <h3>this 指標與 SetWindowLongPtr</h3>
 
 <p>
-你的 <code>ScreenManager</code> 裡有一段很典型的 Windows API 用法：
+和 C API 或 OS API 互動時，pointer 常常被當成 opaque userdata 傳來傳去。Win32 backend 會遇到這種典型寫法：
 </p>
 
 <div class="code">
@@ -387,24 +395,22 @@ r = <span class="val">99</span>;      <span class="cmt">// 改 r 就是改 x</sp
 </p>
 
 <p>
-你的渲染器裡兩種都有。為什麼 <code>RenderDevice</code> 的建構子用指標，而 <code>DrawTriangle</code> 用參考？
+renderer 裡兩種都會出現。判斷重點不是「哪個語法比較好」，而是你要表達哪種語意：這個 dependency 可能為空嗎？要被存起來嗎？這個參數只是呼叫期間借用嗎？
 </p>
 
 <div class="code">
-<span class="cmt">// 建構子 — 用指標</span><br>
-<span class="tp">RenderDevice</span>::<span class="fn">RenderDevice</span>(<span class="tp">ScreenManager</span>* s) : screen(s) {<br>
-&nbsp;&nbsp;frame_buffer = screen-&gt;<span class="fn">GetFrameBuffer</span>();<br>
-}<br>
+<span class="cmt">// Rasterizer 建構子 — 用指標</span><br>
+<span class="tp">Rasterizer</span>::<span class="fn">Rasterizer</span>(<span class="tp">RenderDevice</span>* device) : device(device) {}<br>
 <br>
 <span class="cmt">// DrawTriangle — 用 const 參考</span><br>
-<span class="kw">void</span> <span class="tp">RenderDevice</span>::<span class="fn">DrawTriangle</span>(<span class="kw">const</span> <span class="tp">Vertex</span>&amp; v1, <span class="kw">const</span> <span class="tp">Vertex</span>&amp; v2,<br>
+<span class="kw">void</span> <span class="tp">Rasterizer</span>::<span class="fn">DrawTriangle</span>(<span class="kw">const</span> <span class="tp">Vertex</span>&amp; v1, <span class="kw">const</span> <span class="tp">Vertex</span>&amp; v2,<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">const</span> <span class="tp">Vertex</span>&amp; v3, <span class="tp">uint32_t</span> color) {<br>
 &nbsp;&nbsp;<span class="cmt">// ...</span><br>
 }
 </div>
 
 <p>
-<code>ScreenManager* s</code> 用指標，因為 RenderDevice 需要把這個地址<em>存起來</em>（成員 <code>screen</code>），將來可能需要改指向（或一開始是 nullptr）。而 <code>const Vertex&amp; v1</code> 用 const 參考，因為你只是想<em>讀取</em>頂點資料，不想拷貝整個 Vertex 結構，也不需要存起來。
+<code>RenderDevice* device</code> 用指標，因為 Rasterizer 需要把這個地址<em>存起來</em>，之後每次畫線或畫三角形都要透過它呼叫 <code>SetPixel()</code>。而 <code>const Vertex&amp; v1</code> 用 const 參考，因為你只是想<em>讀取</em>頂點資料，不想拷貝整個 Vertex 結構，也不需要存起來。
 </p>
 
 <!-- ===== Section 5 ===== -->
@@ -475,7 +481,7 @@ r = <span class="val">99</span>;      <span class="cmt">// 改 r 就是改 x</sp
 &nbsp;&nbsp;<span class="cmt">// const 保證不會改到它</span><br>
 }
   </div>
-  <p style="font-size:0.85em;">不拷貝、不能改。你的 DrawTriangle 就是這樣做的。</p>
+  <p style="font-size:0.85em;">不拷貝、不能改。你的 Rasterizer::DrawTriangle 就是這樣做的。</p>
 </div>
 </div>
 
@@ -497,10 +503,10 @@ r = <span class="val">99</span>;      <span class="cmt">// 改 r 就是改 x</sp
 
 <!-- ===== Section 6 ===== -->
 
-<h2><span class="n">6</span> 你的渲染器裡的指標地圖</h2>
+<h2><span class="n">6</span> Renderer 的 pointer ownership 地圖</h2>
 
 <p>
-讓我們把你的 Pixel-Renderer 裡所有的指標和參考關係畫出來。每一根線都是一個你現在能看懂的 <code>*</code> 或 <code>&amp;</code>。
+最後用 renderer 的典型關係收束。每一根線都代表一種語意：owning pointer、observing pointer、或 reference borrowing。C++ 真正難的不是星號本身，而是這些線背後的 lifetime contract。
 </p>
 
 <figure class="fig">
@@ -529,7 +535,7 @@ r = <span class="val">99</span>;      <span class="cmt">// 改 r 就是改 x</sp
   <text x="35" y="60" font-family="Consolas" font-size="11" fill="#cdd6f4">Application</text>
   <text x="35" y="82" font-family="Consolas" font-size="10" fill="#6c7086">ScreenManager screen</text>
   <text x="35" y="100" font-family="Consolas" font-size="10" fill="#cba6f7">RenderDevice* device</text>
-  <text x="35" y="118" font-family="Consolas" font-size="10" fill="#6c7086">bool running</text>
+  <text x="35" y="118" font-family="Consolas" font-size="10" fill="#cba6f7">Rasterizer* rasterizer</text>
   <text x="35" y="138" font-family="Consolas" font-size="9" fill="#89b4fa">(stack object)</text>
 
   <!-- Heap region -->
@@ -539,7 +545,7 @@ r = <span class="val">99</span>;      <span class="cmt">// 改 r 就是改 x</sp
   <!-- RenderDevice box -->
   <rect x="285" y="42" width="210" height="90" rx="6" fill="#181825" stroke="#313244" stroke-width="1"/>
   <text x="295" y="60" font-family="Consolas" font-size="11" fill="#cdd6f4">RenderDevice</text>
-  <text x="295" y="80" font-family="Consolas" font-size="10" fill="#cba6f7">ScreenManager* screen</text>
+  <text x="295" y="80" font-family="Consolas" font-size="10" fill="#cba6f7">frame_buffer pointer</text>
   <text x="295" y="98" font-family="Consolas" font-size="10" fill="#cba6f7">unsigned char* frame_buffer</text>
   <text x="295" y="120" font-family="Consolas" font-size="9" fill="#f38ba8">(new RenderDevice)</text>
 
@@ -552,7 +558,7 @@ r = <span class="val">99</span>;      <span class="cmt">// 改 r 就是改 x</sp
   <line x1="195" y1="100" x2="280" y2="80" stroke="#cba6f7" stroke-width="1.5" marker-end="url(#arr3)"/>
   <text x="222" y="82" font-family="Consolas" font-size="9" fill="#f9e2af">owns</text>
 
-  <!-- Arrow: RenderDevice.screen -> Application.screen (observing) -->
+  <!-- Arrow: Rasterizer.device -> RenderDevice (observing) -->
   <path d="M295,80 Q240,40 195,82" fill="none" stroke="#89b4fa" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#arr4)"/>
   <text x="225" y="50" font-family="Consolas" font-size="9" fill="#89b4fa">observes</text>
 
@@ -568,14 +574,14 @@ r = <span class="val">99</span>;      <span class="cmt">// 改 r 就是改 x</sp
   <text x="250" y="282" font-family="Consolas" font-size="10" fill="#6c7086">— 擁有指標（needs delete）</text>
 
   <line x1="24" y1="298" x2="60" y2="298" stroke="#89b4fa" stroke-width="1.2" stroke-dasharray="4,3"/>
-  <text x="68" y="302" font-family="Consolas" font-size="10" fill="#89b4fa">ScreenManager* screen</text>
+  <text x="68" y="302" font-family="Consolas" font-size="10" fill="#89b4fa">Rasterizer::device</text>
   <text x="260" y="302" font-family="Consolas" font-size="10" fill="#6c7086">— 觀察指標（不 delete）</text>
 
   <line x1="24" y1="318" x2="60" y2="318" stroke="#a6e3a1" stroke-width="1.2" stroke-dasharray="4,3"/>
   <text x="68" y="322" font-family="Consolas" font-size="10" fill="#a6e3a1">unsigned char* frame_buffer</text>
   <text x="290" y="322" font-family="Consolas" font-size="10" fill="#6c7086">— 觀察指標（OS 管理）</text>
 </svg>
-<figcaption>Pixel-Renderer 的指標所有權地圖</figcaption>
+<figcaption>renderer 中常見的 pointer ownership / observing 關係</figcaption>
 </figure>
 
 <p>
@@ -584,7 +590,8 @@ r = <span class="val">99</span>;      <span class="cmt">// 改 r 就是改 x</sp
 
 <ul>
 <li><code>RenderDevice* device</code> &mdash; <strong>擁有指標</strong>（owning pointer）。Application 用 <code>new</code> 建立它，在解構子裡用 <code>delete device</code> 釋放它。忘記 delete 就是記憶體洩漏。</li>
-<li><code>ScreenManager* screen</code>（在 RenderDevice 裡）&mdash; <strong>觀察指標</strong>（observing pointer）。RenderDevice 只是「看一眼」ScreenManager，不負責它的生命週期。<code>screen</code> 指向的物件是 Application 的成員變數，住在 stack 上，Application 結束時自動銷毀。</li>
+<li><code>Rasterizer* rasterizer</code> &mdash; <strong>擁有指標</strong>。Application 一樣負責建立與釋放它；因為 Rasterizer 內部會借用 RenderDevice，所以釋放時要先讓 Rasterizer 結束，再釋放 RenderDevice。</li>
+<li><code>RenderDevice* device</code>（在 Rasterizer 裡）&mdash; <strong>觀察指標</strong>（observing pointer）。Rasterizer 透過它呼叫 <code>SetPixel()</code>，但不負責 RenderDevice 的生命週期。</li>
 <li><code>unsigned char* frame_buffer</code> &mdash; <strong>觀察指標</strong>。指向 Windows 的 DIB section 記憶體，由 OS 管理。ScreenManager 在 <code>CreateDIBSection</code> 時拿到這個地址，在 <code>Shutdown</code> 時由 <code>DeleteObject</code> 釋放。</li>
 </ul>
 
@@ -599,14 +606,14 @@ r = <span class="val">99</span>;      <span class="cmt">// 改 r 就是改 x</sp
 <div class="box box-yellow">
 <strong>常見陷阱</strong><br><br>
 <strong>1. 懸空指標（dangling pointer）</strong> &mdash; 物件已經被 delete 了，但指標還在。之後用這個指標就是未定義行為。解法：delete 之後把指標設為 nullptr。<br><br>
-<strong>2. 忘記檢查 nullptr</strong> &mdash; 你的 <code>device</code> 初始是 nullptr。如果視窗建立失敗（<code>running == false</code>），device 永遠是 nullptr。對它呼叫 <code>device-&gt;DrawTriangle(...)</code> 直接當掉。<br><br>
+<strong>2. 忘記檢查 nullptr</strong> &mdash; 你的 <code>device</code> 與 <code>rasterizer</code> 初始是 nullptr。如果視窗建立失敗（<code>running == false</code>），它們永遠是 nullptr。對它們呼叫 <code>-&gt;</code> 直接當掉。<br><br>
 <strong>3. 搞混 * 的兩種意思</strong> &mdash; <code>int* p = &amp;x;</code> 的 <code>*</code> 是宣告（p 是指標），<code>*p = 99;</code> 的 <code>*</code> 是解引用（去那個地址）。新手常把兩者混為一談。口訣：<em>左邊是身分，右邊是動作</em>。出現在型別旁邊就是宣告指標，出現在表達式裡就是解引用。
 </div>
 
 <!-- ===== Box: 三件事 ===== -->
 
 <div class="box box-green">
-<strong>記住三件事</strong><br><br>
+<strong>本章學到的三件事</strong><br><br>
 <strong>1.</strong> 指標是存放地址的變數。<code>*</code> 在宣告時是「我是指標」，在使用時是「去那個地址」（解引用）。<code>&amp;</code> 在宣告時是「我是參考」，在使用時是「給我地址」。四個含義，不要混淆。<br><br>
 <strong>2.</strong> 參考是別名 &mdash; 綁定後不能改指向、不能為 null。指標可以改指向、可以是 null。<br><br>
 <strong>3.</strong> 函數參數最常用的模式：小型別傳值，大型別唯讀用 <code>const T&amp;</code>，需要可能為 null 或需要存起來時用 <code>T*</code>。
@@ -615,7 +622,7 @@ r = <span class="val">99</span>;      <span class="cmt">// 改 r 就是改 x</sp
 <!-- ===== Box: Forward link ===== -->
 
 <div class="box box-purple">
-<strong>下一步</strong> &mdash; 現在你懂了指標和參考，你知道 <code>RenderDevice*</code> 是存放地址的變數，<code>const Vertex&amp;</code> 是借用物件的別名。但 <code>RenderDevice</code> 和 <code>Vertex</code> 本身是什麼？它們是怎麼被定義出來的？下一章我們進入 <strong>struct 與 class</strong> &mdash; C++ 裡自訂型別的基礎。你會看到成員變數、成員函式、存取控制，以及你的渲染器裡每一個 class 的結構。
+<strong>下一步</strong> &mdash; 現在你懂了 pointer/reference 如何描述「誰能碰到哪個 object」。下一章進入 <strong>struct 與 class</strong>：C++ 如何把一組資料、操作規則、invariant 包成一個自訂型別，讓語意不只存在腦中，而是寫進型別系統。
 </div>
 
 <!-- ===== Next chapter card ===== -->
@@ -624,7 +631,7 @@ r = <span class="val">99</span>;      <span class="cmt">// 改 r 就是改 x</sp
   <div>
     <div class="next-label">NEXT CHAPTER</div>
     <div class="next-title">Ch04 &mdash; Struct 與 Class</div>
-    <div class="next-desc">成員變數、成員函式、存取控制 &mdash; 自訂型別的基礎</div>
+    <div class="next-desc">自訂型別、invariant、access control &mdash; 把資料變成有規範的語意</div>
   </div>
   <a class="next-arrow" href="ch04_struct_class.html">&rarr;</a>
 </div>

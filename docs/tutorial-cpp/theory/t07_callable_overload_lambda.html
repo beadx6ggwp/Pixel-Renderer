@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>T-07 — Callable / Overload / Lambda</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#1e1e2e; --bg1:#181825; --bg2:#11111b; --border:#313244;
+  --muted:#6c7086; --text:#cdd6f4; --blue:#89b4fa; --green:#a6e3a1;
+  --yellow:#f9e2af; --orange:#fab387; --red:#f38ba8; --purple:#cba6f7; --teal:#94e2d5;
+}
+body { background: var(--bg); color: var(--text); font-family: 'Georgia', serif; font-size: 15px; padding: 0 20px 80px; max-width: 900px; margin: 0 auto; line-height: 1.9; }
+nav { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); padding: 14px 0; border-bottom: 1px solid var(--border); margin-bottom: 36px; display: flex; align-items: center; gap: 10px; }
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--blue); }
+.nav-sep { color: var(--border); }
+.nav-cur { color: var(--text); }
+.nav-right { margin-left: auto; display: flex; gap: 16px; }
+.ch-header { margin-bottom: 40px; }
+.ch-label { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px; }
+.ch-title { color: var(--blue); font-size: 1.7em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub { color: var(--muted); font-size: 0.88em; margin-bottom: 14px; }
+.ch-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.ch-tag { font-family: 'Consolas', monospace; font-size: 0.72em; padding: 1px 7px; border-radius: 4px; background: var(--bg2); color: var(--muted); border: 1px solid var(--border); }
+h2 { color: var(--purple); font-size: 1em; font-family: 'Consolas', monospace; letter-spacing: 0.05em; padding: 10px 0; border-bottom: 1px solid var(--border); margin: 44px 0 20px; display: flex; align-items: center; gap: 12px; }
+h2 .n { background: var(--purple); color: var(--bg2); font-weight: bold; border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.85em; }
+h3 { color: var(--yellow); font-size: 0.95em; margin: 24px 0 10px; }
+p { margin-bottom: 12px; }
+strong { color: var(--yellow); }
+em { color: var(--orange); font-style: normal; }
+code { font-family: 'Consolas', monospace; color: var(--teal); }
+ul, ol { margin: 8px 0 14px 26px; line-height: 2.2; }
+.box { border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 0.9em; line-height: 1.85; background: var(--bg1); }
+.box-blue { border-left: 4px solid var(--blue); }
+.box-green { border-left: 4px solid var(--green); }
+.box-yellow { border-left: 4px solid var(--yellow); }
+.box-red { border-left: 4px solid var(--red); }
+.box-purple { border-left: 4px solid var(--purple); }
+.code { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em; line-height: 2.1; margin: 14px 0; overflow-x: auto; }
+.code .cmt { color: var(--muted); } .code .kw { color: var(--purple); } .code .val { color: var(--orange); } .code .tp { color: var(--blue); } .code .fn { color: var(--teal); }
+.ascii { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.82em; line-height: 1.55; margin: 14px 0; overflow-x: auto; color: var(--text); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9em; }
+thead { background: var(--bg1); }
+th { color: var(--muted); font-family: 'Consolas', monospace; font-size: 0.85em; padding: 8px 14px; text-align: left; border-bottom: 2px solid var(--border); }
+td { padding: 8px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.next-ch { margin-top: 56px; padding: 20px 24px; background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 20px; }
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+.next-title { color: var(--orange); font-size: 1em; }
+.next-desc { color: var(--muted); font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: var(--orange); font-size: 1.6em; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">C++ for Pixel-Renderer</a>
+  <span class="nav-sep">/</span>
+  <span class="nav-cur">T-07 — Callable / Overload / Lambda</span>
+  <div class="nav-right">
+    <a href="t06_raii_resource_ownership_exception_safety.html">&larr; T-06</a>
+  </div>
+</nav>
+
+<div class="ch-header">
+  <div class="ch-label">THEORY TRACK &middot; T-07</div>
+  <div class="ch-title">Callable / Overload / Lambda</div>
+  <div class="ch-sub">callable 是 behavior as value；capture lifetime 決定它能不能跨 frame 保存</div>
+  <div class="ch-tags">
+    <span class="ch-tag">lambda</span>
+    <span class="ch-tag">std::function</span>
+    <span class="ch-tag">overload</span>
+  </div>
+</div>
+
+<p>
+Pixel-Renderer 之後會需要 callback：window event、UI button handler、shader function、debug tool、render command execution。最直覺的想法是：「我把一段 lambda 存起來，之後呼叫就好。」可是只要這段 lambda capture 了 local reference，或被放進跨 frame command buffer，它就可能在下一幀指向已經死亡的 object。
+</p>
+
+<p>
+這章要把 callable 當成一種資料來看：<strong>它不只是可以被呼叫的語法，而是帶有 type、storage、capture state、lifetime、dispatch cost、overload resolution 的 object。</strong>
+</p>
+
+<div class="box box-blue">
+<strong>本章範圍</strong> &mdash; 建立 C++ callable 的分層模型：function pointer、member function pointer、functor、lambda closure object、generic lambda、overload set、<code>std::function</code>、template callable parameter、capture by value/reference、default argument、inline function。最後回到 Pixel-Renderer：shader callback、UI command、event handler、render command buffer 應該何時存 behavior，何時存 data。
+</div>
+
+<h2><span class="n">1</span> naive model：lambda 只是匿名 function</h2>
+
+<p>
+最常見的簡化說法是：
+</p>
+
+<pre class="ascii">lambda = anonymous function</pre>
+
+<p>
+這只對不 capture 的 lambda 有一點直覺幫助。真正重要的是：lambda expression 會產生一個 <strong>closure object</strong>。如果它 capture 了資料，那些 captured state 就是這個 object 的 data members。
+</p>
+
+<div class="code">
+<span class="tp">int</span> exposure = <span class="val">2</span>;<br>
+<span class="kw">auto</span> shader = [exposure](<span class="tp">Color</span> c) {<br>
+&nbsp;&nbsp;<span class="kw">return</span> c * exposure;<br>
+};
+</div>
+
+<p>
+你可以用這個近似模型理解：
+</p>
+
+<div class="code">
+<span class="kw">struct</span> <span class="tp">Closure</span> {<br>
+&nbsp;&nbsp;<span class="tp">int</span> exposure;<br>
+&nbsp;&nbsp;<span class="tp">Color</span> <span class="kw">operator</span>()(<span class="tp">Color</span> c) <span class="kw">const</span> {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> c * exposure;<br>
+&nbsp;&nbsp;}<br>
+};
+</div>
+
+<div class="box box-yellow">
+<strong>第一個修正</strong> &mdash; lambda 不是純語法糖成 function pointer。Capture 會產生 state；state 有 lifetime、copy/move cost、dangling 風險。
+</div>
+
+<h2><span class="n">2</span> callable 家族地圖</h2>
+
+<p>
+C++ 裡「可以被呼叫」的東西很多。先把森林畫出來：
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Callable kind</th>
+      <th>有沒有 state</th>
+      <th>可否 inline/最佳化</th>
+      <th>常見用途</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>function pointer</td>
+      <td>沒有。</td>
+      <td>間接呼叫，compiler 較難看穿。</td>
+      <td>C API callback、簡單 dispatch。</td>
+    </tr>
+    <tr>
+      <td>member function pointer</td>
+      <td>不包含 object 本身。</td>
+      <td>需要 object + member pointer 一起呼叫。</td>
+      <td>呼叫某 class method。</td>
+    </tr>
+    <tr>
+      <td>functor</td>
+      <td>可以有。</td>
+      <td>template 下通常很好 inline。</td>
+      <td>policy、shader object、predicate。</td>
+    </tr>
+    <tr>
+      <td>lambda closure</td>
+      <td>capture 決定。</td>
+      <td><code>auto</code>/template 下通常很好。</td>
+      <td>local behavior、UI callback、small shader。</td>
+    </tr>
+    <tr>
+      <td><code>std::function</code></td>
+      <td>type-erased，可以有。</td>
+      <td>通常有 type-erasure overhead。</td>
+      <td>低頻事件、editor tool、heterogeneous callback storage。</td>
+    </tr>
+  </tbody>
+</table>
+
+<pre class="ascii">callable
+  |
+  +-- no state
+  |     function pointer
+  |
+  +-- stateful concrete type
+  |     functor / lambda closure
+  |
+  +-- type-erased wrapper
+        std::function</pre>
+
+<h2><span class="n">3</span> function pointer：只有 address，沒有 context</h2>
+
+<p>
+function pointer 是最接近 C 的 callable：
+</p>
+
+<div class="code">
+<span class="kw">using</span> <span class="tp">PixelShaderFn</span> = <span class="tp">Color</span>(*)(<span class="tp">Color</span> in);<br>
+<br>
+<span class="tp">Color</span> <span class="fn">Invert</span>(<span class="tp">Color</span> in) { <span class="kw">return</span> <span class="tp">Color</span>{<span class="val">255</span> - in.r, <span class="val">255</span> - in.g, <span class="val">255</span> - in.b}; }<br>
+<br>
+<span class="tp">PixelShaderFn</span> shader = &amp;<span class="fn">Invert</span>;
+</div>
+
+<p>
+它的限制是沒有 state。若 shader 需要 exposure、texture pointer、uniforms，你就得另外傳 context：
+</p>
+
+<div class="code">
+<span class="kw">using</span> <span class="tp">ShaderFn</span> = <span class="tp">Color</span>(*)(<span class="kw">void</span>* context, <span class="tp">Color</span> in);
+</div>
+
+<p>
+這就是 C API 常見的 callback + user data 模式。它很明確，但型別安全弱，context cast 要自己保證。
+</p>
+
+<h2><span class="n">4</span> functor / lambda：behavior 可以帶 state</h2>
+
+<p>
+Functor 是有 <code>operator()</code> 的 object：
+</p>
+
+<div class="code">
+<span class="kw">struct</span> <span class="tp">TintShader</span> {<br>
+&nbsp;&nbsp;<span class="tp">Color</span> tint;<br>
+&nbsp;&nbsp;<span class="tp">Color</span> <span class="kw">operator</span>()(<span class="tp">Color</span> in) <span class="kw">const</span> {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> in * tint;<br>
+&nbsp;&nbsp;}<br>
+};<br>
+</div>
+
+<p>
+Lambda closure 是 compiler 幫你生成的 functor。這讓 shader/predicate/tool callback 很自然：
+</p>
+
+<div class="code">
+<span class="kw">auto</span> shader = [tint](<span class="tp">Color</span> in) { <span class="kw">return</span> in * tint; };
+</div>
+
+<p>
+如果 function template 接 callable，compiler 知道 callable 的具體型別，通常能 inline：
+</p>
+
+<div class="code">
+<span class="kw">template</span> &lt;<span class="kw">class</span> <span class="tp">Shader</span>&gt;<br>
+<span class="kw">void</span> <span class="fn">ShadePixels</span>(<span class="tp">Framebuffer</span>&amp; fb, <span class="tp">Shader</span> shader) {<br>
+&nbsp;&nbsp;<span class="cmt">// shader(pixel) may be inlined if Shader is concrete</span><br>
+}
+</div>
+
+<div class="box box-green">
+<strong>callable 的結構等價</strong> &mdash; stateful lambda 在工程模型上等價於一個有 data members 和 <code>operator()</code> 的 anonymous class。這不是比喻，而是很接近 C++ 的實際語意模型。
+</div>
+
+<h2><span class="n">5</span> capture lifetime：UI command 最容易踩的坑</h2>
+
+<p>
+真正危險的不是 lambda，而是 capture 的 lifetime。
+</p>
+
+<div class="code">
+<span class="kw">void</span> <span class="fn">BuildUi</span>(<span class="tp">CommandList</span>&amp; commands) {<br>
+&nbsp;&nbsp;std::<span class="tp">string</span> label = <span class="val">"OK"</span>;<br>
+&nbsp;&nbsp;commands.<span class="fn">push</span>([&amp;] { <span class="fn">DrawText</span>(label); });<br>
+}<br>
+<br>
+<span class="cmt">// later frame / later phase</span><br>
+commands.<span class="fn">execute</span>(); <span class="cmt">// label is already dead</span>
+</div>
+
+<p>
+這不是 lambda 語法問題，而是 T-03/T-04/T-06 的綜合問題：closure object 活得比 captured reference 指向的 object 更久。
+</p>
+
+<pre class="ascii">BuildUi stack:
+  label = "OK"
+  lambda captures reference to label
+  command stored in command list
+return from BuildUi:
+  label destroyed
+later:
+  lambda tries to use dangling reference</pre>
+
+<div class="box box-red">
+<strong>跨 frame / 跨 phase command 不應 capture local reference</strong> &mdash; command buffer 應該擁有需要的資料，例如 copy string、copy rect、copy color，或保存明確 lifetime 的 resource handle。
+</div>
+
+<h2><span class="n">6</span> behavior vs data：command buffer 應該存什麼？</h2>
+
+<p>
+遇到 UI/render command 時，有兩種設計：
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>設計</th>
+      <th>存什麼</th>
+      <th>優點</th>
+      <th>風險</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>store behavior</td>
+      <td><code>std::function&lt;void()&gt;</code> / lambda。</td>
+      <td>彈性高，適合 low-frequency tool callback。</td>
+      <td>capture lifetime、allocation、type erasure、debug 困難。</td>
+    </tr>
+    <tr>
+      <td>store data</td>
+      <td><code>DrawRectCmd</code>, <code>DrawTextCmd</code>, <code>ClipCmd</code>。</td>
+      <td>self-contained、可序列化、可重播、接近 GPU command stream。</td>
+      <td>需要設計 command schema。</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+對 Pixel-Renderer 的 UI draw list，第一版更適合存 data：
+</p>
+
+<div class="code">
+<span class="kw">struct</span> <span class="tp">DrawTextCmd</span> {<br>
+&nbsp;&nbsp;<span class="tp">Rect</span> bounds;<br>
+&nbsp;&nbsp;std::<span class="tp">string</span> text;<br>
+&nbsp;&nbsp;<span class="tp">Color</span> color;<br>
+};<br>
+</div>
+
+<p>
+這樣 command 自己 owns 文字資料，不依賴 UI build function 的 local variable。
+</p>
+
+<div class="box box-purple">
+<strong>類比，不是結構等價</strong> &mdash; UI command list 類似 GPU command buffer，因為它們都把「要做什麼」變成資料流。但 GPU command buffer 有嚴格硬體/driver ABI；你的 UI command list 是教學用 software data structure。
+</div>
+
+<h2><span class="n">7</span> std::function：type erasure 的方便與成本</h2>
+
+<p>
+<code>std::function&lt;R(Args...)&gt;</code> 可以裝不同 concrete callable：
+</p>
+
+<div class="code">
+std::<span class="tp">function</span>&lt;<span class="kw">void</span>(<span class="tp">Event</span>)&gt; callback;<br>
+callback = [](<span class="tp">Event</span> e) { <span class="fn">Handle</span>(e); };
+</div>
+
+<p>
+它的價值是 type erasure：caller 不需要知道裡面是 function pointer、lambda、functor。代價是可能有間接呼叫、可能配置、失去 inline 機會。
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>位置</th>
+      <th>是否適合 <code>std::function</code></th>
+      <th>理由</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>button click callback</td>
+      <td>可以。</td>
+      <td>低頻，彈性比 raw performance 重要。</td>
+    </tr>
+    <tr>
+      <td>per-pixel fragment shader hot loop</td>
+      <td>通常不適合第一選擇。</td>
+      <td>每 pixel 間接呼叫成本可能被放大。</td>
+    </tr>
+    <tr>
+      <td>debug menu action</td>
+      <td>可以。</td>
+      <td>低頻、可讀性和彈性重要。</td>
+    </tr>
+    <tr>
+      <td>render command stream</td>
+      <td>通常 prefer data command。</td>
+      <td>可排序、可重播、可檢查 lifetime。</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2><span class="n">8</span> overload set：名字不是 function object</h2>
+
+<p>
+overload 會讓 callable 變得更微妙：
+</p>
+
+<div class="code">
+<span class="kw">void</span> <span class="fn">Draw</span>(<span class="tp">Line</span>);<br>
+<span class="kw">void</span> <span class="fn">Draw</span>(<span class="tp">Triangle</span>);<br>
+<br>
+<span class="kw">auto</span> f = Draw; <span class="cmt">// error: Draw is an overload set, not one function</span>
+</div>
+
+<p>
+你必須給 compiler 足夠 context：
+</p>
+
+<div class="code">
+<span class="kw">using</span> <span class="tp">DrawLineFn</span> = <span class="kw">void</span>(*)(<span class="tp">Line</span>);<br>
+<span class="tp">DrawLineFn</span> f = <span class="kw">static_cast</span>&lt;<span class="tp">DrawLineFn</span>&gt;(&amp;<span class="fn">Draw</span>);
+</div>
+
+<p>
+這會在 shader API、tool callback、operator overload 裡出現。當你把 function 當資料傳遞時，名字解析必須收斂成一個具體 signature。
+</p>
+
+<h2><span class="n">9</span> member function pointer：還需要 object</h2>
+
+<p>
+member function pointer 不是普通 function pointer。它描述「某個 class 的 method」，但不包含 object instance：
+</p>
+
+<div class="code">
+<span class="kw">struct</span> <span class="tp">Tool</span> {<br>
+&nbsp;&nbsp;<span class="kw">void</span> <span class="fn">OnClick</span>(<span class="tp">Event</span>);<br>
+};<br>
+<br>
+<span class="kw">using</span> <span class="tp">Method</span> = <span class="kw">void</span> (<span class="tp">Tool</span>::*)(<span class="tp">Event</span>);<br>
+<span class="tp">Method</span> m = &amp;<span class="tp">Tool</span>::<span class="fn">OnClick</span>;
+</div>
+
+<p>
+呼叫時還需要 object：
+</p>
+
+<div class="code">
+<span class="tp">Tool</span> tool;<br>
+(tool.*m)(event);
+</div>
+
+<p>
+如果 callback 存的是 member function pointer + object pointer，就要保證 object pointer 的 lifetime。這和 lambda capture reference 是同一類問題。
+</p>
+
+<h2><span class="n">10</span> Pixel-Renderer policy：哪裡用哪種 callable</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>場景</th>
+      <th>建議</th>
+      <th>理由</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>software shader hot loop</td>
+      <td>template callable / concrete functor。</td>
+      <td>可 inline，避免 per-pixel type erasure。</td>
+    </tr>
+    <tr>
+      <td>UI click callback</td>
+      <td><code>std::function</code> 可以接受，但 capture 要 owns 或保證 lifetime。</td>
+      <td>低頻、彈性重要。</td>
+    </tr>
+    <tr>
+      <td>UI draw command</td>
+      <td>prefer data command，不存 arbitrary lambda。</td>
+      <td>避免 dangling、可排序、可重播。</td>
+    </tr>
+    <tr>
+      <td>DisplayBackend</td>
+      <td>virtual interface。</td>
+      <td>frame-level dispatch，不在 hot loop。</td>
+    </tr>
+    <tr>
+      <td>debug tool action</td>
+      <td><code>std::function&lt;void()&gt;</code>。</td>
+      <td>低頻且方便。</td>
+    </tr>
+  </tbody>
+</table>
+
+<pre class="ascii">hot path:
+  prefer concrete callable / template / data-oriented dispatch
+
+frame boundary:
+  virtual interface is acceptable
+
+low-frequency UI/tool:
+  std::function is acceptable
+
+cross-frame command buffer:
+  prefer self-contained data, not borrowed behavior</pre>
+
+<div class="box box-green">
+<strong>本章學到的三件事：</strong>
+<ol>
+  <li>Lambda 是 closure object；capture 會變成 state，state 的 lifetime 和 copy/move cost 必須被設計。</li>
+  <li><code>std::function</code> 是 type-erased callable，適合低頻 callback，不適合作為 per-pixel hot loop 的預設工具。</li>
+  <li>Pixel-Renderer 的 UI/render command 應優先存 self-contained data；只有低頻事件和工具 callback 才適合存 behavior。</li>
+</ol>
+</div>
+
+<p>
+下一章會進入 Templates / Concepts / Type Traits，把「接收任何 callable」從 ad-hoc template 變成有語意要求的 generic contract。這會讓 shader、math type、backend policy 的 compile-time abstraction 更清楚。
+</p>
+
+<div class="next-ch">
+  <div>
+    <div class="next-label">NEXT THEORY</div>
+    <div class="next-title">T-08 &mdash; Templates / Concepts / Type Traits</div>
+    <div class="next-desc">下一章把 template 從語法工具提升成 type contract：shader functor、math type、policy-based design 應該滿足哪些 requirements。</div>
+  </div>
+  <a class="next-arrow" href="t08_templates_concepts_type_traits.html">&rarr;</a>
+</div>
+
+</body>
+</html>

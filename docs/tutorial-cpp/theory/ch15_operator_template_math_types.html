@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Ch15 — Operator / Template 與數學型別</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#1e1e2e; --bg1:#181825; --bg2:#11111b; --border:#313244;
+  --muted:#6c7086; --text:#cdd6f4; --blue:#89b4fa; --green:#a6e3a1;
+  --yellow:#f9e2af; --orange:#fab387; --red:#f38ba8; --purple:#cba6f7; --teal:#94e2d5;
+}
+body { background: var(--bg); color: var(--text); font-family: 'Georgia', serif; font-size: 15px; padding: 0 20px 80px; max-width: 900px; margin: 0 auto; line-height: 1.9; }
+nav { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); padding: 14px 0; border-bottom: 1px solid var(--border); margin-bottom: 36px; display: flex; align-items: center; gap: 10px; }
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--blue); }
+.nav-sep { color: var(--border); }
+.nav-cur { color: var(--text); }
+.nav-right { margin-left: auto; display: flex; gap: 16px; }
+.ch-header { margin-bottom: 40px; }
+.ch-label { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px; }
+.ch-title { color: var(--blue); font-size: 1.7em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub { color: var(--muted); font-size: 0.88em; margin-bottom: 14px; }
+.ch-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.ch-tag { font-family: 'Consolas', monospace; font-size: 0.72em; padding: 1px 7px; border-radius: 4px; background: var(--bg2); color: var(--muted); border: 1px solid var(--border); }
+h2 { color: var(--purple); font-size: 1em; font-family: 'Consolas', monospace; letter-spacing: 0.05em; padding: 10px 0; border-bottom: 1px solid var(--border); margin: 44px 0 20px; display: flex; align-items: center; gap: 12px; }
+h2 .n { background: var(--purple); color: var(--bg2); font-weight: bold; border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.85em; }
+h3 { color: var(--yellow); font-size: 0.95em; margin: 24px 0 10px; }
+p { margin-bottom: 12px; }
+strong { color: var(--yellow); }
+em { color: var(--orange); font-style: normal; }
+code { font-family: 'Consolas', monospace; color: var(--teal); }
+ul, ol { margin: 8px 0 14px 26px; line-height: 2.2; }
+.box { border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 0.9em; line-height: 1.85; background: var(--bg1); }
+.box-blue { border-left: 4px solid var(--blue); }
+.box-green { border-left: 4px solid var(--green); }
+.box-yellow { border-left: 4px solid var(--yellow); }
+.box-red { border-left: 4px solid var(--red); }
+.box-purple { border-left: 4px solid var(--purple); }
+.code { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em; line-height: 2.1; margin: 14px 0; overflow-x: auto; }
+.code .cmt { color: var(--muted); } .code .kw { color: var(--purple); } .code .val { color: var(--orange); } .code .tp { color: var(--blue); } .code .fn { color: var(--teal); }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+.two-col > div { background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; }
+.col-title { font-family: 'Consolas', monospace; font-size: 0.85em; margin-bottom: 10px; color: var(--muted); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9em; }
+thead { background: var(--bg1); }
+th { color: var(--muted); font-family: 'Consolas', monospace; font-size: 0.85em; padding: 8px 14px; text-align: left; border-bottom: 2px solid var(--border); }
+td { padding: 8px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.fig { margin: 24px auto; text-align: center; }
+.fig figcaption { color: var(--muted); font-size: 0.88em; margin-top: 8px; font-style: italic; }
+.next-ch { margin-top: 56px; padding: 20px 24px; background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 20px; }
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+.next-title { color: var(--blue); font-size: 1em; }
+.next-desc { color: var(--muted); font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: var(--blue); font-size: 1.6em; text-decoration: none; }
+@media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">C++ 複習</a>
+  <span class="nav-sep">/</span>
+  <span class="nav-cur">Ch15 — Operator / Template 與數學型別</span>
+  <div class="nav-right">
+    <a href="ch14_regular_semiregular.html">&larr; Ch14</a>
+    <a href="ch16_smart_pointer.html">Ch16 &rarr;</a>
+  </div>
+</nav>
+
+<div class="ch-header">
+  <div class="ch-label">PART 5 &middot; CHAPTER 15</div>
+  <div class="ch-title">Operator / Template 與數學型別</div>
+  <div class="ch-sub">讓 Vec / Mat 好用，但不能讓語法破壞語意</div>
+  <div class="ch-tags">
+    <span class="ch-tag">operator</span>
+    <span class="ch-tag">template</span>
+    <span class="ch-tag">Vec</span>
+  </div>
+</div>
+
+<p>
+Pixel-Renderer 目前已經有很小的 <code>Vec3f</code>：
+</p>
+
+<div class="code">
+<span class="kw">struct</span> <span class="tp">Vec3f</span> {<br>
+&nbsp;&nbsp;<span class="tp">float</span> x, y, z;<br>
+&nbsp;&nbsp;<span class="fn">Vec3f</span>(<span class="tp">float</span> x = <span class="val">0</span>, <span class="tp">float</span> y = <span class="val">0</span>, <span class="tp">float</span> z = <span class="val">0</span>) : x(x), y(y), z(z) {}<br>
+};
+</div>
+
+<p>
+下一步很自然會想：能不能讓它寫成 <code>a + b</code>、<code>m * v</code>、甚至做成 <code>Vec&lt;3, float&gt;</code>？可以。但這一章要先建立一個界線：operator / template 不是為了讓 code 看起來像數學，而是為了把正確的 operation laws 寫進 type。
+</p>
+
+<div class="box box-blue">
+<strong>本章範圍</strong> &mdash; 用 renderer math types 連接 Ch13/Ch14：operator 是 type operation，template 是 operation family。你會看到何時該 overload、何時不該 overload、何時 template 能消除重複，何時它只是過早抽象。
+</div>
+
+<h2><span class="n">1</span> naive model：operator 只是讓語法漂亮</h2>
+
+<p>
+最常見的想法是：
+</p>
+
+<div class="code">
+Vec3f c = Add(a, b);<br>
+<span class="cmt">// 改成</span><br>
+Vec3f c = a + b;
+</div>
+
+<p>
+如果只看可讀性，這好像只是語法糖。但從 Ch13 的角度看，<code>operator+</code> 是在宣告：
+</p>
+
+<div class="code">
+Vec3f 的 addition operation 存在，<br>
+它回傳一個新的 Vec3f，<br>
+它不修改 operands，<br>
+它的語意是 component-wise addition。
+</div>
+
+<p>
+所以 operator overload 不是名字變短，而是把 operation 放進 type 的語意集合。
+</p>
+
+<h2><span class="n">2</span> 好的 operator 要符合直覺 law</h2>
+
+<p>
+對 <code>Vec3f</code>，這樣的 <code>operator+</code> 很合理：
+</p>
+
+<div class="code">
+<span class="kw">inline</span> <span class="tp">Vec3f</span> <span class="kw">operator</span>+(<span class="kw">const</span> <span class="tp">Vec3f</span>&amp; a, <span class="kw">const</span> <span class="tp">Vec3f</span>&amp; b) {<br>
+&nbsp;&nbsp;<span class="kw">return</span> <span class="tp">Vec3f</span>{a.x + b.x, a.y + b.y, a.z + b.z};<br>
+}
+</div>
+
+<p>
+它大致符合幾個期待：
+</p>
+
+<ul>
+<li><strong>non-mutating</strong>：<code>a + b</code> 不改變 <code>a</code> 或 <code>b</code>。</li>
+<li><strong>closed</strong>：兩個 <code>Vec3f</code> 相加仍然得到 <code>Vec3f</code>。</li>
+<li><strong>component-wise</strong>：對每個分量做相同操作。</li>
+<li><strong>cheap enough</strong>：回傳小 value 很合理，不需要 heap allocation。</li>
+</ul>
+
+<p>
+相對地，這種 operator 就很危險：
+</p>
+
+<div class="code">
+<span class="tp">Vec3f</span> <span class="kw">operator</span>+(<span class="tp">Vec3f</span>&amp; a, <span class="kw">const</span> <span class="tp">Vec3f</span>&amp; b) {<br>
+&nbsp;&nbsp;a.x += b.x;<br>
+&nbsp;&nbsp;a.y += b.y;<br>
+&nbsp;&nbsp;a.z += b.z;<br>
+&nbsp;&nbsp;<span class="kw">return</span> a;<br>
+}
+</div>
+
+<p>
+它能編譯，但違反大多數人對 <code>+</code> 的 law：<code>a + b</code> 不應該偷改 <code>a</code>。如果你要 mutation，應該用 <code>operator+=</code>。
+</p>
+
+<div class="box box-yellow">
+<strong>operator 的基本準則</strong> &mdash; overload 只有在語意符合讀者對該符號的強烈期待時才值得做。語法看起來像數學，行為就必須真的接近數學。
+</div>
+
+<h2><span class="n">3</span> Matrix multiplication 不是只差一個符號</h2>
+
+<p>
+對 matrix，operator 更容易藏規則：
+</p>
+
+<div class="code">
+<span class="tp">Vec4f</span> out = m * v;
+</div>
+
+<p>
+這行牽涉的不只是乘法：
+</p>
+
+<ul>
+<li>你使用 row-major 還是 column-major memory layout？</li>
+<li>vector 是 column vector 還是 row vector？</li>
+<li>transform order 是 <code>MVP * position</code> 還是 <code>position * MVP</code>？</li>
+<li>座標系是 left-handed 還是 right-handed？</li>
+</ul>
+
+<p>
+所以 <code>operator*</code> 的語意必須和 renderer pipeline 的慣例一致。不然你會得到最糟的 bug：程式碼看起來非常自然，但實際做了另一套數學。
+</p>
+
+<h2><span class="n">4</span> operator 也有 value category 問題</h2>
+
+<p>
+前面幾章講過 prvalue、xvalue、return by value。Operator 也會碰到同一件事。看這行：
+</p>
+
+<div class="code">
+<span class="tp">Vec3f</span> c = a + b;
+</div>
+
+<p>
+如果 <code>operator+</code> 回傳 <code>Vec3f</code> by value，那 <code>a + b</code> 這個 expression 通常是 prvalue：它代表一個新產生的 <code>Vec3f</code> value，用來初始化 <code>c</code>。
+</p>
+
+<div class="code">
+<span class="kw">inline</span> <span class="tp">Vec3f</span> <span class="kw">operator</span>+(<span class="kw">const</span> <span class="tp">Vec3f</span>&amp; a, <span class="kw">const</span> <span class="tp">Vec3f</span>&amp; b) {<br>
+&nbsp;&nbsp;<span class="kw">return</span> <span class="tp">Vec3f</span>{a.x + b.x, a.y + b.y, a.z + b.z};<br>
+}
+</div>
+
+<p>
+這個設計對小型 math value type 通常是最穩定的 default：
+</p>
+
+<ul>
+<li>operands 用 <code>const&amp;</code>，避免複製，也表達不修改。</li>
+<li>result 回傳 by value，表達 <code>+</code> 產生新 value。</li>
+<li><code>return Vec3f{...}</code> 可以走 prvalue direct initialization，不需要你手動 <code>std::move</code>。</li>
+<li><code>Vec3f</code> 是 inline value data，move 不會比 copy 有本質優勢。</li>
+</ul>
+
+<p>
+你可能會看到更進階的 overload，試圖 reuse rvalue operand：
+</p>
+
+<div class="code">
+<span class="tp">Vec</span> <span class="kw">operator</span>+(<span class="tp">Vec</span>&amp;&amp; a, <span class="kw">const</span> <span class="tp">Vec</span>&amp; b) {<br>
+&nbsp;&nbsp;a += b;<br>
+&nbsp;&nbsp;<span class="kw">return</span> std::<span class="fn">move</span>(a);<br>
+}
+</div>
+
+<p>
+這個 overload 的想法是：如果左邊本來就是 temporary，例如 <code>makeVec() + b</code>，就直接修改那個 temporary 再回傳，避免多建一個 value。這對大型 dynamic vector 或 expression template library 可能有價值。
+</p>
+
+<p>
+但對本教學目前的 <code>Vec3f</code> / <code>Matrix4x4</code> 階段，我不建議一開始就做這種 overload。它會讓 overload set 和 value category 行為變複雜，收益卻很小。先讓 operator 語意正確、簡單、可被 optimizer 處理，通常更好。
+</p>
+
+<div class="box box-blue">
+<strong>第一版建議</strong> &mdash; 小型 renderer math type 先採用 <code>const&amp;</code> operands + return by value。等你真的遇到大型 temporary chain 的效能問題，再考慮 rvalue overload、expression templates 或 SIMD-oriented design。
+</div>
+
+<h2><span class="n">5</span> operator== 對 float math type 要小心</h2>
+
+<p>
+Regular type 需要 equality，但 renderer math type 裡的 equality 很微妙：
+</p>
+
+<div class="code">
+<span class="kw">bool</span> same = (a == b);
+</div>
+
+<p>
+這裡的 <code>==</code> 可以有兩種語意：
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Equality</th>
+      <th>語意</th>
+      <th>適用場景</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>bit-exact / component-exact</td>
+      <td>每個 float 分量完全相等。</td>
+      <td>cache key、deterministic tests、資料是否完全一致。</td>
+    </tr>
+    <tr>
+      <td>epsilon-based</td>
+      <td>誤差小於某個 threshold 就視為相等。</td>
+      <td>幾何計算、數值演算法容忍誤差。</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+問題是 epsilon equality 不一定符合 equality relation 的所有 law，尤其 transitivity 可能出問題。因此很多 engine 會提供 <code>NearlyEqual(a, b, eps)</code>，而不是讓 <code>operator==</code> 偷偷做 epsilon compare。
+</p>
+
+<div class="box box-red">
+<strong>不要濫用 operator==</strong> &mdash; 如果 equality law 不穩定，就不要硬把它包成 <code>operator==</code>。把誤差容忍寫成明確函數，通常比讓 operator 偷藏 policy 更清楚。
+</div>
+
+<h2><span class="n">6</span> Template：把 operation family 參數化</h2>
+
+<p>
+當你有 <code>Vec2f</code>、<code>Vec3f</code>、<code>Vec4f</code>，很容易重複寫很多相似 code。Template 可以把 dimension 和 scalar type 變成參數：
+</p>
+
+<div class="code">
+<span class="kw">template</span> &lt;<span class="tp">int</span> N, <span class="kw">class</span> <span class="tp">T</span>&gt;<br>
+<span class="kw">struct</span> <span class="tp">Vec</span> {<br>
+&nbsp;&nbsp;<span class="tp">T</span> data[N];<br>
+};
+</div>
+
+<p>
+這看起來很漂亮，但它也帶來新的責任：
+</p>
+
+<ul>
+<li>哪些 operation 對所有 <code>N</code> 都合理？</li>
+<li><code>cross(a, b)</code> 只對 3D 合理，要怎麼限制？</li>
+<li><code>Vec&lt;4, float&gt;</code> 是 homogeneous coordinate，還是單純 4D vector？</li>
+<li>generic code 會不會讓錯誤在 template error 裡爆炸？</li>
+</ul>
+
+<p>
+Template 不是把所有維度統一就自動變好。它是在建立一族 types，你要確認這族 types 共享同一組合理 operations。
+</p>
+
+<h2><span class="n">7</span> 何時不要 template</h2>
+
+<p>
+對 Pixel-Renderer 的早期階段，直接保留具名型別可能更清楚：
+</p>
+
+<div class="code">
+<span class="kw">struct</span> <span class="tp">Vec3f</span> { <span class="tp">float</span> x, y, z; };<br>
+<span class="kw">struct</span> <span class="tp">Vec4f</span> { <span class="tp">float</span> x, y, z, w; };<br>
+<span class="kw">struct</span> <span class="tp">Matrix4x4</span> { <span class="tp">float</span> m[<span class="val">16</span>]; };
+</div>
+
+<p>
+原因不是 template 不好，而是目前 renderer pipeline 的語意還在形成。<code>Vec3f</code> 可能代表 position、normal、color RGB；它們 layout 一樣，但 operation 不一定完全一樣。過早用一個泛型 <code>Vec&lt;3, float&gt;</code> 吃掉所有差異，可能會讓 domain semantics 變模糊。
+</p>
+
+<div class="box box-blue">
+<strong>保守策略</strong> &mdash; 先讓核心 math types 的語意穩定，再抽 template。當重複已經明確、operation laws 也一致時，template 才是在消除 real duplication，而不是提前建立不確定的抽象。
+</div>
+
+<h2><span class="n">8</span> Pixel-Renderer 的落點</h2>
+
+<p>
+這章對後續 renderer 擴充可以整理成：
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>設計點</th>
+      <th>建議</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>Vec3f</code></td>
+      <td>可以先加 <code>+</code>、<code>-</code>、scalar multiply、dot；mutation 放在 <code>+=</code>。</td>
+    </tr>
+    <tr>
+      <td><code>Matrix4x4</code></td>
+      <td>先明確 row/column convention，再提供 <code>operator*</code>。</td>
+    </tr>
+    <tr>
+      <td><code>Color</code></td>
+      <td>不要和 geometric vector 混用；即使都是 3/4 floats，語意不同。</td>
+    </tr>
+    <tr>
+      <td>Template Vec</td>
+      <td>等 <code>Vec2</code>/<code>Vec3</code>/<code>Vec4</code> 的共同 operation 明確後再抽。</td>
+    </tr>
+    <tr>
+      <td>Shader input/output</td>
+      <td>不要只追求 generic；有些 vertex attributes 需要明確 domain names。</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2><span class="n">9</span> 和下一章 smart pointer 的關係</h2>
+
+<p>
+到這裡，Part 5 完成了 value type 的主線：type contract、regular/value requirements、math operation laws。下一章會切到另一條線：ownership handle。
+</p>
+
+<p>
+也就是說，<code>Vec3f</code> 這類 type 應該像 value；但 <code>Texture</code>、<code>DisplayBackend</code>、window handle、SDL texture wrapper 這些不是 value，它們需要用 smart pointer 或 move-only wrapper 表達 ownership policy。
+</p>
+
+<hr>
+
+<div class="box box-yellow">
+<strong>常見陷阱</strong><br><br>
+<strong>1. 為了漂亮語法濫用 operator</strong> &mdash; operator 必須符合讀者對符號的語意期待，否則會製造隱性 bug。<br><br>
+<strong>2. 過早寫 rvalue operator overload</strong> &mdash; 對小型 inline math value，reuse temporary 的收益通常不值得增加 overload 複雜度。<br><br>
+<strong>3. 對 float type 隨便定義 operator==</strong> &mdash; bit-exact 和 epsilon-based equality 是不同 policy，不要混在同一個符號裡。<br><br>
+<strong>4. 過早 template 化 Vec/Mat</strong> &mdash; layout 相同不代表語意相同。先確認 operation laws，再抽 generic type。
+</div>
+
+<div class="box box-green">
+<strong>本章學到的三件事</strong><br><br>
+<strong>1.</strong> Operator overload 是 type operation，不只是語法糖；它必須守住數學直覺與 type invariant。<br><br>
+<strong>2.</strong> Operator expression 也有 value category；小型 math value type 通常先用 <code>const&amp;</code> operands + return by value。<br><br>
+<strong>3.</strong> Template 可以把一族 operations 參數化，但只有在各型別共享合理 laws 時才是好抽象。
+</div>
+
+<div class="box box-purple">
+<strong>下一步</strong> &mdash; Part 5 到這裡收束 value type。下一章進入 <strong>智慧指標</strong>：同樣是 pointer-like representation，<code>unique_ptr</code>、<code>shared_ptr</code>、<code>weak_ptr</code> 會把不同 ownership policy 寫進不同 type。
+</div>
+
+<div class="next-ch">
+  <div>
+    <div class="next-label">NEXT CHAPTER</div>
+    <div class="next-title">Ch16 &mdash; 智慧指標</div>
+    <div class="next-desc">Ch16 會拆 unique ownership、shared ownership、observer relation，以及 renderer resource graph 裡應該怎麼選 pointer type。</div>
+  </div>
+  <a class="next-arrow" href="ch16_smart_pointer.html">&rarr;</a>
+</div>
+
+</body>
+</html>

@@ -142,15 +142,15 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
 
 <!-- ============ OPENING ============ -->
 <p>
-打開你的渲染器專案資料夾，你會看到這些檔案：<em>main.cpp</em>、<em>application.h</em>、<em>application.cpp</em>、<em>screen_manager.h</em>、<em>screen_manager.cpp</em>、<em>render_device.h</em>、<em>render_device.cpp</em>。為什麼不把所有程式碼寫在一個檔案裡就好？為什麼要把 <code>.h</code> 和 <code>.cpp</code> 分開？當你在 VS Code 按下 Build，那短短幾秒鐘裡到底發生了什麼事？
+你要寫的是一個會慢慢長大的 renderer，不是一支只有幾十行的練習程式。之後它會有 framebuffer、rasterizer、math library、platform backend、maybe UI。第一個 C++ 問題不是語法，而是：<strong>這些檔案最後怎麼變成一個能執行的程式？</strong>
 </p>
 <p>
-更重要的是，你一定遇過這個令人崩潰的錯誤訊息：<strong>undefined reference to `RenderDevice::DrawTriangle(...)`</strong>。編譯明明通過了，為什麼最後一步又炸了？要理解這些問題，你需要知道 C++ 的<strong>編譯模型</strong> &mdash; 從原始碼到可執行檔，中間經歷了哪些階段，每個階段各自負責什麼。
+這就是 C++ 和很多 scripting language 最不一樣的地方。你看到的是 <code>.cpp</code>、<code>.h</code>、<code>#include</code>、<code>class</code>，但編譯器看到的是 translation unit、symbol、object file、linking。當你遇到 <strong>undefined reference</strong>，它不是「語法錯」，而是 C++ 建構模型某個階段在告訴你：宣告、定義、或連結關係斷掉了。
 </p>
 
 <!-- ============ BOX: 本章範圍 ============ -->
 <div class="box box-blue">
-  <strong>本章範圍</strong> &mdash; 建立 C++ 編譯流水線的心智模型。你會學到預處理、編譯、連結三個階段各自做什麼，以及常見錯誤出現在哪個階段。我們會用你的渲染器專案作為貫穿全章的範例。
+  <strong>本章範圍</strong> &mdash; 建立 C++ 編譯流水線的心智模型。你會學到 translation unit、preprocess、compile、link、declaration、definition 之間的關係。renderer 會作為例子，但真正要掌握的是：C++ 如何把「分散在多個檔案的語意」組合成一個 executable。
 </div>
 
 <!-- ============ SECTION 1 ============ -->
@@ -220,7 +220,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
 </figure>
 
 <p>
-接下來我們逐一拆解每個階段，用你的渲染器程式碼當作例子。
+接下來我們逐一拆解每個階段。renderer 的檔案結構會拿來當例子，但重點是建立可遷移的模型：以後你拆 math、platform、render backend、UI module，靠的都是同一套規則。
 </p>
 
 <!-- ============ SECTION 2 ============ -->
@@ -235,7 +235,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
 當預處理器看到 <code>#include "application.h"</code>，它做的事情就是：打開 <code>application.h</code> 這個檔案，把裡面的內容<strong>原封不動</strong>地貼到 <code>#include</code> 那一行的位置。沒有什麼魔法，就是複製貼上。
 </p>
 <p>
-看看你的 <code>main.cpp</code> 開頭：
+先用 renderer 的 <code>main.cpp</code> 當例子：
 </p>
 
 <div class="code">
@@ -248,7 +248,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
 </div>
 
 <p>
-預處理器處理 <code>#include "application.h"</code> 時，會打開 <code>application.h</code>，發現裡面又有 <code>#include "screen_manager.h"</code> 和 <code>#include "render_device.h"</code>，於是繼續遞迴展開。最後，原本只有 45 行的 <code>main.cpp</code> 可能膨脹成數千行（因為 <code>screen_manager.h</code> 引入了 <code>&lt;windows.h&gt;</code>，那個檔案本身就有上萬行）。
+預處理器處理 <code>#include "application.h"</code> 時，會打開 <code>application.h</code>，把裡面的內容貼進來；如果它又引入 <code>screen_manager.h</code> 或 <code>rasterizer.h</code>，就繼續遞迴展開。最後，原本很短的 <code>main.cpp</code> 可能膨脹成數千行。這不是 C++ 在做語意分析，只是還沒進入編譯器之前的文字展開。
 </p>
 
 <figure class="fig">
@@ -269,7 +269,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
   <text x="236" y="50" font-family="Consolas,monospace" font-size="10" fill="#cba6f7">#include</text>
   <text x="300" y="50" font-family="Consolas,monospace" font-size="10" fill="#fab387">"screen_manager.h"</text>
   <text x="236" y="66" font-family="Consolas,monospace" font-size="10" fill="#cba6f7">#include</text>
-  <text x="300" y="66" font-family="Consolas,monospace" font-size="10" fill="#fab387">"render_device.h"</text>
+  <text x="300" y="66" font-family="Consolas,monospace" font-size="10" fill="#fab387">"rasterizer.h"</text>
   <text x="236" y="86" font-family="Consolas,monospace" font-size="10" fill="#6c7086">class Application{...};</text>
 
   <!-- Arrow main -> app.h -->
@@ -282,8 +282,8 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
   <text x="96" y="196" font-family="Consolas,monospace" font-size="10" fill="#6c7086">class ScreenManager { ... };</text>
   <text x="96" y="212" font-family="Consolas,monospace" font-size="10" fill="#6c7086">struct Vertex { ... };</text>
   <text x="96" y="228" font-family="Consolas,monospace" font-size="10" fill="#6c7086">class RenderDevice { ... };</text>
-  <text x="96" y="244" font-family="Consolas,monospace" font-size="10" fill="#6c7086">class Application { ... };</text>
-  <text x="96" y="260" font-family="Consolas,monospace" font-size="10" fill="#89b4fa">class MyApp : public Application ...</text>
+  <text x="96" y="244" font-family="Consolas,monospace" font-size="10" fill="#6c7086">class Rasterizer { ... };</text>
+  <text x="96" y="260" font-family="Consolas,monospace" font-size="10" fill="#89b4fa">class Application / MyApp ...</text>
 
   <!-- Arrow down -->
   <line x1="100" y1="120" x2="100" y2="138" stroke="#a6e3a1" stroke-width="1.2" marker-end="url(#arrowG)"/>
@@ -303,7 +303,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
 
 <h3>Header Guards：防止重複貼上</h3>
 <p>
-這裡有個問題。你的 <code>application.h</code> 引入了 <code>screen_manager.h</code>，而 <code>render_device.h</code> 也引入了 <code>screen_manager.h</code>。如果預處理器老老實實地兩次把 <code>ScreenManager</code> 類別的定義貼進來，編譯器就會抱怨：「<code>class ScreenManager</code> 被定義了兩次！」
+這裡有個問題。你的 <code>application.h</code> 會引入多個 header，而這些 header 之間又可能有間接依賴。如果某個 header 被兩條不同路徑貼進同一個 translation unit，編譯器就可能看到兩次相同的定義，然後抱怨：「這個類別被定義了兩次！」
 </p>
 <p>
 解法就是你在每個 <code>.h</code> 開頭看到的那三行：
@@ -350,12 +350,12 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
 
 <div class="two-col">
   <div>
-    <div class="col-title">render_device.h (宣告)</div>
+    <div class="col-title">rasterizer.h (宣告)</div>
 <div class="code" style="margin:0">
-<span class="kw">class</span> <span class="tp">RenderDevice</span> {<br>
+<span class="kw">class</span> <span class="tp">RenderDevice</span>;<br>
+<br>
+<span class="kw">class</span> <span class="tp">Rasterizer</span> {<br>
 <span class="kw">public</span>:<br>
-&nbsp;&nbsp;<span class="tp">void</span> <span class="fn">Clear</span>(<span class="tp">uint32_t</span> color);<br>
-&nbsp;&nbsp;<span class="tp">void</span> <span class="fn">SetPixel</span>(<span class="tp">int</span> x, <span class="tp">int</span> y, <span class="tp">uint32_t</span> color);<br>
 &nbsp;&nbsp;<span class="tp">void</span> <span class="fn">DrawLine</span>(...);<br>
 &nbsp;&nbsp;<span class="tp">void</span> <span class="fn">DrawTriangle</span>(...);<br>
 };<br>
@@ -363,26 +363,22 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
 </div>
   </div>
   <div>
-    <div class="col-title">render_device.cpp (定義)</div>
+    <div class="col-title">rasterizer.cpp (定義)</div>
 <div class="code" style="margin:0">
-<span class="kw">#include</span> <span class="val">"render_device.h"</span><br>
+<span class="kw">#include</span> <span class="val">"rasterizer.h"</span><br>
 <br>
-<span class="tp">void</span> <span class="tp">RenderDevice</span>::<span class="fn">Clear</span>(<span class="tp">uint32_t</span> c) {<br>
-&nbsp;&nbsp;<span class="cmt">// 實際清除 frame buffer</span><br>
-&nbsp;&nbsp;<span class="fn">memset</span>(frame_buffer, ...);<br>
-}<br>
-<span class="tp">void</span> <span class="tp">RenderDevice</span>::<span class="fn">DrawTriangle</span>(...) {<br>
-&nbsp;&nbsp;<span class="cmt">// 實際畫三角形的程式碼</span><br>
+<span class="tp">void</span> <span class="tp">Rasterizer</span>::<span class="fn">DrawTriangle</span>(...) {<br>
+&nbsp;&nbsp;<span class="cmt">// 實際掃描 bounding box，呼叫 device-&gt;SetPixel()</span><br>
 }
 </div>
   </div>
 </div>
 
 <p>
-當編譯器在處理 <code>main.cpp</code> 時，它看到 <code>device-&gt;DrawTriangle(...)</code> 這行呼叫。它翻開（展開後的）header，確認 <code>DrawTriangle</code> 的簽名正確，然後就安心了：「好，我相信這個函式在某個地方有實作，我先記下這裡需要呼叫它，等會兒連結器會幫我找到。」
+當編譯器在處理 <code>main.cpp</code> 時，它看到 <code>rasterizer-&gt;DrawTriangle(...)</code> 這行呼叫。它翻開（展開後的）header，確認 <code>DrawTriangle</code> 的簽名正確，然後就安心了：「好，我相信這個函式在某個地方有實作，我先記下這裡需要呼叫它，等會兒連結器會幫我找到。」
 </p>
 <p>
-編譯器在 <code>main.o</code> 裡留下一個「待填」的記號：<em>「這裡要呼叫 RenderDevice::DrawTriangle，地址待定。」</em>
+編譯器在 <code>main.o</code> 裡留下一個「待填」的記號：<em>「這裡要呼叫 Rasterizer::DrawTriangle，地址待定。」</em>
 </p>
 
 <figure class="fig">
@@ -398,7 +394,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
   <text x="62" y="143" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="#89b4fa">screen_manager.cpp</text>
 
   <rect x="10" y="170" width="105" height="36" rx="5" fill="#89b4fa" fill-opacity="0.12" stroke="#89b4fa" stroke-width="1"/>
-  <text x="62" y="193" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="#89b4fa">render_device.cpp</text>
+  <text x="62" y="193" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="#89b4fa">rasterizer.cpp</text>
 
   <!-- Compiler box -->
   <rect x="180" y="70" width="100" height="80" rx="8" fill="#cba6f7" fill-opacity="0.10" stroke="#cba6f7" stroke-width="1.2"/>
@@ -422,7 +418,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
   <text x="402" y="143" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="#a6e3a1">screen_manager.o</text>
 
   <rect x="350" y="170" width="105" height="36" rx="5" fill="#a6e3a1" fill-opacity="0.12" stroke="#a6e3a1" stroke-width="1"/>
-  <text x="402" y="193" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="#a6e3a1">render_device.o</text>
+  <text x="402" y="193" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="#a6e3a1">rasterizer.o</text>
 
   <!-- Arrows: compiler -> obj -->
   <line x1="280" y1="85" x2="348" y2="38" stroke="#6c7086" stroke-width="1" stroke-dasharray="4,3"/>
@@ -434,8 +430,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
 </figure>
 
 <div class="box box-blue">
-<strong>為什麼要獨立編譯？</strong> &mdash; 想像你的渲染器專案越來越大，有幾十個 <code>.cpp</code>。如果你只改了 <code>render_device.cpp</code>，編譯器只需要重新編譯這一個檔案，其他的 <code>.o</code> 可以直接重用。這就是<strong>增量編譯</strong>的好處，也是 <code>make</code> 工具存在的意義。
-</p>
+<strong>為什麼要獨立編譯？</strong> &mdash; 想像 renderer 專案越來越大，有幾十個 <code>.cpp</code>。如果你只改了 <code>rasterizer.cpp</code>，編譯器只需要重新編譯這一個檔案，其他的 <code>.o</code> 可以直接重用。這就是<strong>增量編譯</strong>的好處，也是 <code>make</code> 工具存在的意義。
 </div>
 
 <!-- ============ SECTION 4 ============ -->
@@ -469,9 +464,9 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
       <td>Windows API (由系統庫提供)</td>
     </tr>
     <tr>
-      <td><em>render_device.o</em></td>
-      <td>RenderDevice::Clear(), RenderDevice::DrawTriangle(), ...</td>
-      <td>ScreenManager::GetFrameBuffer(), memset()</td>
+      <td><em>rasterizer.o</em></td>
+      <td>Rasterizer::DrawLine(), Rasterizer::DrawTriangle(), ...</td>
+      <td>RenderDevice::SetPixel(), RenderDevice::GetWidth()</td>
     </tr>
   </tbody>
 </table>
@@ -482,12 +477,12 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
 
 <h3>undefined reference 的真相</h3>
 <p>
-現在你終於能理解那個恐怖的錯誤了。假設你在 <code>render_device.h</code> 宣告了一個新函式：
+現在你終於能理解那個恐怖的錯誤了。假設你在 <code>rasterizer.h</code> 宣告了一個新函式：
 </p>
 
 <div class="code">
-<span class="cmt">// render_device.h</span><br>
-<span class="kw">class</span> <span class="tp">RenderDevice</span> {<br>
+<span class="cmt">// rasterizer.h</span><br>
+<span class="kw">class</span> <span class="tp">Rasterizer</span> {<br>
 <span class="kw">public</span>:<br>
 &nbsp;&nbsp;<span class="tp">void</span> <span class="fn">DrawCircle</span>(<span class="tp">int</span> cx, <span class="tp">int</span> cy, <span class="tp">int</span> r, <span class="tp">uint32_t</span> color); <span class="cmt">// 新增！</span><br>
 &nbsp;&nbsp;<span class="cmt">// ...</span><br>
@@ -499,21 +494,21 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
 </p>
 
 <div class="code">
-device-&gt;<span class="fn">DrawCircle</span>(<span class="val">400</span>, <span class="val">300</span>, <span class="val">50</span>, <span class="val">0xFF0000</span>);
+rasterizer-&gt;<span class="fn">DrawCircle</span>(<span class="val">400</span>, <span class="val">300</span>, <span class="val">50</span>, <span class="val">0xFF0000</span>);
 </div>
 
 <p>
-但你忘了在 <code>render_device.cpp</code> 裡寫實作。會發生什麼事？
+但你忘了在 <code>rasterizer.cpp</code> 裡寫實作。會發生什麼事？
 </p>
 
 <ul>
   <li><strong>預處理</strong>：完全沒問題。<code>#include</code> 正常展開。</li>
-  <li><strong>編譯</strong>：也沒問題！編譯器看到 header 裡有宣告，簽名吻合，它很滿意，在 <code>main.o</code> 裡留下一個「待填」記號：「這裡要呼叫 <code>RenderDevice::DrawCircle</code>」。</li>
+  <li><strong>編譯</strong>：也沒問題！編譯器看到 header 裡有宣告，簽名吻合，它很滿意，在 <code>main.o</code> 裡留下一個「待填」記號：「這裡要呼叫 <code>Rasterizer::DrawCircle</code>」。</li>
   <li><strong>連結</strong>：<span style="color:#f38ba8; font-weight:bold;">爆炸。</span>連結器翻遍所有 <code>.o</code> 檔，找不到 <code>DrawCircle</code> 的定義。</li>
 </ul>
 
 <div class="code" style="border-color:#f38ba8;">
-<span style="color:#f38ba8;">undefined reference to `RenderDevice::DrawCircle(int, int, int, unsigned int)'</span><br>
+<span style="color:#f38ba8;">undefined reference to `Rasterizer::DrawCircle(int, int, int, unsigned int)'</span><br>
 <span style="color:#f38ba8;">collect2: error: ld returned 1 exit status</span>
 </div>
 
@@ -522,10 +517,10 @@ device-&gt;<span class="fn">DrawCircle</span>(<span class="val">400</span>, <spa
 </div>
 
 <!-- ============ SECTION 5 ============ -->
-<h2><span class="n">5</span> 你的渲染器的編譯流程</h2>
+<h2><span class="n">5</span> Renderer 專案作為 case study</h2>
 
 <p>
-把所有東西串起來，你的渲染器專案從原始碼到可執行檔的完整旅程長這樣：
+把所有東西串起來，一個 renderer 專案從原始碼到可執行檔的完整旅程長這樣。這張圖不是要你背目前有哪些檔案，而是要你看懂：module 拆得越多，translation unit、object file、linker 的心智模型就越重要。
 </p>
 
 <figure class="fig">
@@ -544,13 +539,13 @@ device-&gt;<span class="fn">DrawCircle</span>(<span class="val">400</span>, <spa
   <text x="68" y="117" text-anchor="middle" font-family="Consolas,monospace" font-size="10" fill="#89b4fa">screen_manager.cpp</text>
 
   <rect x="20" y="132" width="96" height="24" rx="4" fill="#89b4fa" fill-opacity="0.15" stroke="#89b4fa" stroke-width="0.8"/>
-  <text x="68" y="149" text-anchor="middle" font-family="Consolas,monospace" font-size="10" fill="#89b4fa">render_device.cpp</text>
+  <text x="68" y="149" text-anchor="middle" font-family="Consolas,monospace" font-size="10" fill="#89b4fa">rasterizer.cpp</text>
 
   <!-- Headers feeding in -->
   <rect x="140" y="44" width="88" height="52" rx="4" fill="#f9e2af" fill-opacity="0.10" stroke="#f9e2af" stroke-width="0.8"/>
   <text x="184" y="62" text-anchor="middle" font-family="Consolas,monospace" font-size="9" fill="#f9e2af">application.h</text>
   <text x="184" y="74" text-anchor="middle" font-family="Consolas,monospace" font-size="9" fill="#f9e2af">screen_manager.h</text>
-  <text x="184" y="86" text-anchor="middle" font-family="Consolas,monospace" font-size="9" fill="#f9e2af">render_device.h</text>
+  <text x="184" y="86" text-anchor="middle" font-family="Consolas,monospace" font-size="9" fill="#f9e2af">rasterizer.h</text>
   <text x="184" y="110" font-family="Consolas,monospace" font-size="9" fill="#6c7086" text-anchor="middle">#include 展開</text>
 
   <!-- Phase 2: Compilation -->
@@ -567,7 +562,7 @@ device-&gt;<span class="fn">DrawCircle</span>(<span class="val">400</span>, <spa
   <text x="314" y="117" text-anchor="middle" font-family="Consolas,monospace" font-size="10" fill="#a6e3a1">screen_manager.o</text>
 
   <rect x="270" y="132" width="88" height="24" rx="4" fill="#a6e3a1" fill-opacity="0.15" stroke="#a6e3a1" stroke-width="0.8"/>
-  <text x="314" y="149" text-anchor="middle" font-family="Consolas,monospace" font-size="10" fill="#a6e3a1">render_device.o</text>
+  <text x="314" y="149" text-anchor="middle" font-family="Consolas,monospace" font-size="10" fill="#a6e3a1">rasterizer.o</text>
 
   <!-- Arrows: phase1 -> phase2 -->
   <line x1="116" y1="48" x2="268" y2="48" stroke="#6c7086" stroke-width="1" marker-end="url(#arrowP)"/>
@@ -612,11 +607,11 @@ device-&gt;<span class="fn">DrawCircle</span>(<span class="val">400</span>, <spa
     </marker>
   </defs>
 </svg>
-<figcaption>Fig 4 &mdash; 你的渲染器專案完整編譯流程</figcaption>
+<figcaption>Fig 4 &mdash; renderer 專案從 source files 到 executable 的完整編譯流程</figcaption>
 </figure>
 
 <p>
-你的 <code>makefile</code> 正是在控制這個流程。當你執行 <code>make</code> 時，它會：
+<code>makefile</code> 正是在控制這個流程。當你執行 <code>make</code> 時，它會：
 </p>
 <ol>
   <li>對每個 <code>.cpp</code> 執行 <code>g++ -c</code>（<code>-c</code> 表示「只編譯，不連結」），產出對應的 <code>.o</code></li>
@@ -624,7 +619,7 @@ device-&gt;<span class="fn">DrawCircle</span>(<span class="val">400</span>, <spa
 </ol>
 
 <p>
-如果你只改了 <code>render_device.cpp</code>，<code>make</code> 會聰明地只重新編譯這一個檔案，然後重新連結。這比每次都重新編譯所有檔案快得多。
+如果你只改了 <code>rasterizer.cpp</code>，<code>make</code> 會聰明地只重新編譯這一個檔案，然後重新連結。這比每次都重新編譯所有檔案快得多。
 </p>
 
 <hr>
@@ -651,7 +646,7 @@ device-&gt;<span class="fn">DrawCircle</span>(<span class="val">400</span>, <spa
 
 <!-- ============ BOX: 前瞻 ============ -->
 <div class="box box-purple">
-<strong>下一步</strong> &mdash; 現在你知道原始碼如何變成可執行檔了。但當 <code>PixelRenderer.exe</code> 真正啟動時，記憶體裡發生了什麼？你的 <code>ScreenManager</code> 物件住在哪裡？<code>frame_buffer</code> 陣列住在哪裡？<code>new RenderDevice</code> 分配的空間又在哪裡？下一章我們進入<strong>記憶體佈局</strong>，看看 stack、heap、和 static 區各自的角色。
+<strong>下一步</strong> &mdash; 現在你知道原始碼如何變成可執行檔了。但 executable 啟動後，object 會住在哪裡？區域變數、heap allocation、全域資料、函式機器碼分別位於哪個區域？下一章我們進入<strong>記憶體佈局</strong>，把 C++ 的 storage duration 和 object lifetime 接起來。
 </div>
 
 <!-- ============ NEXT CH CARD ============ -->
@@ -659,7 +654,7 @@ device-&gt;<span class="fn">DrawCircle</span>(<span class="val">400</span>, <spa
   <div>
     <div class="next-label">NEXT CHAPTER</div>
     <div class="next-title">Ch02 — 記憶體佈局</div>
-    <div class="next-desc">Stack vs Heap vs Static &mdash; 你的渲染器物件住在記憶體的哪裡？</div>
+    <div class="next-desc">Stack vs Heap vs Static &mdash; object 住在哪裡，lifetime 就由誰管理</div>
   </div>
   <a class="next-arrow" href="ch02_memory_layout.html">&rarr;</a>
 </div>

@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>T-05 — Copy / Move / Object Transfer</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#1e1e2e; --bg1:#181825; --bg2:#11111b; --border:#313244;
+  --muted:#6c7086; --text:#cdd6f4; --blue:#89b4fa; --green:#a6e3a1;
+  --yellow:#f9e2af; --orange:#fab387; --red:#f38ba8; --purple:#cba6f7; --teal:#94e2d5;
+}
+body { background: var(--bg); color: var(--text); font-family: 'Georgia', serif; font-size: 15px; padding: 0 20px 80px; max-width: 900px; margin: 0 auto; line-height: 1.9; }
+nav { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); padding: 14px 0; border-bottom: 1px solid var(--border); margin-bottom: 36px; display: flex; align-items: center; gap: 10px; }
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--blue); }
+.nav-sep { color: var(--border); }
+.nav-cur { color: var(--text); }
+.nav-right { margin-left: auto; display: flex; gap: 16px; }
+.ch-header { margin-bottom: 40px; }
+.ch-label { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px; }
+.ch-title { color: var(--blue); font-size: 1.7em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub { color: var(--muted); font-size: 0.88em; margin-bottom: 14px; }
+.ch-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.ch-tag { font-family: 'Consolas', monospace; font-size: 0.72em; padding: 1px 7px; border-radius: 4px; background: var(--bg2); color: var(--muted); border: 1px solid var(--border); }
+h2 { color: var(--purple); font-size: 1em; font-family: 'Consolas', monospace; letter-spacing: 0.05em; padding: 10px 0; border-bottom: 1px solid var(--border); margin: 44px 0 20px; display: flex; align-items: center; gap: 12px; }
+h2 .n { background: var(--purple); color: var(--bg2); font-weight: bold; border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.85em; }
+h3 { color: var(--yellow); font-size: 0.95em; margin: 24px 0 10px; }
+p { margin-bottom: 12px; }
+strong { color: var(--yellow); }
+em { color: var(--orange); font-style: normal; }
+code { font-family: 'Consolas', monospace; color: var(--teal); }
+ul, ol { margin: 8px 0 14px 26px; line-height: 2.2; }
+.box { border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 0.9em; line-height: 1.85; background: var(--bg1); }
+.box-blue { border-left: 4px solid var(--blue); }
+.box-green { border-left: 4px solid var(--green); }
+.box-yellow { border-left: 4px solid var(--yellow); }
+.box-red { border-left: 4px solid var(--red); }
+.box-purple { border-left: 4px solid var(--purple); }
+.code { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em; line-height: 2.1; margin: 14px 0; overflow-x: auto; }
+.code .cmt { color: var(--muted); } .code .kw { color: var(--purple); } .code .val { color: var(--orange); } .code .tp { color: var(--blue); } .code .fn { color: var(--teal); }
+.ascii { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.82em; line-height: 1.55; margin: 14px 0; overflow-x: auto; color: var(--text); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9em; }
+thead { background: var(--bg1); }
+th { color: var(--muted); font-family: 'Consolas', monospace; font-size: 0.85em; padding: 8px 14px; text-align: left; border-bottom: 2px solid var(--border); }
+td { padding: 8px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.fig { margin: 24px auto; text-align: center; }
+.fig figcaption { color: var(--muted); font-size: 0.88em; margin-top: 8px; font-style: italic; }
+.next-ch { margin-top: 56px; padding: 20px 24px; background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 20px; }
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+.next-title { color: var(--orange); font-size: 1em; }
+.next-desc { color: var(--muted); font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: var(--orange); font-size: 1.6em; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">C++ for Pixel-Renderer</a>
+  <span class="nav-sep">/</span>
+  <span class="nav-cur">T-05 — Copy / Move / Object Transfer</span>
+  <div class="nav-right">
+    <a href="t04_value_category_reference_system.html">&larr; T-04</a>
+    <a href="t06_raii_resource_ownership_exception_safety.html">T-06 &rarr;</a>
+  </div>
+</nav>
+
+<div class="ch-header">
+  <div class="ch-label">THEORY TRACK &middot; T-05</div>
+  <div class="ch-title">Copy / Move / Object Transfer</div>
+  <div class="ch-sub">copy 是 duplication，move 是 transfer，return by value 常常是 direct construction</div>
+  <div class="ch-tags">
+    <span class="ch-tag">copy</span>
+    <span class="ch-tag">move</span>
+    <span class="ch-tag">copy-elision</span>
+  </div>
+</div>
+
+<p>
+T-04 已經把 value category 說清楚：<code>std::move(x)</code> 只是把 expression 轉成 xvalue，不會自己搬東西。那真正搬東西的是什麼？答案不是某個魔法語法，而是 type 自己定義的 object transfer operations：copy constructor、copy assignment、move constructor、move assignment，以及 return-by-value 的 result object formation。
+</p>
+
+<p>
+這章要回答 Pixel-Renderer 會一直遇到的問題：<strong>當 framebuffer、texture data、command buffer、math value、backend handle 在 function、container、factory 之間流動時，object 的語意到底是複製、轉移、借用，還是直接在目標位置形成？</strong>
+</p>
+
+<div class="box box-blue">
+<strong>本章範圍</strong> &mdash; 建立 object transfer 的 decision tree。你會分清 copy vs move、construction vs assignment、memberwise default operation vs custom operation、moved-from state、copy elision、NRVO、<code>return std::move(x)</code> 的風險、<code>noexcept move</code> 對 container 的影響，以及 Pixel-Renderer type 應該如何決定 copyable、move-only、borrowed view 或 Rule of Zero。
+</div>
+
+<h2><span class="n">1</span> naive model：copy 慢，move 快</h2>
+
+<p>
+很多人學 move 後會把世界分成兩格：
+</p>
+
+<pre class="ascii">copy = slow
+move = fast</pre>
+
+<p>
+這個模型有時會猜中結果，但它抓錯第一原則。Move 的本質不是「比較快的 copy」，而是 <strong>source object 的舊內容可以被放棄，所以 destination 可以接手它的 resource</strong>。
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Operation</th>
+      <th>第一問題</th>
+      <th>語意</th>
+      <th>典型後果</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>copy</code></td>
+      <td>source 之後還要保留原本語意嗎？</td>
+      <td>duplication 或 shared ownership。</td>
+      <td>source 和 destination 都 valid，通常都保留可用內容。</td>
+    </tr>
+    <tr>
+      <td><code>move</code></td>
+      <td>source 可以被消耗嗎？</td>
+      <td>ownership/state transfer。</td>
+      <td>destination 接手；source 仍然活著，但內容通常 unspecified。</td>
+    </tr>
+    <tr>
+      <td><code>elision</code></td>
+      <td>是否根本不需要 source object？</td>
+      <td>direct result construction。</td>
+      <td>沒有 copy，也沒有 move；object 直接在目標 storage 形成。</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="box box-yellow">
+<strong>第一個修正</strong> &mdash; C++ object transfer 不是效能標籤，而是語意選擇。先問 type 的 ownership/invariant，再問成本。
+</div>
+
+<h2><span class="n">2</span> Transfer 之前先問：object 擁有什麼？</h2>
+
+<p>
+T-02 說 type 是 valid states + operations + invariants；T-03 說 object 有 storage 與 lifetime。現在把它們合起來：copy/move 的設計取決於 object 擁有的是 value、resource、view，還是 platform handle。
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Type kind</th>
+      <th>例子</th>
+      <th>Copy</th>
+      <th>Move</th>
+      <th>直覺</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>small value</td>
+      <td><code>Vec2</code>, <code>Color</code>, <code>Rect</code></td>
+      <td>通常保留。</td>
+      <td>通常和 copy 差不多。</td>
+      <td>資料就在 object 本體裡，沒有外部 resource 可偷。</td>
+    </tr>
+    <tr>
+      <td>owning buffer</td>
+      <td><code>Framebuffer</code>, <code>Image</code>, <code>MeshData</code></td>
+      <td>可能昂貴，需明確 deep copy 或 delete。</td>
+      <td>通常有意義，可轉移內部 vector/heap block。</td>
+      <td>copy/move 都是 type policy。</td>
+    </tr>
+    <tr>
+      <td>borrowed view</td>
+      <td><code>std::span&lt;uint32_t&gt;</code>, pointer + pitch</td>
+      <td>cheap shallow copy。</td>
+      <td>沒太大意義。</td>
+      <td>copy view 不 copy resource，但 lifetime 由別人保證。</td>
+    </tr>
+    <tr>
+      <td>unique handle</td>
+      <td>Win32 <code>HWND</code>, SDL texture wrapper</td>
+      <td>通常 delete。</td>
+      <td>可能允許 move-only。</td>
+      <td>不能讓兩個 object 同時以為自己負責釋放同一個 handle。</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+因此 <code>Framebuffer fb2 = fb1;</code> 不是語法問題，而是設計問題：你希望它複製一整張畫面？共享同一塊 pixels？還是禁止，避免不小心複製幾 MB 的 buffer？
+</p>
+
+<h2><span class="n">3</span> Copy construction vs copy assignment</h2>
+
+<p>
+copy constructor 和 copy assignment 常被混在一起，但它們處理的是兩種不同狀態：
+</p>
+
+<pre class="ascii">copy construction:
+  destination does not exist yet
+  source object -> construct destination
+
+copy assignment:
+  destination already owns some state
+  replace destination's current state with source's state</pre>
+
+<div class="code">
+<span class="tp">Image</span> a = <span class="fn">LoadImage</span>(<span class="val">"a.png"</span>);<br>
+<span class="tp">Image</span> b = a;      <span class="cmt">// copy constructor: b was not alive before</span><br>
+<br>
+<span class="tp">Image</span> c = <span class="fn">LoadImage</span>(<span class="val">"c.png"</span>);<br>
+c = a;              <span class="cmt">// copy assignment: c already owns old pixels</span>
+</div>
+
+<p>
+這就是 assignment 比 construction 更容易寫錯的原因。左邊 object 已經活著，可能已經擁有 resource，所以 assignment 必須處理三件事：
+</p>
+
+<ol>
+  <li>不能在 self-assignment 時破壞自己。</li>
+  <li>不能先釋放舊 resource，再做可能失敗的新配置。</li>
+  <li>最後要讓 destination 回到 valid state。</li>
+</ol>
+
+<div class="code">
+<span class="tp">Image</span>&amp; <span class="kw">operator</span>=(<span class="kw">const</span> <span class="tp">Image</span>&amp; other) {<br>
+&nbsp;&nbsp;<span class="kw">if</span> (<span class="kw">this</span> == &amp;other) <span class="kw">return</span> *<span class="kw">this</span>;<br>
+<br>
+&nbsp;&nbsp;std::<span class="tp">vector</span>&lt;<span class="tp">uint32_t</span>&gt; new_pixels = other.pixels;<br>
+&nbsp;&nbsp;width = other.width;<br>
+&nbsp;&nbsp;height = other.height;<br>
+&nbsp;&nbsp;pixels = std::<span class="fn">move</span>(new_pixels);<br>
+&nbsp;&nbsp;<span class="kw">return</span> *<span class="kw">this</span>;<br>
+}
+</div>
+
+<p>
+這裡刻意先建立 <code>new_pixels</code>。如果 allocation 失敗，原本的 object 還沒被拆掉。這已經把 T-06 會正式處理的 exception safety 帶進來了。
+</p>
+
+<h2><span class="n">4</span> Move construction：轉移 ownership，不是瞬移 object</h2>
+
+<p>
+Move constructor 的 source 是 xvalue/prvalue。它表示 caller 給你一個可以被消耗的 source，但 source object 的 lifetime 仍然存在。
+</p>
+
+<div class="code">
+<span class="kw">class</span> <span class="tp">CpuBuffer</span> {<br>
+<span class="kw">public</span>:<br>
+&nbsp;&nbsp;<span class="fn">CpuBuffer</span>(<span class="tp">size_t</span> n) : ptr(<span class="kw">new</span> <span class="tp">uint32_t</span>[n]), count(n) {}<br>
+&nbsp;&nbsp;~<span class="fn">CpuBuffer</span>() { <span class="kw">delete</span>[] ptr; }<br>
+<br>
+&nbsp;&nbsp;<span class="fn">CpuBuffer</span>(<span class="tp">CpuBuffer</span>&amp;&amp; other) <span class="kw">noexcept</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;: ptr(other.ptr), count(other.count) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;other.ptr = <span class="kw">nullptr</span>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;other.count = <span class="val">0</span>;<br>
+&nbsp;&nbsp;}<br>
+<br>
+&nbsp;&nbsp;<span class="fn">CpuBuffer</span>(<span class="kw">const</span> <span class="tp">CpuBuffer</span>&amp;) = <span class="kw">delete</span>;<br>
+&nbsp;&nbsp;<span class="tp">CpuBuffer</span>&amp; <span class="kw">operator</span>=(<span class="kw">const</span> <span class="tp">CpuBuffer</span>&amp;) = <span class="kw">delete</span>;<br>
+<br>
+<span class="kw">private</span>:<br>
+&nbsp;&nbsp;<span class="tp">uint32_t</span>* ptr = <span class="kw">nullptr</span>;<br>
+&nbsp;&nbsp;<span class="tp">size_t</span> count = <span class="val">0</span>;<br>
+};
+</div>
+
+<p>
+move 後的 <code>other</code> 沒有消失。它只是被放進一個 <strong>valid but unspecified</strong> 的狀態。最少要求是：destructor 可以安全執行；通常也希望 assignment 可以讓它重新取得新內容。
+</p>
+
+<figure class="fig">
+<svg width="560" height="280" viewBox="0 0 560 280" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="560" height="280" rx="10" fill="#11111b"/>
+  <text x="280" y="28" text-anchor="middle" font-family="Consolas" font-size="12" fill="#6c7086">Move transfers handle state; source lifetime remains</text>
+
+  <rect x="46" y="70" width="150" height="70" rx="7" fill="#89b4fa" fill-opacity="0.12" stroke="#89b4fa"/>
+  <text x="121" y="96" text-anchor="middle" font-family="Consolas" font-size="11" fill="#89b4fa">source before</text>
+  <text x="121" y="118" text-anchor="middle" font-family="Consolas" font-size="10" fill="#cdd6f4">ptr = 0x5000</text>
+
+  <rect x="364" y="70" width="150" height="70" rx="7" fill="#a6e3a1" fill-opacity="0.12" stroke="#a6e3a1"/>
+  <text x="439" y="106" text-anchor="middle" font-family="Consolas" font-size="11" fill="#a6e3a1">heap pixels</text>
+
+  <line x1="196" y1="106" x2="362" y2="106" stroke="#89b4fa" stroke-width="1.3" marker-end="url(#arrowA)"/>
+
+  <rect x="46" y="184" width="150" height="70" rx="7" fill="#313244" fill-opacity="0.35" stroke="#313244"/>
+  <text x="121" y="210" text-anchor="middle" font-family="Consolas" font-size="11" fill="#6c7086">source after</text>
+  <text x="121" y="232" text-anchor="middle" font-family="Consolas" font-size="10" fill="#6c7086">ptr = nullptr</text>
+
+  <rect x="218" y="184" width="150" height="70" rx="7" fill="#cba6f7" fill-opacity="0.12" stroke="#cba6f7"/>
+  <text x="293" y="210" text-anchor="middle" font-family="Consolas" font-size="11" fill="#cba6f7">destination</text>
+  <text x="293" y="232" text-anchor="middle" font-family="Consolas" font-size="10" fill="#cdd6f4">ptr = 0x5000</text>
+
+  <rect x="390" y="184" width="124" height="70" rx="7" fill="#a6e3a1" fill-opacity="0.12" stroke="#a6e3a1"/>
+  <text x="452" y="220" text-anchor="middle" font-family="Consolas" font-size="11" fill="#a6e3a1">heap pixels</text>
+  <line x1="368" y1="220" x2="388" y2="220" stroke="#cba6f7" stroke-width="1.3" marker-end="url(#arrowB)"/>
+
+  <defs>
+    <marker id="arrowA" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="none" stroke="#89b4fa" stroke-width="1"/></marker>
+    <marker id="arrowB" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="none" stroke="#cba6f7" stroke-width="1"/></marker>
+  </defs>
+</svg>
+<figcaption>move 不會讓 source object 死掉；它只改變 source 的 state，讓 ownership 不再重複。</figcaption>
+</figure>
+
+<div class="box box-red">
+<strong>move constructor 的最低責任</strong> &mdash; 如果 destination 接手 source 的 resource，source 必須被改成不會再次釋放同一份 resource 的狀態。否則 move 只是 disguised shallow copy。
+</div>
+
+<h2><span class="n">5</span> Compiler-generated operations：不是免費正確</h2>
+
+<p>
+C++ 會幫 class 生成一些 special member functions，但它只能根據 members 做 memberwise operation。Compiler 不知道某個 <code>uint32_t*</code> 是 owner、borrower、view，還是 C API 暫借出來的 pointer。
+</p>
+
+<div class="code">
+<span class="kw">struct</span> <span class="tp">BadFramebuffer</span> {<br>
+&nbsp;&nbsp;<span class="tp">uint32_t</span>* pixels;<br>
+&nbsp;&nbsp;<span class="tp">int</span> width;<br>
+&nbsp;&nbsp;<span class="tp">int</span> height;<br>
+};<br>
+<br>
+<span class="tp">BadFramebuffer</span> b = a; <span class="cmt">// memberwise copy: copies pointer value only</span>
+</div>
+
+<p>
+如果 <code>pixels</code> 是 view，這可能合理。如果 <code>pixels</code> 是 owner，這是 double free 的入口。如果 <code>pixels</code> 指到 Win32 DIBSection memory，copy 出去還可能讓你誤以為 renderer core 擁有 platform memory。
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>你寫的 member</th>
+      <th>compiler 看到</th>
+      <th>compiler 看不到</th>
+      <th>設計動作</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>std::vector&lt;uint32_t&gt; pixels</code></td>
+      <td>member 自己知道 copy/move/destroy。</td>
+      <td>semantic size 是否合理。</td>
+      <td>通常 Rule of Zero。</td>
+    </tr>
+    <tr>
+      <td><code>uint32_t* pixels</code></td>
+      <td>只是一個 address value。</td>
+      <td>ownership、capacity、pitch、allocator。</td>
+      <td>必須明確 delete/copy/move 或包成 RAII type。</td>
+    </tr>
+    <tr>
+      <td><code>SDL_Texture*</code></td>
+      <td>只是一個 pointer。</td>
+      <td>誰呼叫 destroy、是否可跨 renderer。</td>
+      <td>通常 move-only wrapper + custom destructor。</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="box box-yellow">
+<strong>第二個修正</strong> &mdash; compiler-generated copy/move 是 memberwise semantic composition。只有當每個 member 都已經有正確語意，整個 type 的 default operation 才可信。
+</div>
+
+<h2><span class="n">6</span> Return by value：不是 out parameter 的敵人</h2>
+
+<p>
+Renderer 會有很多 factory-like function：
+</p>
+
+<div class="code">
+<span class="tp">Image</span> <span class="fn">LoadImage</span>(<span class="kw">const</span> <span class="tp">Path</span>&amp; path);<br>
+<span class="tp">MeshData</span> <span class="fn">BuildCubeMesh</span>();<br>
+<span class="tp">FrameCommands</span> <span class="fn">BuildUiCommands</span>(<span class="kw">const</span> <span class="tp">UiState</span>&amp; ui);
+</div>
+
+<p>
+naive C-style 直覺會擔心：「回傳大 object 會 copy，所以應該用 output pointer/reference」。但 modern C++ 要先分清三種 return shape：
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Return shape</th>
+      <th>主要 path</th>
+      <th>該怎麼想</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>return T{};</code></td>
+      <td>same-type prvalue direct result initialization。</td>
+      <td>通常沒有 source object 可以 move；result object 直接形成。</td>
+    </tr>
+    <tr>
+      <td><code>return local;</code></td>
+      <td>NRVO candidate；失敗時通常 move fallback。</td>
+      <td>保留 compiler 把 local 建在 result storage 的機會。</td>
+    </tr>
+    <tr>
+      <td><code>return std::move(local);</code></td>
+      <td>明確 xvalue path。</td>
+      <td>通常破壞 plain local name 的 NRVO shape，可能變成 pessimizing move。</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="code">
+<span class="tp">Image</span> <span class="fn">MakeImage</span>(<span class="tp">int</span> w, <span class="tp">int</span> h) {<br>
+&nbsp;&nbsp;<span class="tp">Image</span> img(w, h);<br>
+&nbsp;&nbsp;<span class="fn">Clear</span>(img);<br>
+&nbsp;&nbsp;<span class="kw">return</span> img;              <span class="cmt">// keep NRVO candidate shape</span><br>
+}<br>
+<br>
+<span class="tp">Image</span> <span class="fn">MakeEmpty</span>() {<br>
+&nbsp;&nbsp;<span class="kw">return</span> <span class="tp">Image</span>{};          <span class="cmt">// direct result construction</span><br>
+}
+</div>
+
+<p>
+這是為什麼「看到 return 大 object 就改 out parameter」不一定比較現代，也不一定比較清楚。Out parameter 的確有用途，例如要重用 caller 已有 capacity、回傳多個結果、或配合 C API；但它不是避免 copy 的第一反應。
+</p>
+
+<div class="box box-blue">
+<strong>Return-by-value guideline</strong> &mdash; factory、loader、builder 預設可以 return by value。先讓 type 的 move/copy/elision 語意正確，再用 profiler 判斷是否需要改成 reuse buffer / out parameter。
+</div>
+
+<h2><span class="n">7</span> noexcept move：container 為什麼在意？</h2>
+
+<p>
+<code>std::vector</code> reallocation 是最容易把 copy/move 語意具體化的地方。假設 vector 需要從容量 4 長到 8，它要把舊元素放到新 storage：
+</p>
+
+<pre class="ascii">old storage: [ e0 ][ e1 ][ e2 ][ e3 ]
+                 |
+                 | relocate elements
+                 v
+new storage: [ e0 ][ e1 ][ e2 ][ e3 ][    ][    ][    ][    ]</pre>
+
+<p>
+如果 element type 的 move constructor 可能 throw，而 copy constructor 又可用，vector 可能偏好 copy，因為 copy 失敗時舊 storage 還完整，可以維持 strong exception guarantee。若 move 被標成 <code>noexcept</code>，vector 比較能安心 move。
+</p>
+
+<div class="code">
+<span class="fn">Image</span>(<span class="tp">Image</span>&amp;&amp; other) <span class="kw">noexcept</span> = <span class="kw">default</span>;<br>
+<span class="tp">Image</span>&amp; <span class="kw">operator</span>=(<span class="tp">Image</span>&amp;&amp; other) <span class="kw">noexcept</span> = <span class="kw">default</span>;
+</div>
+
+<p>
+對只移動 pointer、handle、<code>std::vector</code>、<code>std::unique_ptr</code> 的 type，move 通常應該能做到 <code>noexcept</code>。但不要為了讓 container 選 move 就亂標。<code>noexcept</code> 是 contract：如果真的 throw，程式會走向 <code>std::terminate</code>。
+</p>
+
+<div class="box box-purple">
+<strong>和 T-06 的連接</strong> &mdash; <code>noexcept move</code> 不是孤立技巧。它牽涉 resource release、exception safety、container guarantee。下一章會把這些整理進 RAII / Resource Ownership。
+</div>
+
+<h2><span class="n">8</span> Rule of Zero：讓 member 自己帶語意</h2>
+
+<p>
+最穩的 C++ 設計常常不是手寫一整套 copy/move，而是讓 member 的 type 已經表達 ownership。
+</p>
+
+<div class="code">
+<span class="kw">class</span> <span class="tp">Framebuffer</span> {<br>
+<span class="kw">public</span>:<br>
+&nbsp;&nbsp;<span class="fn">Framebuffer</span>(<span class="tp">int</span> w, <span class="tp">int</span> h)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;: width(w), height(h), pixels(<span class="kw">static_cast</span>&lt;<span class="tp">size_t</span>&gt;(w * h)) {}<br>
+<br>
+&nbsp;&nbsp;<span class="tp">uint32_t</span>* <span class="fn">Data</span>() { <span class="kw">return</span> pixels.<span class="fn">data</span>(); }<br>
+&nbsp;&nbsp;<span class="kw">const</span> <span class="tp">uint32_t</span>* <span class="fn">Data</span>() <span class="kw">const</span> { <span class="kw">return</span> pixels.<span class="fn">data</span>(); }<br>
+<br>
+<span class="kw">private</span>:<br>
+&nbsp;&nbsp;<span class="tp">int</span> width = <span class="val">0</span>;<br>
+&nbsp;&nbsp;<span class="tp">int</span> height = <span class="val">0</span>;<br>
+&nbsp;&nbsp;std::<span class="tp">vector</span>&lt;<span class="tp">uint32_t</span>&gt; pixels;<br>
+};
+</div>
+
+<p>
+這種版本下，<code>Framebuffer</code> 不需要自己寫 destructor，也不需要自己寫 move constructor。<code>std::vector</code> 已經知道如何 copy/move/destroy its storage。你要做的是決定 operation 是否應該公開：
+</p>
+
+<div class="code">
+<span class="fn">Framebuffer</span>(<span class="kw">const</span> <span class="tp">Framebuffer</span>&amp;) = <span class="kw">delete</span>;            <span class="cmt">// if accidental full image copy is unwanted</span><br>
+<span class="tp">Framebuffer</span>&amp; <span class="kw">operator</span>=(<span class="kw">const</span> <span class="tp">Framebuffer</span>&amp;) = <span class="kw">delete</span>;<br>
+<br>
+<span class="fn">Framebuffer</span>(<span class="tp">Framebuffer</span>&amp;&amp;) <span class="kw">noexcept</span> = <span class="kw">default</span>;<br>
+<span class="tp">Framebuffer</span>&amp; <span class="kw">operator</span>=(<span class="tp">Framebuffer</span>&amp;&amp;) <span class="kw">noexcept</span> = <span class="kw">default</span>;
+</div>
+
+<p>
+注意這不是說 framebuffer 一定要禁止 copy。它是在說 copy 是否存在要由語意決定：教學或工具 code 可能希望 copy image；hot path renderer state 可能希望禁止 accidental copy。
+</p>
+
+<h2><span class="n">9</span> Pixel-Renderer type policy</h2>
+
+<p>
+把這章收束到專案設計，可以得到一張初版 policy 表：
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>建議語意</th>
+      <th>理由</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>Vec2</code>, <code>Vec3</code>, <code>Color</code></td>
+      <td>copyable value type。</td>
+      <td>小型 inline data，copy 語意清楚，move 沒有特殊價值。</td>
+    </tr>
+    <tr>
+      <td><code>Framebuffer</code></td>
+      <td>第一版可 move-only；是否 copyable 要明確選。</td>
+      <td>owns CPU pixels；accidental copy 成本高，而且容易混淆 ownership。</td>
+    </tr>
+    <tr>
+      <td><code>FramebufferView</code></td>
+      <td>copyable borrowed view。</td>
+      <td>copy pointer + size + pitch 合理，但不得超過 owner lifetime。</td>
+    </tr>
+    <tr>
+      <td><code>DisplayBackend</code></td>
+      <td>通常 non-copyable；可能 move-only 或固定 lifetime。</td>
+      <td>owns platform/window/texture handles。</td>
+    </tr>
+    <tr>
+      <td><code>DrawCommand</code></td>
+      <td>prefer copyable/movable value command。</td>
+      <td>command buffer 應擁有跨 phase 所需資料，避免 dangling reference。</td>
+    </tr>
+    <tr>
+      <td><code>TextureData</code>, <code>MeshData</code></td>
+      <td>return by value + movable owner。</td>
+      <td>loader/builder 產生資料後交給 renderer/cache，move/elision 都自然。</td>
+    </tr>
+  </tbody>
+</table>
+
+<pre class="ascii">Rasterizer core:
+  Vec3 / Color / Rect
+    -> small copyable values
+
+Renderer state:
+  Framebuffer
+    -> owns pixels
+    -> copy policy explicit
+    -> move is useful
+
+Platform layer:
+  DisplayBackend
+    -> owns OS/SDL/Win32 handles
+    -> non-copyable resource wrapper
+
+Frame data:
+  DrawCommand / MeshData / TextureData
+    -> value objects carried by vector
+    -> rely on move/elision, avoid long-lived borrowed refs</pre>
+
+<div class="box box-red">
+<strong>不要把 transfer policy 藏在註解裡</strong> &mdash; 如果 type 不該 copy，就 <code>= delete</code>。如果 type 應該 cheap view copy，就把名字叫成 <code>View</code> 或使用 <code>std::span</code>。如果 type owns resource，就讓 member type 或 special members 明確表達。
+</div>
+
+<h2><span class="n">10</span> verification：怎麼真的看見 copy/move/elision？</h2>
+
+<p>
+你可以用 logging type 驗證自己的 mental model，但要注意 optimizer 與 C++17 guaranteed copy elision 會讓結果和舊教材不同。
+</p>
+
+<div class="code">
+<span class="kw">struct</span> <span class="tp">Trace</span> {<br>
+&nbsp;&nbsp;<span class="fn">Trace</span>() { <span class="fn">puts</span>(<span class="val">"default"</span>); }<br>
+&nbsp;&nbsp;<span class="fn">Trace</span>(<span class="kw">const</span> <span class="tp">Trace</span>&amp;) { <span class="fn">puts</span>(<span class="val">"copy"</span>); }<br>
+&nbsp;&nbsp;<span class="fn">Trace</span>(<span class="tp">Trace</span>&amp;&amp;) <span class="kw">noexcept</span> { <span class="fn">puts</span>(<span class="val">"move"</span>); }<br>
+&nbsp;&nbsp;~<span class="fn">Trace</span>() { <span class="fn">puts</span>(<span class="val">"destroy"</span>); }<br>
+};<br>
+<br>
+<span class="tp">Trace</span> <span class="fn">MakeA</span>() { <span class="kw">return</span> <span class="tp">Trace</span>{}; }<br>
+<span class="tp">Trace</span> <span class="fn">MakeB</span>() { <span class="tp">Trace</span> t; <span class="kw">return</span> t; }<br>
+<span class="tp">Trace</span> <span class="fn">MakeC</span>() { <span class="tp">Trace</span> t; <span class="kw">return</span> std::<span class="fn">move</span>(t); }<br>
+</div>
+
+<p>
+可以用這些方向檢查：
+</p>
+
+<ul>
+  <li><code>MakeA</code> 是否沒有 copy/move log？它是 same-type prvalue return。</li>
+  <li><code>MakeB</code> 在不同 compiler/flags 下是否可能 NRVO？</li>
+  <li><code>MakeC</code> 是否更容易看到 move？這不代表它比較好，可能只是關掉 NRVO path。</li>
+  <li>對 container reallocation，移除 <code>noexcept</code> 後 <code>std::vector&lt;T&gt;</code> 是否改走 copy？</li>
+</ul>
+
+<div class="box box-green">
+<strong>本章學到的三件事：</strong>
+<ol>
+  <li>copy/move 不是單純快慢差異；copy 是 duplication 或 shared semantics，move 是 ownership/state transfer，elision 則可能完全沒有 transfer。</li>
+  <li>construction 和 assignment 的難度不同；assignment 要替已經活著、可能擁有舊 resource 的 object 安全換狀態。</li>
+  <li>Pixel-Renderer 的 type 要明確標出 transfer policy：math value copyable、framebuffer owner 明確 copy/move、backend handle non-copyable、view cheap copy 但不 owns lifetime。</li>
+</ol>
+</div>
+
+<p>
+下一章要把 transfer policy 往更完整的 resource ownership 推進。Copy/move 解釋的是 object 如何被交付；RAII 解釋的是 object 如何在整個 lifetime 期間取得、維持、釋放 resource，並在 exception 或 early return 發生時仍然不漏資源。
+</p>
+
+<div class="next-ch">
+  <div>
+    <div class="next-label">NEXT THEORY</div>
+    <div class="next-title">T-06 &mdash; RAII / Resource Ownership / Exception Safety</div>
+    <div class="next-desc">下一章會把 destructor、Rule of Zero/Five、unique_ptr/shared_ptr、custom deleter、exception safety、move-only handle 整理成完整 ownership 模型。</div>
+  </div>
+  <a class="next-arrow" href="t06_raii_resource_ownership_exception_safety.html">&rarr;</a>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Ch17 — 繼承、virtual 與 vtable</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#1e1e2e; --bg1:#181825; --bg2:#11111b; --border:#313244;
+  --muted:#6c7086; --text:#cdd6f4; --blue:#89b4fa; --green:#a6e3a1;
+  --yellow:#f9e2af; --orange:#fab387; --red:#f38ba8; --purple:#cba6f7; --teal:#94e2d5;
+}
+body { background: var(--bg); color: var(--text); font-family: 'Georgia', serif; font-size: 15px; padding: 0 20px 80px; max-width: 900px; margin: 0 auto; line-height: 1.9; }
+nav { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); padding: 14px 0; border-bottom: 1px solid var(--border); margin-bottom: 36px; display: flex; align-items: center; gap: 10px; }
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--blue); }
+.nav-sep { color: var(--border); }
+.nav-cur { color: var(--text); }
+.nav-right { margin-left: auto; display: flex; gap: 16px; }
+.ch-header { margin-bottom: 40px; }
+.ch-label { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px; }
+.ch-title { color: var(--blue); font-size: 1.7em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub { color: var(--muted); font-size: 0.88em; margin-bottom: 14px; }
+.ch-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.ch-tag { font-family: 'Consolas', monospace; font-size: 0.72em; padding: 1px 7px; border-radius: 4px; background: var(--bg2); color: var(--muted); border: 1px solid var(--border); }
+h2 { color: var(--purple); font-size: 1em; font-family: 'Consolas', monospace; letter-spacing: 0.05em; padding: 10px 0; border-bottom: 1px solid var(--border); margin: 44px 0 20px; display: flex; align-items: center; gap: 12px; }
+h2 .n { background: var(--purple); color: var(--bg2); font-weight: bold; border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.85em; }
+h3 { color: var(--yellow); font-size: 0.95em; margin: 24px 0 10px; }
+p { margin-bottom: 12px; }
+strong { color: var(--yellow); }
+em { color: var(--orange); font-style: normal; }
+code { font-family: 'Consolas', monospace; color: var(--teal); }
+ul, ol { margin: 8px 0 14px 26px; line-height: 2.2; }
+.box { border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 0.9em; line-height: 1.85; background: var(--bg1); }
+.box-blue { border-left: 4px solid var(--blue); }
+.box-green { border-left: 4px solid var(--green); }
+.box-yellow { border-left: 4px solid var(--yellow); }
+.box-red { border-left: 4px solid var(--red); }
+.box-purple { border-left: 4px solid var(--purple); }
+.code { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em; line-height: 2.1; margin: 14px 0; overflow-x: auto; }
+.code .cmt { color: var(--muted); } .code .kw { color: var(--purple); } .code .val { color: var(--orange); } .code .tp { color: var(--blue); } .code .fn { color: var(--teal); }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+.two-col > div { background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; }
+.col-title { font-family: 'Consolas', monospace; font-size: 0.85em; margin-bottom: 10px; color: var(--muted); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9em; }
+thead { background: var(--bg1); }
+th { color: var(--muted); font-family: 'Consolas', monospace; font-size: 0.85em; padding: 8px 14px; text-align: left; border-bottom: 2px solid var(--border); }
+td { padding: 8px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.fig { margin: 24px auto; text-align: center; }
+.fig figcaption { color: var(--muted); font-size: 0.88em; margin-top: 8px; font-style: italic; }
+.next-ch { margin-top: 56px; padding: 20px 24px; background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 20px; }
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+.next-title { color: var(--blue); font-size: 1em; }
+.next-desc { color: var(--muted); font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: var(--blue); font-size: 1.6em; text-decoration: none; }
+@media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">C++ 複習</a>
+  <span class="nav-sep">/</span>
+  <span class="nav-cur">Ch17 — 繼承、virtual 與 vtable</span>
+  <div class="nav-right">
+    <a href="ch16_smart_pointer.html">&larr; Ch16</a>
+    <a href="ch18_design_patterns.html">Ch18 &rarr;</a>
+  </div>
+</nav>
+
+<div class="ch-header">
+  <div class="ch-label">PART 6 &middot; CHAPTER 17</div>
+  <div class="ch-title">繼承、virtual 與 vtable</div>
+  <div class="ch-sub">runtime dispatch 讓行為可替換，但不是免費抽象</div>
+  <div class="ch-tags">
+    <span class="ch-tag">virtual</span>
+    <span class="ch-tag">vtable</span>
+    <span class="ch-tag">interface</span>
+  </div>
+</div>
+
+<p>
+上一章說 <code>unique_ptr</code> 可以管理 lifetime。但如果你希望同一個 pointer 背後可以是 <code>Win32DisplayBackend</code>、<code>SDLDisplayBackend</code>、或 <code>MacOSDisplayBackend</code>，只靠 smart pointer 還不夠。
+</p>
+<p>
+這章要回答的是：C++ 怎麼讓你透過同一個 interface 呼叫不同 implementation？代價是什麼？什麼時候值得？
+</p>
+
+<div class="box box-blue">
+<strong>本章範圍</strong> &mdash; 建立 runtime polymorphism 的實用模型：base class pointer/reference、virtual function、vtable、virtual destructor、interface ownership。重點會放在 Pixel-Renderer 的 <code>Application</code> hooks、DisplayBackend abstraction、Shader/UI renderer 這些真實擴充點。
+</div>
+
+<h2><span class="n">1</span> naive model：繼承就是共用程式碼</h2>
+
+<p>
+很多人第一次學 inheritance 會把它想成：
+</p>
+
+<div class="code">
+class B inherits A<br>
+so B can reuse A's code
+</div>
+
+<p>
+這只是 inheritance 的一種用途，而且常常不是最重要的用途。對 renderer architecture 來說，更重要的是：
+</p>
+
+<div class="code">
+caller knows the interface<br>
+runtime object decides the implementation
+</div>
+
+<p>
+也就是 <strong>dynamic dispatch</strong>。你不是為了少打 code 才使用 virtual，而是為了在 runtime 替換行為。
+</p>
+
+<h2><span class="n">2</span> 目前專案已經有 virtual hook</h2>
+
+<p>
+<code>Application</code> 現在已經有一組 virtual hooks：
+</p>
+
+<div class="code">
+<span class="kw">class</span> <span class="tp">Application</span> {<br>
+<span class="kw">protected</span>:<br>
+&nbsp;&nbsp;<span class="kw">virtual</span> <span class="kw">void</span> <span class="fn">OnInit</span>() {}<br>
+&nbsp;&nbsp;<span class="kw">virtual</span> <span class="kw">void</span> <span class="fn">OnUpdate</span>(<span class="tp">float</span> delta_time) {}<br>
+&nbsp;&nbsp;<span class="kw">virtual</span> <span class="kw">void</span> <span class="fn">OnRender</span>() {}<br>
+&nbsp;&nbsp;<span class="kw">virtual</span> <span class="kw">void</span> <span class="fn">OnClose</span>() {}<br>
+};
+</div>
+
+<p>
+<code>Application::Run()</code> 不需要知道你的 demo app 實際怎麼 render。它只知道「每一 frame 要呼叫 <code>OnUpdate</code> 和 <code>OnRender</code>」。真正行為由 derived class override。
+</p>
+
+<div class="box box-green">
+<strong>這是 Template Method pattern 的雛形</strong><br><br>
+Base class 固定流程：init、loop、update、render、close。Derived class 填入某些步驟。這不是 backend abstraction，但它已經是 runtime polymorphism 的一種使用方式。
+</div>
+
+<h2><span class="n">3</span> DisplayBackend interface</h2>
+
+<p>
+未來如果要把 Win32 繪製替換成 SDL 或 macOS，適合出現另一種 interface：
+</p>
+
+<div class="code">
+<span class="kw">class</span> <span class="tp">DisplayBackend</span> {<br>
+<span class="kw">public</span>:<br>
+&nbsp;&nbsp;<span class="kw">virtual</span> ~<span class="fn">DisplayBackend</span>() = <span class="kw">default</span>;<br>
+<br>
+&nbsp;&nbsp;<span class="kw">virtual</span> <span class="tp">bool</span> <span class="fn">Init</span>(<span class="tp">int</span> width, <span class="tp">int</span> height, <span class="kw">const</span> <span class="tp">char</span>* title) = <span class="val">0</span>;<br>
+&nbsp;&nbsp;<span class="kw">virtual</span> <span class="kw">void</span> <span class="fn">PollEvents</span>() = <span class="val">0</span>;<br>
+&nbsp;&nbsp;<span class="kw">virtual</span> <span class="tp">bool</span> <span class="fn">ShouldClose</span>() <span class="kw">const</span> = <span class="val">0</span>;<br>
+&nbsp;&nbsp;<span class="kw">virtual</span> <span class="kw">void</span> <span class="fn">Present</span>(<span class="kw">const</span> <span class="tp">Framebuffer</span>&amp; fb) = <span class="val">0</span>;<br>
+};
+</div>
+
+<p>
+然後 Application 可以 owns 一個 interface pointer：
+</p>
+
+<div class="code">
+std::<span class="tp">unique_ptr</span>&lt;<span class="tp">DisplayBackend</span>&gt; backend;<br>
+backend = std::<span class="fn">make_unique</span>&lt;<span class="tp">SDLDisplayBackend</span>&gt;();<br>
+backend-&gt;<span class="fn">Present</span>(framebuffer);
+</div>
+
+<p>
+這裡有兩層語意：
+</p>
+
+<ul>
+<li><code>unique_ptr</code>：Application owns backend lifetime。</li>
+<li><code>virtual Present</code>：實際呼叫 SDL / Win32 / macOS implementation。</li>
+</ul>
+
+<h2><span class="n">4</span> vtable 的最低限度模型</h2>
+
+<p>
+只要 class 有 virtual function，多數實作會在 object 裡放一個隱藏的 vptr，指向一張 vtable。vtable 裡放的是 virtual functions 的實際 function pointers。
+</p>
+
+<figure class="fig">
+<svg width="560" height="330" viewBox="0 0 560 330" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="560" height="330" rx="10" fill="#11111b"/>
+  <text x="280" y="30" text-anchor="middle" font-family="Consolas" font-size="12" fill="#6c7086">virtual dispatch mental model</text>
+
+  <rect x="42" y="86" width="150" height="92" rx="8" fill="#89b4fa" fill-opacity="0.12" stroke="#89b4fa"/>
+  <text x="117" y="112" text-anchor="middle" font-family="Consolas" font-size="10" fill="#89b4fa">DisplayBackend*</text>
+  <text x="117" y="138" text-anchor="middle" font-family="Consolas" font-size="9" fill="#cdd6f4">points to object</text>
+  <text x="117" y="158" text-anchor="middle" font-family="Consolas" font-size="9" fill="#cdd6f4">static type: base</text>
+
+  <rect x="242" y="70" width="124" height="124" rx="8" fill="#cba6f7" fill-opacity="0.12" stroke="#cba6f7"/>
+  <text x="304" y="98" text-anchor="middle" font-family="Consolas" font-size="10" fill="#cba6f7">SDLBackend obj</text>
+  <text x="304" y="124" text-anchor="middle" font-family="Consolas" font-size="9" fill="#cdd6f4">vptr</text>
+  <text x="304" y="146" text-anchor="middle" font-family="Consolas" font-size="9" fill="#cdd6f4">SDL state</text>
+  <text x="304" y="168" text-anchor="middle" font-family="Consolas" font-size="9" fill="#cdd6f4">window/texture</text>
+
+  <rect x="416" y="76" width="108" height="112" rx="8" fill="#a6e3a1" fill-opacity="0.12" stroke="#a6e3a1"/>
+  <text x="470" y="102" text-anchor="middle" font-family="Consolas" font-size="10" fill="#a6e3a1">vtable</text>
+  <text x="470" y="128" text-anchor="middle" font-family="Consolas" font-size="9" fill="#cdd6f4">Init -> SDL</text>
+  <text x="470" y="150" text-anchor="middle" font-family="Consolas" font-size="9" fill="#cdd6f4">Present -> SDL</text>
+  <text x="470" y="172" text-anchor="middle" font-family="Consolas" font-size="9" fill="#cdd6f4">Destroy -> SDL</text>
+
+  <line x1="192" y1="132" x2="238" y2="132" stroke="#89b4fa" stroke-width="1.2" marker-end="url(#arrowB)"/>
+  <line x1="366" y1="124" x2="412" y2="124" stroke="#cba6f7" stroke-width="1.2" marker-end="url(#arrowP)"/>
+
+  <text x="282" y="250" text-anchor="middle" font-family="Consolas" font-size="10" fill="#6c7086">backend->Present(fb) follows vptr -> vtable -> actual SDL Present function</text>
+
+  <defs>
+    <marker id="arrowB" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="none" stroke="#89b4fa" stroke-width="1"/></marker>
+    <marker id="arrowP" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="none" stroke="#cba6f7" stroke-width="1"/></marker>
+  </defs>
+</svg>
+<figcaption>Base pointer 決定你能呼叫哪些 interface；vtable 決定 runtime 實際跳到哪個 implementation。</figcaption>
+</figure>
+
+<p>
+所以 dynamic dispatch 的概念流程是：
+</p>
+
+<div class="code">
+backend-&gt;Present(fb)<br>
+&nbsp;&nbsp;-&gt; read object vptr<br>
+&nbsp;&nbsp;-&gt; find Present slot in vtable<br>
+&nbsp;&nbsp;-&gt; call SDLDisplayBackend::Present or Win32DisplayBackend::Present
+</div>
+
+<h2><span class="n">5</span> virtual destructor 不是可選裝飾</h2>
+
+<p>
+如果你會透過 base pointer delete derived object，base class destructor 必須是 virtual：
+</p>
+
+<div class="code">
+<span class="kw">class</span> <span class="tp">DisplayBackend</span> {<br>
+<span class="kw">public</span>:<br>
+&nbsp;&nbsp;<span class="kw">virtual</span> ~<span class="fn">DisplayBackend</span>() = <span class="kw">default</span>;<br>
+};
+</div>
+
+<p>
+原因是：
+</p>
+
+<div class="code">
+std::<span class="tp">unique_ptr</span>&lt;<span class="tp">DisplayBackend</span>&gt; backend = std::<span class="fn">make_unique</span>&lt;<span class="tp">SDLDisplayBackend</span>&gt;();<br>
+<span class="cmt">// unique_ptr destructs through DisplayBackend*</span>
+</div>
+
+<p>
+如果 destructor 不是 virtual，derived destructor 可能不會正確執行，SDL window / texture / platform handle 就可能 leak 或以錯誤方式釋放。
+</p>
+
+<div class="box box-red">
+<strong>規則</strong> &mdash; 只要一個 class 是 polymorphic base，並且可能透過 base pointer/reference 擁有或刪除 derived object，就給它 virtual destructor。
+</div>
+
+<h2><span class="n">6</span> virtual 的成本與邊界</h2>
+
+<p>
+Virtual dispatch 的成本通常包含：
+</p>
+
+<ul>
+<li>object 多一個 vptr。</li>
+<li>呼叫時多一次間接跳轉。</li>
+<li>compiler 比較難 inline 和最佳化。</li>
+<li>CPU branch prediction / instruction cache 可能受影響。</li>
+</ul>
+
+<p>
+這不代表不能用 virtual。它代表你要把 virtual 放在正確的邊界，而不是放在每個 pixel 或每個 inner loop。
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>位置</th>
+      <th>是否適合 virtual</th>
+      <th>理由</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>DisplayBackend::Present</code></td>
+      <td>適合</td>
+      <td>每 frame 呼叫一次，換取平台可替換性。</td>
+    </tr>
+    <tr>
+      <td><code>Rasterizer::SetPixel</code> per pixel</td>
+      <td>通常不適合</td>
+      <td>inner loop 內呼叫數百萬次，dispatch 成本與 inline 會重要。</td>
+    </tr>
+    <tr>
+      <td><code>Application::OnRender</code></td>
+      <td>適合</td>
+      <td>frame-level hook，成本可忽略，架構清楚。</td>
+    </tr>
+    <tr>
+      <td>Shader interface</td>
+      <td>視階段而定</td>
+      <td>教學版可以 virtual；高效版可能改 template、function object、JIT 或 command data。</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2><span class="n">7</span> 不是所有 polymorphism 都要 inheritance</h2>
+
+<p>
+C++ 有很多替代方式：
+</p>
+
+<ul>
+<li><strong>virtual interface</strong>：runtime 可替換，適合 backend / platform boundary。</li>
+<li><strong>template</strong>：compile-time polymorphism，適合 hot path 或 math code。</li>
+<li><strong>function pointer / std::function</strong>：把 callable 當資料傳遞。</li>
+<li><strong>variant</strong>：有限集合的 alternatives，避免 heap allocation 和 virtual base。</li>
+<li><strong>command buffer</strong>：把行為轉成資料，再由 backend 解讀。</li>
+</ul>
+
+<p>
+選擇時先問：你需要 runtime 替換嗎？型別集合是否固定？呼叫是否在 hot loop？ownership 在哪裡？這些問題比「OOP 好不好」更具體。
+</p>
+
+<h2><span class="n">8</span> Pixel-Renderer 的落點</h2>
+
+<p>
+對 Pixel-Renderer，目前最合理的 virtual 邊界是：
+</p>
+
+<ul>
+<li><strong>DisplayBackend</strong>：Win32 / SDL / macOS 替換點。這是最值得 virtual 的地方。</li>
+<li><strong>Application hooks</strong>：目前已經存在，用來讓 demo app 填入 update/render 行為。</li>
+<li><strong>Shader interface</strong>：早期可以用 virtual 幫助理解 programmable pipeline；後續再評估 hot path 成本。</li>
+<li><strong>UI renderer backend</strong>：UI draw commands 可以被不同 backend consume，interface 可以放在 frame-level，不要放在 per-pixel inner loop。</li>
+</ul>
+
+<div class="box box-blue">
+<strong>架構判斷</strong> &mdash; 用 virtual 隔離「低頻、平台相依、需要替換」的邊界；避免在「高頻、資料密集、可靜態決定」的內層演算法濫用 virtual。
+</div>
+
+<hr>
+
+<div class="box box-yellow">
+<strong>常見陷阱</strong><br><br>
+<strong>1. 把 inheritance 當 code reuse 工具</strong> &mdash; renderer 架構裡更常需要的是 interface substitution，不是共享幾行 helper code。<br><br>
+<strong>2. 忘記 virtual destructor</strong> &mdash; base pointer owns derived object 時，沒有 virtual destructor 會讓 teardown 語意壞掉。<br><br>
+<strong>3. 把 virtual 放進 hot loop</strong> &mdash; per-pixel / per-vertex inner loop 應先考慮 static dispatch、data-oriented design 或 command data。<br><br>
+<strong>4. 混淆 lifetime 與 dispatch</strong> &mdash; <code>unique_ptr</code> 解決 ownership；<code>virtual</code> 解決 runtime method selection。它們常一起用，但不是同一件事。
+</div>
+
+<div class="box box-green">
+<strong>本章學到的三件事</strong><br><br>
+<strong>1.</strong> Virtual function 讓 base pointer/reference 在 runtime 呼叫 derived implementation，核心是 substitutable behavior。<br><br>
+<strong>2.</strong> vtable 的代價是間接呼叫與較差 inline 機會；適合放在 frame/platform boundary，不適合濫放在 hot loop。<br><br>
+<strong>3.</strong> Polymorphic base class 通常需要 virtual destructor，尤其當它會被 <code>unique_ptr&lt;Base&gt;</code> 擁有時。
+</div>
+
+<div class="box box-purple">
+<strong>下一步</strong> &mdash; 你現在有 ownership handle 和 runtime dispatch 的語言工具。下一章會把它們放進常見架構詞彙：Strategy、RAII、type erasure、command buffer，看看這些 design patterns 在 renderer 裡到底是在命名什麼問題。
+</div>
+
+<div class="next-ch">
+  <div>
+    <div class="next-label">NEXT CHAPTER</div>
+    <div class="next-title">Ch18 &mdash; 設計模式速查</div>
+    <div class="next-desc">Ch18 會把 Strategy、RAII、type erasure、command buffer 對應到 backend、shader pipeline 與 UI renderer 的實際邊界。</div>
+  </div>
+  <a class="next-arrow" href="ch18_design_patterns.html">&rarr;</a>
+</div>
+
+</body>
+</html>

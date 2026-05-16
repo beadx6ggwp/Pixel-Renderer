@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Ch08 — Move 是 ownership transfer</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#1e1e2e; --bg1:#181825; --bg2:#11111b; --border:#313244;
+  --muted:#6c7086; --text:#cdd6f4; --blue:#89b4fa; --green:#a6e3a1;
+  --yellow:#f9e2af; --orange:#fab387; --red:#f38ba8; --purple:#cba6f7; --teal:#94e2d5;
+}
+body { background: var(--bg); color: var(--text); font-family: 'Georgia', serif; font-size: 15px; padding: 0 20px 80px; max-width: 900px; margin: 0 auto; line-height: 1.9; }
+nav { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); padding: 14px 0; border-bottom: 1px solid var(--border); margin-bottom: 36px; display: flex; align-items: center; gap: 10px; }
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--blue); }
+.nav-sep { color: var(--border); }
+.nav-cur { color: var(--text); }
+.nav-right { margin-left: auto; display: flex; gap: 16px; }
+.ch-header { margin-bottom: 40px; }
+.ch-label { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px; }
+.ch-title { color: var(--blue); font-size: 1.7em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub { color: var(--muted); font-size: 0.88em; margin-bottom: 14px; }
+.ch-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.ch-tag { font-family: 'Consolas', monospace; font-size: 0.72em; padding: 1px 7px; border-radius: 4px; background: var(--bg2); color: var(--muted); border: 1px solid var(--border); }
+h2 { color: var(--purple); font-size: 1em; font-family: 'Consolas', monospace; letter-spacing: 0.05em; padding: 10px 0; border-bottom: 1px solid var(--border); margin: 44px 0 20px; display: flex; align-items: center; gap: 12px; }
+h2 .n { background: var(--purple); color: var(--bg2); font-weight: bold; border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.85em; }
+h3 { color: var(--yellow); font-size: 0.95em; margin: 24px 0 10px; }
+p { margin-bottom: 12px; }
+strong { color: var(--yellow); }
+em { color: var(--orange); font-style: normal; }
+ul, ol { margin: 8px 0 14px 26px; line-height: 2.2; }
+.box { border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 0.9em; line-height: 1.85; background: var(--bg1); }
+.box-blue { border-left: 4px solid var(--blue); }
+.box-green { border-left: 4px solid var(--green); }
+.box-yellow { border-left: 4px solid var(--yellow); }
+.box-red { border-left: 4px solid var(--red); }
+.box-purple { border-left: 4px solid var(--purple); }
+.code { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em; line-height: 2.1; margin: 14px 0; overflow-x: auto; }
+.code .cmt { color: var(--muted); } .code .kw { color: var(--purple); } .code .val { color: var(--orange); } .code .tp { color: var(--blue); } .code .fn { color: var(--teal); }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+.two-col > div { background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; }
+.col-title { font-family: 'Consolas', monospace; font-size: 0.85em; margin-bottom: 10px; color: var(--muted); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9em; }
+thead { background: var(--bg1); }
+th { color: var(--muted); font-family: 'Consolas', monospace; font-size: 0.85em; padding: 8px 14px; text-align: left; border-bottom: 2px solid var(--border); }
+td { padding: 8px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.fig { margin: 24px auto; text-align: center; }
+.fig figcaption { color: var(--muted); font-size: 0.88em; margin-top: 8px; font-style: italic; }
+.next-ch { margin-top: 56px; padding: 20px 24px; background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 20px; }
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+.next-title { color: var(--blue); font-size: 1em; }
+.next-desc { color: var(--muted); font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: var(--blue); font-size: 1.6em; text-decoration: none; }
+@media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">C++ 複習</a>
+  <span class="nav-sep">/</span>
+  <span class="nav-cur">Ch08 — Move 是 ownership transfer</span>
+  <div class="nav-right">
+    <a href="ch07_rule_of_zero_three_five.html">&larr; Ch07</a>
+    <a href="ch09_std_move_value_category.html">Ch09 &rarr;</a>
+  </div>
+</nav>
+
+<div class="ch-header">
+  <div class="ch-label">PART 3 &middot; CHAPTER 08</div>
+  <div class="ch-title">Move 是 ownership transfer</div>
+  <div class="ch-sub">copy means duplication, move means transfer</div>
+  <div class="ch-tags">
+    <span class="ch-tag">move</span>
+    <span class="ch-tag">ownership</span>
+    <span class="ch-tag">moved-from</span>
+  </div>
+</div>
+
+<p>
+前面幾章把 resource-owning type 的壓力一路推到 Rule of 5。現在要正式回答：<strong>move 到底解決什麼問題？</strong>
+</p>
+<p>
+最常見的錯誤直覺是「move 是比較快的 copy」。這句話在某些 case 看起來對，但它抓錯了本質。Move 的核心不是快，而是：當 source object 可以被放棄時，destination 可以接手 source 擁有的 resource。
+</p>
+
+<div class="box box-blue">
+<strong>本章範圍</strong> &mdash; 建立 move semantics 的正確心智模型：copy 是 duplication，move 是 ownership transfer。你會看到為什麼 inline value type 的 move 可能沒什麼意義，而 Buffer / texture / backend handle 這種 resource owner 的 move 才是關鍵。
+</div>
+
+<h2><span class="n">1</span> naive model：move = faster copy</h2>
+
+<p>
+很多人第一次學 move 會得到這個簡化模型：
+</p>
+
+<div class="code">
+copy = slow<br>
+move = fast
+</div>
+
+<p>
+這個模型有一點實用直覺，但它不夠精準。真正的區別是：
+</p>
+
+<div class="box box-green">
+<strong>Copy vs Move</strong><br><br>
+<strong>copy</strong>：A 和 B 都要一份。語意是 duplication。<br>
+<strong>move</strong>：A 不再需要原本 resource，B 接手。語意是 transfer。
+</div>
+
+<p>
+如果 A 之後還要保留原本內容，你不能 move from A。如果 A 是 temporary、即將離開 scope、或是 container reallocation 中即將被替換的位置，move 才有語意上的合理性。
+</p>
+
+<h2><span class="n">2</span> Inline value data：沒有東西可以偷</h2>
+
+<p>
+先看一個 renderer 會常見的數學型別：
+</p>
+
+<div class="code">
+<span class="kw">struct</span> <span class="tp">Matrix4x4</span> {<br>
+&nbsp;&nbsp;<span class="tp">float</span> m[<span class="val">16</span>];<br>
+};
+</div>
+
+<p>
+這個 object 的資料就在 object 本體裡。沒有 heap block、沒有 handle、沒有外部 resource。copy 時要複製 16 個 <code>float</code>；move 時也沒有什麼 ownership 可以轉移，多半還是要把 16 個 <code>float</code> 放到 destination。
+</p>
+
+<div class="box box-yellow">
+<strong>關鍵修正</strong> &mdash; move 對每個 type 都比較快，這個說法是錯的。對 inline value data，move 可能和 copy 幾乎一樣，因為沒有外部 resource 可以接手。
+</div>
+
+<h2><span class="n">3</span> Resource owner：move 開始有意義</h2>
+
+<p>
+現在回到 <code>Buffer</code>：
+</p>
+
+<div class="code">
+<span class="kw">class</span> <span class="tp">Buffer</span> {<br>
+<span class="kw">public</span>:<br>
+&nbsp;&nbsp;<span class="kw">explicit</span> <span class="fn">Buffer</span>(<span class="tp">size_t</span> n)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;: ptr(<span class="kw">new</span> <span class="tp">char</span>[n]), size(n) {}<br>
+<br>
+&nbsp;&nbsp;~<span class="fn">Buffer</span>() { <span class="kw">delete</span>[] ptr; }<br>
+<br>
+<span class="kw">private</span>:<br>
+&nbsp;&nbsp;<span class="tp">char</span>* ptr = <span class="kw">nullptr</span>;<br>
+&nbsp;&nbsp;<span class="tp">size_t</span> size = <span class="val">0</span>;<br>
+};
+</div>
+
+<p>
+<code>Buffer</code> 本體只有 pointer 和 size，但真正大的資料在 heap 上。deep copy 要 allocate 新 block 並複製內容；move 可以只轉移 pointer ownership。
+</p>
+
+<figure class="fig">
+<svg width="540" height="270" viewBox="0 0 540 270" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="540" height="270" rx="10" fill="#11111b"/>
+  <text x="270" y="28" text-anchor="middle" font-family="Consolas" font-size="12" fill="#6c7086">Move transfers ownership</text>
+
+  <text x="145" y="58" text-anchor="middle" font-family="Consolas" font-size="11" fill="#89b4fa">before</text>
+  <rect x="45" y="78" width="130" height="58" rx="6" fill="#89b4fa" fill-opacity="0.12" stroke="#89b4fa"/>
+  <text x="110" y="102" text-anchor="middle" font-family="Consolas" font-size="10" fill="#cdd6f4">Buffer a</text>
+  <text x="110" y="122" text-anchor="middle" font-family="Consolas" font-size="9" fill="#cdd6f4">ptr = 0x5000</text>
+  <rect x="220" y="78" width="130" height="58" rx="6" fill="#313244" fill-opacity="0.4" stroke="#313244"/>
+  <text x="285" y="112" text-anchor="middle" font-family="Consolas" font-size="10" fill="#6c7086">Buffer b empty</text>
+  <rect x="395" y="78" width="105" height="58" rx="6" fill="#a6e3a1" fill-opacity="0.12" stroke="#a6e3a1"/>
+  <text x="448" y="112" text-anchor="middle" font-family="Consolas" font-size="10" fill="#a6e3a1">heap block</text>
+  <line x1="175" y1="108" x2="392" y2="108" stroke="#89b4fa" stroke-width="1.2" marker-end="url(#arrowA)"/>
+
+  <text x="145" y="168" text-anchor="middle" font-family="Consolas" font-size="11" fill="#cba6f7">after move</text>
+  <rect x="45" y="188" width="130" height="58" rx="6" fill="#313244" fill-opacity="0.4" stroke="#313244"/>
+  <text x="110" y="212" text-anchor="middle" font-family="Consolas" font-size="10" fill="#6c7086">Buffer a</text>
+  <text x="110" y="232" text-anchor="middle" font-family="Consolas" font-size="9" fill="#6c7086">ptr = nullptr</text>
+  <rect x="220" y="188" width="130" height="58" rx="6" fill="#cba6f7" fill-opacity="0.12" stroke="#cba6f7"/>
+  <text x="285" y="212" text-anchor="middle" font-family="Consolas" font-size="10" fill="#cdd6f4">Buffer b</text>
+  <text x="285" y="232" text-anchor="middle" font-family="Consolas" font-size="9" fill="#cdd6f4">ptr = 0x5000</text>
+  <rect x="395" y="188" width="105" height="58" rx="6" fill="#a6e3a1" fill-opacity="0.12" stroke="#a6e3a1"/>
+  <text x="448" y="222" text-anchor="middle" font-family="Consolas" font-size="10" fill="#a6e3a1">heap block</text>
+  <line x1="350" y1="218" x2="392" y2="218" stroke="#cba6f7" stroke-width="1.2" marker-end="url(#arrowB)"/>
+
+  <defs>
+    <marker id="arrowA" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="none" stroke="#89b4fa" stroke-width="1"/>
+    </marker>
+    <marker id="arrowB" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="none" stroke="#cba6f7" stroke-width="1"/>
+    </marker>
+  </defs>
+</svg>
+<figcaption>move 後 source 仍然存在，但不再擁有那塊 heap memory。</figcaption>
+</figure>
+
+<h2><span class="n">4</span> Move constructor 的核心</h2>
+
+<p>
+<code>Buffer</code> 的 move constructor 可能長這樣：
+</p>
+
+<div class="code">
+<span class="fn">Buffer</span>(<span class="tp">Buffer</span>&amp;&amp; other) <span class="kw">noexcept</span><br>
+&nbsp;&nbsp;: ptr(other.ptr), size(other.size) {<br>
+&nbsp;&nbsp;other.ptr = <span class="kw">nullptr</span>;<br>
+&nbsp;&nbsp;other.size = <span class="val">0</span>;<br>
+}
+</div>
+
+<p>
+前兩行把 resource handle 複製到 destination；後兩行把 source 放進 empty-but-valid state。這不是可有可無的清理，而是 move semantics 的核心。如果 source 還以為自己 owns 那塊 memory，兩個 destructor 還是會 double delete。
+</p>
+
+<div class="box box-blue">
+<strong>moved-from state</strong> &mdash; move 後的 source object 還活著。它不需要保留原本值，但必須仍然 valid，至少能安全 destruct，也應該能被重新 assign。標準庫通常說 moved-from object 是 valid but unspecified。
+</div>
+
+<h2><span class="n">5</span> Move 不是 object teleportation</h2>
+
+<p>
+Move 沒有讓 source object 消失，也不是把整個 object teleport 到另一個位置。它只是一個 function call，負責用 source 建構或賦值 destination。source 的 lifetime 仍然照常走完。
+</p>
+
+<div class="code">
+<span class="tp">Buffer</span> a(<span class="val">1024</span>);<br>
+<span class="tp">Buffer</span> b = <span class="fn">move_from</span>(a); <span class="cmt">// 概念上：b 接手 a 的 resource</span><br>
+<br>
+<span class="cmt">// a 還活著，只是處於 moved-from state</span>
+</div>
+
+<p>
+真正的 C++ 語法會用 <code>std::move(a)</code> 讓 move constructor 有機會被選到；但 <code>std::move</code> 本身不搬東西。這個坑很重要，所以下一章會專門處理。
+</p>
+
+<h2><span class="n">6</span> Pixel-Renderer 的落點</h2>
+
+<p>
+Move 對 Pixel-Renderer 有幾個很實際的設計落點：
+</p>
+
+<ul>
+<li><strong>Framebuffer owner</strong>：如果 framebuffer owns CPU pixels，copy 可能很貴或應該禁止；move 可以讓 temporary framebuffer 轉移到 renderer state。</li>
+<li><strong>DisplayBackend</strong>：Win32 window、SDL texture、macOS layer 這些 handle 通常不能 copy。它們要嘛固定 lifetime，要嘛 move-only。</li>
+<li><strong>Texture / image / mesh</strong>：載入器產生 temporary resource，再交給 resource cache 或 renderer，這正是 ownership transfer。</li>
+<li><strong>UI command buffer</strong>：每 frame 產生 draw commands，可能用 vector 直接重建；若 command buffer owns memory，move 可以避免 expensive duplication。</li>
+</ul>
+
+<div class="box box-yellow">
+<strong>設計提醒</strong> &mdash; 不是所有 renderer type 都該 move。<code>Vec3</code>、<code>Matrix4x4</code> 這類 inline math value copy 就很好。move 主要服務 resource owner，而不是替所有型別加上「現代 C++ 感」。
+</div>
+
+<hr>
+
+<div class="box box-yellow">
+<strong>常見陷阱</strong><br><br>
+<strong>1. 以為 move 一定更快</strong> &mdash; 對 inline value data，move 可能和 copy 一樣。<br><br>
+<strong>2. move 後繼續依賴 source 原本內容</strong> &mdash; moved-from object 是 valid，但內容通常 unspecified。你可以 destruct 或 assign，不該假設原值還在。<br><br>
+<strong>3. 忘記清空 source ownership</strong> &mdash; move constructor 如果只 copy pointer，不重設 source，就是 shallow copy bug 的變形。
+</div>
+
+<div class="box box-green">
+<strong>本章學到的三件事</strong><br><br>
+<strong>1.</strong> move 不是 faster copy。copy 是 duplication，move 是 ownership transfer。<br><br>
+<strong>2.</strong> move 對 resource-owning type 最有意義；對 inline value type，可能沒有明顯優勢。<br><br>
+<strong>3.</strong> move 後 source object 仍然存在，必須保持 valid moved-from state，讓 destructor 和 assignment 安全。
+</div>
+
+<div class="box box-purple">
+<strong>下一步</strong> &mdash; 你現在知道 move 的語意是 ownership transfer，但還沒回答：C++ 怎麼知道該選 move constructor？下一章進入 <strong>std::move 與 value category</strong>，拆開 <code>std::move</code>、xvalue、prvalue，以及「std::move 不會 move」這句話。
+</div>
+
+<div class="next-ch">
+  <div>
+    <div class="next-label">NEXT CHAPTER</div>
+    <div class="next-title">Ch09 &mdash; std::move 與 value category</div>
+    <div class="next-desc">Ch09 會接到 std::move、xvalue/prvalue，以及 move constructor 如何被 overload resolution 選中。</div>
+  </div>
+  <a class="next-arrow" href="ch09_std_move_value_category.html">&rarr;</a>
+</div>
+
+</body>
+</html>

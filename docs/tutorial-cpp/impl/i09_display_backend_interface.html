@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>I-09 — DisplayBackend Interface</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#1e1e2e; --bg1:#181825; --bg2:#11111b; --border:#313244;
+  --muted:#6c7086; --text:#cdd6f4; --blue:#89b4fa; --green:#a6e3a1;
+  --yellow:#f9e2af; --orange:#fab387; --red:#f38ba8; --purple:#cba6f7; --teal:#94e2d5;
+}
+body { background: var(--bg); color: var(--text); font-family: 'Georgia', serif; font-size: 15px; padding: 0 20px 80px; max-width: 900px; margin: 0 auto; line-height: 1.9; }
+nav { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); padding: 14px 0; border-bottom: 1px solid var(--border); margin-bottom: 36px; display: flex; align-items: center; gap: 10px; }
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--orange); }
+.nav-sep { color: var(--border); }
+.nav-cur { color: var(--text); }
+.nav-right { margin-left: auto; display: flex; gap: 16px; }
+.ch-header { margin-bottom: 40px; }
+.ch-label { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px; }
+.ch-title { color: var(--orange); font-size: 1.7em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub { color: var(--muted); font-size: 0.88em; margin-bottom: 14px; }
+.ch-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.ch-tag { font-family: 'Consolas', monospace; font-size: 0.72em; padding: 1px 7px; border-radius: 4px; background: var(--bg2); color: var(--muted); border: 1px solid var(--border); }
+h2 { color: var(--purple); font-size: 1em; font-family: 'Consolas', monospace; letter-spacing: 0.05em; padding: 10px 0; border-bottom: 1px solid var(--border); margin: 44px 0 20px; display: flex; align-items: center; gap: 12px; }
+h2 .n { background: var(--purple); color: var(--bg2); font-weight: bold; border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.85em; }
+h3 { color: var(--yellow); font-size: 0.95em; margin: 24px 0 10px; }
+p { margin-bottom: 12px; }
+strong { color: var(--yellow); }
+em { color: var(--orange); font-style: normal; }
+code { font-family: 'Consolas', monospace; color: var(--teal); }
+ul, ol { margin: 8px 0 14px 26px; line-height: 2.2; }
+.box { border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 0.9em; line-height: 1.85; background: var(--bg1); }
+.box-blue { border-left: 4px solid var(--blue); }
+.box-green { border-left: 4px solid var(--green); }
+.box-yellow { border-left: 4px solid var(--yellow); }
+.box-red { border-left: 4px solid var(--red); }
+.box-purple { border-left: 4px solid var(--purple); }
+.code { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em; line-height: 2.1; margin: 14px 0; overflow-x: auto; }
+.code .cmt { color: var(--muted); } .code .kw { color: var(--purple); } .code .val { color: var(--orange); } .code .tp { color: var(--blue); } .code .fn { color: var(--teal); }
+.ascii { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.82em; line-height: 1.55; margin: 14px 0; overflow-x: auto; color: var(--text); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9em; }
+thead { background: var(--bg1); }
+th { color: var(--muted); font-family: 'Consolas', monospace; font-size: 0.85em; padding: 8px 14px; text-align: left; border-bottom: 2px solid var(--border); }
+td { padding: 8px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.next-ch { margin-top: 56px; padding: 20px 24px; background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 20px; }
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+.next-title { color: var(--orange); font-size: 1em; }
+.next-desc { color: var(--muted); font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: var(--orange); font-size: 1.6em; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">C++ for Pixel-Renderer</a>
+  <span class="nav-sep">/</span>
+  <span class="nav-cur">I-09 — DisplayBackend Interface</span>
+  <div class="nav-right">
+    <a href="i08_framebuffer_ownership_refactor.html">&larr; I-08</a>
+    <a href="i10_win32_display_backend.html">I-10 &rarr;</a>
+  </div>
+</nav>
+
+<div class="ch-header">
+  <div class="ch-label">IMPLEMENTATION TRACK &middot; I-09</div>
+  <div class="ch-title">DisplayBackend Interface</div>
+  <div class="ch-sub">backend interface 應該抽 present/input/window，不應抽 rasterization</div>
+  <div class="ch-tags">
+    <span class="ch-tag">interface</span>
+    <span class="ch-tag">backend</span>
+    <span class="ch-tag">lifetime</span>
+  </div>
+</div>
+
+<p>
+I-08 已經把最重要的 ownership 切開：renderer core owns CPU framebuffer，DisplayBackend 只 present final pixels。現在問題變成：<strong>這個 backend interface 應該長什麼樣？</strong>
+</p>
+
+<p>
+介面不是把所有平台差異都藏起來就好。好的 interface 要剛好描述替換點：Win32、SDL、macOS 會不同的是 window、event/input、present path；不應該不同的是 triangle rasterization、SetPixel、depth test、shader interface。
+</p>
+
+<div class="box box-blue">
+<strong>本章範圍</strong> &mdash; 從目前 <code>ScreenManager</code> 的責任拆出 <code>DisplayBackend</code> interface：<code>Init</code>、<code>Shutdown</code>、<code>PollEvents</code>、<code>ShouldClose</code>、input query、<code>Present(const Framebuffer&amp;)</code>。同時說明什麼不該放進 interface、如何用 <code>unique_ptr&lt;DisplayBackend&gt;</code> 管 lifetime、如何避免 backend 反向 owns framebuffer，以及 Win32/SDL/macOS 實作會在哪裡分歧。
+</div>
+
+<h2><span class="n">1</span> naive model：把 ScreenManager 改名成 DisplayBackend</h2>
+
+<p>
+最容易做錯的 refactor 是只改名字：
+</p>
+
+<pre class="ascii">class ScreenManager
+  -> class DisplayBackend</pre>
+
+<p>
+如果內部仍然 owns framebuffer，仍然把 <code>GetFrameBuffer()</code> 給 <code>RenderDevice</code>，那只是命名變漂亮，架構沒有真的分離。
+</p>
+
+<pre class="ascii">bad interface:
+  unsigned char* GetFrameBuffer()
+  int GetPitch()
+  void UpdateScreen()
+
+why bad:
+  renderer still writes backend-owned memory
+  backend still decides framebuffer layout
+  SDL/macOS replacement still affects RenderDevice</pre>
+
+<div class="box box-red">
+<strong>interface 不能保留錯誤 ownership</strong> &mdash; 只要 interface 還回傳 writable framebuffer pointer 給 renderer core，DisplayBackend 就不只是 display backend，它仍然是 render target owner。
+</div>
+
+<h2><span class="n">2</span> 從 ScreenManager 拆責任</h2>
+
+<p>
+目前 <code>ScreenManager</code> 同時做五件事：
+</p>
+
+<pre class="ascii">ScreenManager
+  window creation/destruction
+  input state
+  event pump
+  DIBSection resource
+  framebuffer ownership
+  BitBlt present</pre>
+
+<p>
+重構後應該拆成：
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>責任</th>
+      <th>新位置</th>
+      <th>理由</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>CPU framebuffer ownership</td>
+      <td><code>Framebuffer</code></td>
+      <td>renderer core 的 render target，不屬於平台層。</td>
+    </tr>
+    <tr>
+      <td>pixel write</td>
+      <td><code>RenderDevice</code></td>
+      <td>software renderer 的底層 write API。</td>
+    </tr>
+    <tr>
+      <td>window lifecycle</td>
+      <td><code>DisplayBackend</code> implementation</td>
+      <td>Win32/SDL/macOS 各自不同。</td>
+    </tr>
+    <tr>
+      <td>event/input polling</td>
+      <td><code>DisplayBackend</code> 或 <code>InputState</code></td>
+      <td>平台 event source 不同，但上層要共用 input query。</td>
+    </tr>
+    <tr>
+      <td>present final pixels</td>
+      <td><code>DisplayBackend::Present</code></td>
+      <td>Win32 BitBlt、SDL_UpdateTexture、macOS upload 的替換點。</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2><span class="n">3</span> interface sketch</h2>
+
+<p>
+第一版可以先設計得保守：
+</p>
+
+<div class="code">
+<span class="kw">class</span> <span class="tp">DisplayBackend</span> {<br>
+<span class="kw">public</span>:<br>
+&nbsp;&nbsp;<span class="kw">virtual</span> ~<span class="fn">DisplayBackend</span>() = <span class="kw">default</span>;<br>
+<br>
+&nbsp;&nbsp;<span class="kw">virtual</span> <span class="tp">bool</span> <span class="fn">Init</span>(<span class="tp">int</span> width, <span class="tp">int</span> height, <span class="kw">const</span> <span class="tp">char</span>* title) = <span class="val">0</span>;<br>
+&nbsp;&nbsp;<span class="kw">virtual</span> <span class="kw">void</span> <span class="fn">Shutdown</span>() = <span class="val">0</span>;<br>
+<br>
+&nbsp;&nbsp;<span class="kw">virtual</span> <span class="kw">void</span> <span class="fn">PollEvents</span>() = <span class="val">0</span>;<br>
+&nbsp;&nbsp;<span class="kw">virtual</span> <span class="tp">bool</span> <span class="fn">ShouldClose</span>() <span class="kw">const</span> = <span class="val">0</span>;<br>
+&nbsp;&nbsp;<span class="kw">virtual</span> <span class="tp">bool</span> <span class="fn">IsKeyDown</span>(<span class="tp">KeyCode</span> key) <span class="kw">const</span> = <span class="val">0</span>;<br>
+<br>
+&nbsp;&nbsp;<span class="kw">virtual</span> <span class="kw">void</span> <span class="fn">Present</span>(<span class="kw">const</span> <span class="tp">Framebuffer</span>&amp; framebuffer) = <span class="val">0</span>;<br>
+};
+</div>
+
+<p>
+這裡最重要的是最後一行：<code>Present</code> 接收 <code>const Framebuffer&amp;</code>。這表示 backend 只能讀取 final pixels，不能 owns 或修改 renderer target。
+</p>
+
+<div class="box box-green">
+<strong>核心 interface invariant</strong> &mdash; DisplayBackend owns platform resources；Framebuffer owns CPU pixels；RenderDevice writes Framebuffer；DisplayBackend only presents Framebuffer.
+</div>
+
+<h2><span class="n">4</span> 什麼不該放進 DisplayBackend</h2>
+
+<p>
+一個 interface 的清楚程度，常取決於它拒絕放什麼。
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>不該放</th>
+      <th>原因</th>
+      <th>應該在哪</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>SetPixel</code></td>
+      <td>pixel write 是 renderer core，不是 display。</td>
+      <td><code>RenderDevice</code></td>
+    </tr>
+    <tr>
+      <td><code>DrawLine</code>, <code>DrawTriangle</code></td>
+      <td>rasterization 不應被 SDL/Win32 替換。</td>
+      <td><code>Rasterizer</code></td>
+    </tr>
+    <tr>
+      <td><code>GetFrameBuffer</code></td>
+      <td>會讓 renderer 寫 backend-owned memory。</td>
+      <td><code>Framebuffer</code> owns, <code>RenderDevice</code> borrows view。</td>
+    </tr>
+    <tr>
+      <td>shader execution</td>
+      <td>software shader pipeline 是 renderer feature。</td>
+      <td>renderer/shader module。</td>
+    </tr>
+    <tr>
+      <td>UI drawing API</td>
+      <td>UI 應輸出 draw commands，再由 software renderer 畫到 framebuffer。</td>
+      <td>UI renderer / command execution。</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="box box-yellow">
+<strong>第二個修正</strong> &mdash; DisplayBackend 是 present/input/window abstraction，不是 graphics API abstraction。它不是 SDL_Renderer wrapper，也不是 GPU RHI。
+</div>
+
+<h2><span class="n">5</span> Application composition root</h2>
+
+<p>
+Application 應該在最外層選 backend，然後把 renderer core 和 display backend 組起來：
+</p>
+
+<pre class="ascii">Application
+  owns backend: unique_ptr<DisplayBackend>
+  owns framebuffer
+  owns render device
+  owns rasterizer
+
+Run loop:
+  backend->PollEvents()
+  OnUpdate(dt)
+  framebuffer.Clear()
+  OnRender()
+  backend->Present(framebuffer)</pre>
+
+<p>
+概念 code：
+</p>
+
+<div class="code">
+std::<span class="tp">unique_ptr</span>&lt;<span class="tp">DisplayBackend</span>&gt; backend;<br>
+<span class="tp">Framebuffer</span> framebuffer(width, height);<br>
+<span class="tp">RenderDevice</span> device(framebuffer.<span class="fn">View</span>());<br>
+<span class="tp">Rasterizer</span> rasterizer(&amp;device);<br>
+<br>
+backend = std::<span class="fn">make_unique</span>&lt;<span class="tp">Win32DisplayBackend</span>&gt;();<br>
+backend-&gt;<span class="fn">Init</span>(width, height, <span class="val">"Pixel Renderer"</span>);
+</div>
+
+<p>
+<code>unique_ptr&lt;DisplayBackend&gt;</code> 解決 ownership；<code>virtual</code> 解決 runtime dispatch。兩者常一起出現，但不是同一件事。
+</p>
+
+<h2><span class="n">6</span> Win32 / SDL / macOS 實作差異</h2>
+
+<pre class="ascii">Win32DisplayBackend::Present(fb)
+  copy fb pixels into DIBSection
+  BitBlt(mem_dc -> window_dc)
+
+SDLDisplayBackend::Present(fb)
+  SDL_UpdateTexture(texture, nullptr, fb.Data(), fb.PitchBytes())
+  SDL_RenderCopy / SDL_RenderTexture
+  SDL_RenderPresent
+
+MacOSDisplayBackend::Present(fb)
+  upload/copy pixels to native surface/texture
+  submit to compositor</pre>
+
+<p>
+三者的共同點是：都不決定 triangle 怎麼 rasterize，也不決定 SetPixel 寫哪裡。它們只負責把已完成的 pixels 交給平台。
+</p>
+
+<h2><span class="n">7</span> input state：直接 query 還是獨立 InputState？</h2>
+
+<p>
+第一版可以讓 backend 提供 <code>IsKeyDown</code>，和目前 <code>ScreenManager</code> 接近。但長期更乾淨的方式是讓 backend 更新一個 platform-independent <code>InputState</code>。
+</p>
+
+<pre class="ascii">Option A:
+  backend->IsKeyDown(KeyCode::Escape)
+
+Option B:
+  backend->PollEvents(input_state)
+  app reads input_state
+
+first version:
+  Option A is simpler
+
+future UI/game logic:
+  Option B separates event source from app state</pre>
+
+<p>
+重點是不要讓上層直接依賴 <code>VK_ESCAPE</code> 或 SDL scancode。要先建立自己的 <code>KeyCode</code> 或 input abstraction。
+</p>
+
+<h2><span class="n">8</span> virtual interface vs template/static dispatch</h2>
+
+<p>
+Display backend 每 frame 只呼叫少數幾次：poll events、present。這不是 rasterizer hot loop。使用 virtual interface 的成本通常不是瓶頸，換來的是簡單的 runtime backend selection。
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>方式</th>
+      <th>適合</th>
+      <th>在這裡的判斷</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>virtual interface</td>
+      <td>runtime replacement，少量 calls。</td>
+      <td>DisplayBackend 適合。</td>
+    </tr>
+    <tr>
+      <td>template/static polymorphism</td>
+      <td>hot loop，compile-time policy。</td>
+      <td>pixel shader/math policy 之後再考慮。</td>
+    </tr>
+    <tr>
+      <td>function pointer table</td>
+      <td>C-style ABI/plugin boundary。</td>
+      <td>目前不需要。</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="box box-purple">
+<strong>和 T-11 的連接</strong> &mdash; virtual、type erasure、variant、template dispatch 都是 polymorphism 工具。DisplayBackend 先用 virtual 是因為它在 frame boundary，不在 pixel hot loop。
+</div>
+
+<h2><span class="n">9</span> CMake target boundary</h2>
+
+<p>
+I-07 的 target graph 在這裡應該長成：
+</p>
+
+<pre class="ascii">pixel_core
+  Framebuffer
+  RenderDevice
+  Rasterizer
+  DisplayBackend interface header
+  no windows.h / SDL.h
+
+pixel_platform_win32
+  Win32DisplayBackend
+  includes windows.h
+  links gdi32 user32
+
+pixel_platform_sdl
+  SDLDisplayBackend
+  includes SDL.h
+  links SDL2
+
+pixel_app
+  composition root
+  links pixel_core + selected backend</pre>
+
+<p>
+如果 <code>pixel_core</code> 需要 link <code>gdi32</code> 或 include <code>SDL.h</code>，就表示 interface boundary 破了。
+</p>
+
+<h2><span class="n">10</span> verification checklist</h2>
+
+<ul>
+  <li><code>DisplayBackend</code> 是否沒有 <code>GetFrameBuffer()</code>？</li>
+  <li><code>Present</code> 是否接 <code>const Framebuffer&amp;</code>？</li>
+  <li><code>RenderDevice</code> 是否不 include Win32/SDL/macOS headers？</li>
+  <li><code>Application</code> 是否 owns backend lifetime，而不是 backend owns renderer state？</li>
+  <li>Win32/SDL/macOS backend 是否只在 platform target 裡編譯？</li>
+  <li>input key code 是否有平台無關表示法？</li>
+  <li>同一個 framebuffer test pattern 是否能被不同 backend present？</li>
+</ul>
+
+<div class="box box-green">
+<strong>本章學到的三件事：</strong>
+<ol>
+  <li><code>DisplayBackend</code> 抽的是 window/event/present，不抽 <code>SetPixel</code>、rasterizer、shader 或 UI drawing。</li>
+  <li>正確 interface boundary 是 <code>Present(const Framebuffer&amp;)</code>：backend owns platform resources，renderer owns CPU pixels。</li>
+  <li><code>unique_ptr&lt;DisplayBackend&gt;</code> 管 lifetime，virtual 管 runtime dispatch；CMake target boundary 應保證 core 不依賴 Win32/SDL/macOS。</li>
+</ol>
+</div>
+
+<p>
+下一章可以把這個 interface 落到 Win32 實作：把目前 <code>ScreenManager</code> 的 window、message pump、DIBSection、<code>BitBlt</code> 拆成 <code>Win32DisplayBackend</code>，同時保留 renderer core 的乾淨邊界。
+</p>
+
+<div class="next-ch">
+  <div>
+    <div class="next-label">NEXT IMPLEMENTATION</div>
+    <div class="next-title">I-10 &mdash; Win32DisplayBackend</div>
+    <div class="next-desc">下一章把目前 ScreenManager 的 Win32 path 重新命名與切割成 backend implementation，並檢查 DIBSection/BitBlt 的 RAII 與 present responsibility。</div>
+  </div>
+  <a class="next-arrow" href="i10_win32_display_backend.html">&rarr;</a>
+</div>
+
+</body>
+</html>

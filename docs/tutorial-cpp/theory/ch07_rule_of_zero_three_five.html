@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Ch07 — Rule of 0/3/5</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#1e1e2e; --bg1:#181825; --bg2:#11111b; --border:#313244;
+  --muted:#6c7086; --text:#cdd6f4; --blue:#89b4fa; --green:#a6e3a1;
+  --yellow:#f9e2af; --orange:#fab387; --red:#f38ba8; --purple:#cba6f7; --teal:#94e2d5;
+}
+body { background: var(--bg); color: var(--text); font-family: 'Georgia', serif; font-size: 15px; padding: 0 20px 80px; max-width: 900px; margin: 0 auto; line-height: 1.9; }
+nav { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); padding: 14px 0; border-bottom: 1px solid var(--border); margin-bottom: 36px; display: flex; align-items: center; gap: 10px; }
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--blue); }
+.nav-sep { color: var(--border); }
+.nav-cur { color: var(--text); }
+.nav-right { margin-left: auto; display: flex; gap: 16px; }
+.ch-header { margin-bottom: 40px; }
+.ch-label { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px; }
+.ch-title { color: var(--blue); font-size: 1.7em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub { color: var(--muted); font-size: 0.88em; margin-bottom: 14px; }
+.ch-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.ch-tag { font-family: 'Consolas', monospace; font-size: 0.72em; padding: 1px 7px; border-radius: 4px; background: var(--bg2); color: var(--muted); border: 1px solid var(--border); }
+h2 { color: var(--purple); font-size: 1em; font-family: 'Consolas', monospace; letter-spacing: 0.05em; padding: 10px 0; border-bottom: 1px solid var(--border); margin: 44px 0 20px; display: flex; align-items: center; gap: 12px; }
+h2 .n { background: var(--purple); color: var(--bg2); font-weight: bold; border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.85em; }
+h3 { color: var(--yellow); font-size: 0.95em; margin: 24px 0 10px; }
+p { margin-bottom: 12px; }
+strong { color: var(--yellow); }
+em { color: var(--orange); font-style: normal; }
+ul, ol { margin: 8px 0 14px 26px; line-height: 2.2; }
+.box { border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 0.9em; line-height: 1.85; background: var(--bg1); }
+.box-blue { border-left: 4px solid var(--blue); }
+.box-green { border-left: 4px solid var(--green); }
+.box-yellow { border-left: 4px solid var(--yellow); }
+.box-red { border-left: 4px solid var(--red); }
+.box-purple { border-left: 4px solid var(--purple); }
+.code { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em; line-height: 2.1; margin: 14px 0; overflow-x: auto; }
+.code .cmt { color: var(--muted); } .code .kw { color: var(--purple); } .code .val { color: var(--orange); } .code .tp { color: var(--blue); } .code .fn { color: var(--teal); }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+.two-col > div { background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; }
+.col-title { font-family: 'Consolas', monospace; font-size: 0.85em; margin-bottom: 10px; color: var(--muted); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9em; }
+thead { background: var(--bg1); }
+th { color: var(--muted); font-family: 'Consolas', monospace; font-size: 0.85em; padding: 8px 14px; text-align: left; border-bottom: 2px solid var(--border); }
+td { padding: 8px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.fig { margin: 24px auto; text-align: center; }
+.fig figcaption { color: var(--muted); font-size: 0.88em; margin-top: 8px; font-style: italic; }
+.next-ch { margin-top: 56px; padding: 20px 24px; background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 20px; }
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+.next-title { color: var(--blue); font-size: 1em; }
+.next-desc { color: var(--muted); font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: var(--blue); font-size: 1.6em; text-decoration: none; }
+@media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">C++ 複習</a>
+  <span class="nav-sep">/</span>
+  <span class="nav-cur">Ch07 — Rule of 0/3/5</span>
+  <div class="nav-right">
+    <a href="ch06_copy_semantics.html">&larr; Ch06</a>
+    <a href="ch08_move_ownership.html">Ch08 &rarr;</a>
+  </div>
+</nav>
+
+<div class="ch-header">
+  <div class="ch-label">PART 2 &middot; CHAPTER 07</div>
+  <div class="ch-title">Rule of 0/3/5</div>
+  <div class="ch-sub">special member functions and ownership invariant</div>
+  <div class="ch-tags">
+    <span class="ch-tag">special-member</span>
+    <span class="ch-tag">RAII</span>
+    <span class="ch-tag">invariant</span>
+  </div>
+</div>
+
+<p>
+上一章看到：如果 <code>Buffer</code> owns heap memory，預設 copy 可能把 pointer value 複製出去，最後 double delete。現在問題變得更尖銳：<strong>如果一個 type 自己管理 resource，到底哪些函式必須一起設計？</strong>
+</p>
+<p>
+Rule of 0/3/5 不是背誦清單。它是 ownership 壓力的結果：只要一個 type 有「我擁有這個 resource，死掉時我要釋放它」這種語意，copy、move、destroy 就不能各自獨立。
+</p>
+
+<div class="box box-blue">
+<strong>本章範圍</strong> &mdash; 從 resource-owning <code>Buffer</code> 推出 Rule of 3、Rule of 5、Rule of 0。重點是理解 special member functions 如何共同維護同一個 ownership invariant，而不是背規則名稱。
+</div>
+
+<h2><span class="n">1</span> Destructor 不是孤立的</h2>
+
+<p>
+先看這個很常見的 RAII wrapper：
+</p>
+
+<div class="code">
+<span class="kw">class</span> <span class="tp">Buffer</span> {<br>
+<span class="kw">public</span>:<br>
+&nbsp;&nbsp;<span class="kw">explicit</span> <span class="fn">Buffer</span>(<span class="tp">size_t</span> n)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;: ptr(<span class="kw">new</span> <span class="tp">char</span>[n]), size(n) {}<br>
+<br>
+&nbsp;&nbsp;~<span class="fn">Buffer</span>() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">delete</span>[] ptr;<br>
+&nbsp;&nbsp;}<br>
+<br>
+<span class="kw">private</span>:<br>
+&nbsp;&nbsp;<span class="tp">char</span>* ptr = <span class="kw">nullptr</span>;<br>
+&nbsp;&nbsp;<span class="tp">size_t</span> size = <span class="val">0</span>;<br>
+};
+</div>
+
+<p>
+你寫下 destructor 的瞬間，其實宣告了一個 invariant：
+</p>
+
+<div class="box box-green">
+<strong>Ownership invariant</strong> &mdash; 如果 <code>ptr != nullptr</code>，那它指向一塊由這個 <code>Buffer</code> 擁有、並且會在 destructor 中釋放的 heap memory。
+</div>
+
+<p>
+那下一個問題自然出現：如果 <code>Buffer b = a;</code>，兩個 object 誰擁有 <code>ptr</code>？如果 compiler 自動產生 memberwise copy，<code>a.ptr</code> 和 <code>b.ptr</code> 會指向同一塊 memory，但兩個 destructor 都會 <code>delete[]</code> 它。
+</p>
+
+<div class="box box-red">
+<strong>naive model 失敗</strong> &mdash; 「我只要寫 destructor 管好釋放」是不夠的。Destructor 表示 ownership；ownership 一旦存在，copy operation 就必須回答 ownership 如何被複製、共享、轉移，或禁止。
+</div>
+
+<h2><span class="n">2</span> Rule of 3：destroy、copy construct、copy assign</h2>
+
+<p>
+Rule of 3 說：如果你需要自訂其中一個，通常也要思考另外兩個：
+</p>
+
+<table>
+<thead>
+<tr><th>Function</th><th>何時發生</th><th>要維護什麼</th></tr>
+</thead>
+<tbody>
+<tr><td>destructor</td><td>object lifetime 結束</td><td>釋放 owned resource</td></tr>
+<tr><td>copy constructor</td><td>用另一個 object 建立新 object</td><td>新 object 如何取得自己的 valid resource</td></tr>
+<tr><td>copy assignment</td><td>把既有 object 改成另一個 object 的內容</td><td>先處理舊 resource，再取得新語意</td></tr>
+</tbody>
+</table>
+
+<p>
+如果 <code>Buffer</code> 要支援 deep copy，copy constructor 可能像這樣：
+</p>
+
+<div class="code">
+<span class="fn">Buffer</span>(<span class="kw">const</span> <span class="tp">Buffer</span>&amp; other)<br>
+&nbsp;&nbsp;: ptr(<span class="kw">new</span> <span class="tp">char</span>[other.size]), size(other.size) {<br>
+&nbsp;&nbsp;std::<span class="fn">memcpy</span>(ptr, other.ptr, size);<br>
+}
+</div>
+
+<p>
+copy assignment 更麻煩，因為左邊已經是一個活著的 object，可能已經 owns 一塊 memory：
+</p>
+
+<div class="code">
+<span class="tp">Buffer</span>&amp; <span class="kw">operator</span>=(<span class="kw">const</span> <span class="tp">Buffer</span>&amp; other) {<br>
+&nbsp;&nbsp;<span class="kw">if</span> (<span class="kw">this</span> == &amp;other) <span class="kw">return</span> *<span class="kw">this</span>;<br>
+<br>
+&nbsp;&nbsp;<span class="tp">char</span>* new_ptr = <span class="kw">new</span> <span class="tp">char</span>[other.size];<br>
+&nbsp;&nbsp;std::<span class="fn">memcpy</span>(new_ptr, other.ptr, other.size);<br>
+<br>
+&nbsp;&nbsp;<span class="kw">delete</span>[] ptr;<br>
+&nbsp;&nbsp;ptr = new_ptr;<br>
+&nbsp;&nbsp;size = other.size;<br>
+&nbsp;&nbsp;<span class="kw">return</span> *<span class="kw">this</span>;<br>
+}
+</div>
+
+<p>
+注意順序：先配置新 memory，成功後才釋放舊 memory。這是 exception safety 的基本直覺：不要先把自己拆掉，再去做可能失敗的事。
+</p>
+
+<h2><span class="n">3</span> Rule of 5：move 也加入 ownership invariant</h2>
+
+<p>
+C++11 加入 move semantics 後，resource-owning type 又多了兩個 operation 要思考：
+</p>
+
+<table>
+<thead>
+<tr><th>Function</th><th>語意</th></tr>
+</thead>
+<tbody>
+<tr><td>move constructor</td><td>用一個即將被放棄的 source 建立 destination，轉移 ownership</td></tr>
+<tr><td>move assignment</td><td>釋放 destination 原本 resource，再接手 source resource</td></tr>
+</tbody>
+</table>
+
+<p>
+move constructor 的核心不是「更快 copy」，而是「把 ownership 搬給 destination，並讓 source 留在可安全 destruct 的狀態」：
+</p>
+
+<div class="code">
+<span class="fn">Buffer</span>(<span class="tp">Buffer</span>&amp;&amp; other) <span class="kw">noexcept</span><br>
+&nbsp;&nbsp;: ptr(other.ptr), size(other.size) {<br>
+&nbsp;&nbsp;other.ptr = <span class="kw">nullptr</span>;<br>
+&nbsp;&nbsp;other.size = <span class="val">0</span>;<br>
+}
+</div>
+
+<p>
+如果沒有把 <code>other.ptr</code> 清掉，source object 的 destructor 仍然會釋放同一塊 memory，destination 就拿到 dangling pointer。move 後的 source 不必保留原本內容，但必須仍然是 <strong>valid object</strong>，可以被 destruct、可以被 assign。
+</p>
+
+<div class="box box-yellow">
+<strong>noexcept 為什麼常出現？</strong> &mdash; 對 resource owner 來說，move 通常只是搬 pointer 和 size，不應該 throw。標成 <code>noexcept</code> 也讓 <code>std::vector</code> 這類 container 在 reallocation 時更敢選 move path。這個細節會在 Ch12 再完整展開。
+</div>
+
+<h2><span class="n">4</span> Rule of 0：更現代的第一選擇</h2>
+
+<p>
+Rule of 3/5 告訴你：手動管理 resource 時，special member functions 會成組出現。但現代 C++ 的優先方向其實是 Rule of 0：
+</p>
+
+<div class="box box-green">
+<strong>Rule of 0</strong> &mdash; 讓專門的 RAII member 管理 resource，讓你的 domain type 不需要自己寫 destructor/copy/move。
+</div>
+
+<p>
+例如與其手寫 <code>char*</code> owner：
+</p>
+
+<div class="code">
+<span class="kw">class</span> <span class="tp">Buffer</span> {<br>
+&nbsp;&nbsp;<span class="tp">char</span>* ptr;<br>
+&nbsp;&nbsp;<span class="tp">size_t</span> size;<br>
+};
+</div>
+
+<p>
+更好的第一版通常是：
+</p>
+
+<div class="code">
+<span class="kw">class</span> <span class="tp">Buffer</span> {<br>
+<span class="kw">public</span>:<br>
+&nbsp;&nbsp;<span class="kw">explicit</span> <span class="fn">Buffer</span>(<span class="tp">size_t</span> n) : bytes(n) {}<br>
+<br>
+<span class="kw">private</span>:<br>
+&nbsp;&nbsp;std::<span class="tp">vector</span>&lt;<span class="tp">char</span>&gt; bytes;<br>
+};
+</div>
+
+<p>
+現在 <code>std::vector</code> 自己負責 memory ownership。你的 <code>Buffer</code> 沒有手寫 destructor，copy/move/destroy 都可以交給 compiler-generated special members，因為每個 member 自己都已經有正確語意。
+</p>
+
+<h2><span class="n">5</span> Pixel-Renderer 的落點</h2>
+
+<p>
+這章不是純 C++ 課。它會直接影響 Pixel-Renderer 未來的設計：
+</p>
+
+<ul>
+<li><strong>Owned framebuffer</strong>：如果 framebuffer owns pixels，copy 是 deep copy、deleted copy，還是 move-only？這會決定 <code>Framebuffer</code> 的 special members。</li>
+<li><strong>DisplayBackend</strong>：Win32/SDL/macOS backend 可能 owns window handle、texture、DIB section。這類 object 通常應該禁止 copy，支援 move 或完全固定 lifetime。</li>
+<li><strong>Shader object</strong>：如果 shader 只是 stateless function object，copy 可能很便宜；如果 shader owns compiled data/cache，copy policy 就要重新設計。</li>
+<li><strong>Immediate UI</strong>：UI command buffer 可能適合 Rule of 0：用 <code>std::vector</code> 管理 draw commands，讓 container 負責 resource。</li>
+</ul>
+
+<div class="box box-blue">
+<strong>設計檢查表</strong> &mdash; 只要你準備寫 destructor，先停下來問：這個 resource 能不能交給 <code>std::vector</code>、<code>std::unique_ptr</code>、或某個小型 RAII handle？如果可以，優先 Rule of 0。只有 wrapper OS/GPU/C API handle 時，才自己承擔 Rule of 3/5。
+</div>
+
+<hr>
+
+<div class="box box-yellow">
+<strong>常見陷阱</strong><br><br>
+<strong>1. 只寫 destructor</strong> &mdash; 這通常留下 compiler-generated copy，導致 double delete。<br><br>
+<strong>2. move 後 source 不安全</strong> &mdash; moved-from object 必須仍然 valid，至少能安全 destruct。<br><br>
+<strong>3. 過早手寫 Rule of 5</strong> &mdash; 能用 Rule of 0 就不要手動管理 resource；手寫越多，越容易漏掉 exception safety、自我賦值、move 後狀態。
+</div>
+
+<div class="box box-green">
+<strong>本章學到的三件事</strong><br><br>
+<strong>1.</strong> Destructor 表示 ownership，ownership 會逼你一起思考 copy constructor 和 copy assignment。這就是 Rule of 3 的壓力來源。<br><br>
+<strong>2.</strong> C++11 後 move constructor / move assignment 加入同一組 invariant：destination 接手 resource，source 留在 valid moved-from state。<br><br>
+<strong>3.</strong> 現代 C++ 優先 Rule of 0：把 resource 放進已經會 RAII 的 member，讓 compiler-generated special members 自然正確。
+</div>
+
+<div class="box box-purple">
+<strong>下一步</strong> &mdash; 現在你知道 copy/destroy/move 是同一組 ownership operations。下一章會正式進入 <strong>Move 是 ownership transfer</strong>：為什麼 move 不是 faster copy，什麼時候 Matrix 之類的 value type move 沒意義，什麼時候 Buffer / texture / backend handle move 才真正重要。
+</div>
+
+<div class="next-ch">
+  <div>
+    <div class="next-label">NEXT CHAPTER</div>
+    <div class="next-title">Ch08 &mdash; Move 是 ownership transfer</div>
+    <div class="next-desc">Ch08 會接到 move ownership、moved-from state，以及 resource transfer 的設計壓力。</div>
+  </div>
+  <a class="next-arrow" href="ch08_move_ownership.html">&rarr;</a>
+</div>
+
+</body>
+</html>

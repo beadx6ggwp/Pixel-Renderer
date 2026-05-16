@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Ch14 — Regular / Semiregular types</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#1e1e2e; --bg1:#181825; --bg2:#11111b; --border:#313244;
+  --muted:#6c7086; --text:#cdd6f4; --blue:#89b4fa; --green:#a6e3a1;
+  --yellow:#f9e2af; --orange:#fab387; --red:#f38ba8; --purple:#cba6f7; --teal:#94e2d5;
+}
+body { background: var(--bg); color: var(--text); font-family: 'Georgia', serif; font-size: 15px; padding: 0 20px 80px; max-width: 900px; margin: 0 auto; line-height: 1.9; }
+nav { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); padding: 14px 0; border-bottom: 1px solid var(--border); margin-bottom: 36px; display: flex; align-items: center; gap: 10px; }
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--blue); }
+.nav-sep { color: var(--border); }
+.nav-cur { color: var(--text); }
+.nav-right { margin-left: auto; display: flex; gap: 16px; }
+.ch-header { margin-bottom: 40px; }
+.ch-label { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px; }
+.ch-title { color: var(--blue); font-size: 1.7em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub { color: var(--muted); font-size: 0.88em; margin-bottom: 14px; }
+.ch-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.ch-tag { font-family: 'Consolas', monospace; font-size: 0.72em; padding: 1px 7px; border-radius: 4px; background: var(--bg2); color: var(--muted); border: 1px solid var(--border); }
+h2 { color: var(--purple); font-size: 1em; font-family: 'Consolas', monospace; letter-spacing: 0.05em; padding: 10px 0; border-bottom: 1px solid var(--border); margin: 44px 0 20px; display: flex; align-items: center; gap: 12px; }
+h2 .n { background: var(--purple); color: var(--bg2); font-weight: bold; border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.85em; }
+h3 { color: var(--yellow); font-size: 0.95em; margin: 24px 0 10px; }
+p { margin-bottom: 12px; }
+strong { color: var(--yellow); }
+em { color: var(--orange); font-style: normal; }
+code { font-family: 'Consolas', monospace; color: var(--teal); }
+ul, ol { margin: 8px 0 14px 26px; line-height: 2.2; }
+.box { border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 0.9em; line-height: 1.85; background: var(--bg1); }
+.box-blue { border-left: 4px solid var(--blue); }
+.box-green { border-left: 4px solid var(--green); }
+.box-yellow { border-left: 4px solid var(--yellow); }
+.box-red { border-left: 4px solid var(--red); }
+.box-purple { border-left: 4px solid var(--purple); }
+.code { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em; line-height: 2.1; margin: 14px 0; overflow-x: auto; }
+.code .cmt { color: var(--muted); } .code .kw { color: var(--purple); } .code .val { color: var(--orange); } .code .tp { color: var(--blue); } .code .fn { color: var(--teal); }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+.two-col > div { background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; }
+.col-title { font-family: 'Consolas', monospace; font-size: 0.85em; margin-bottom: 10px; color: var(--muted); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9em; }
+thead { background: var(--bg1); }
+th { color: var(--muted); font-family: 'Consolas', monospace; font-size: 0.85em; padding: 8px 14px; text-align: left; border-bottom: 2px solid var(--border); }
+td { padding: 8px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.fig { margin: 24px auto; text-align: center; }
+.fig figcaption { color: var(--muted); font-size: 0.88em; margin-top: 8px; font-style: italic; }
+.next-ch { margin-top: 56px; padding: 20px 24px; background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 20px; }
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+.next-title { color: var(--blue); font-size: 1em; }
+.next-desc { color: var(--muted); font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: var(--blue); font-size: 1.6em; text-decoration: none; }
+@media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">C++ 複習</a>
+  <span class="nav-sep">/</span>
+  <span class="nav-cur">Ch14 — Regular / Semiregular types</span>
+  <div class="nav-right">
+    <a href="ch13_type_invariants.html">&larr; Ch13</a>
+    <a href="ch15_operator_template_math_types.html">Ch15 &rarr;</a>
+  </div>
+</nav>
+
+<div class="ch-header">
+  <div class="ch-label">PART 5 &middot; CHAPTER 14</div>
+  <div class="ch-title">Regular / Semiregular types</div>
+  <div class="ch-sub">generic algorithm 需要的是 operation laws，不是任意型別</div>
+  <div class="ch-tags">
+    <span class="ch-tag">regular</span>
+    <span class="ch-tag">concept</span>
+    <span class="ch-tag">generic</span>
+  </div>
+</div>
+
+<p>
+上一章說 type 是 valid states、operations、invariants、cost model。接下來要問：如果一個 algorithm 不知道你的 concrete type，它憑什麼能正確使用它？
+</p>
+<p>
+這就是 generic programming 的核心。Template 不是「什麼 type 都可以丟進來」。真正可組合的 generic code 需要 type 滿足一組 operation requirements，也就是它能做哪些操作，這些操作要符合什麼語意。
+</p>
+
+<div class="box box-blue">
+<strong>本章範圍</strong> &mdash; 用 <code>Semiregular</code> / <code>Regular</code> 建立 C++ generic programming 的第一個語意詞彙。重點不是背 C++20 concepts 定義，而是理解「像普通值一樣使用」到底要求哪些 operation laws，以及為什麼 resource owner 不一定應該 regular。
+</div>
+
+<h2><span class="n">1</span> naive model：template 可以吃任何型別</h2>
+
+<p>
+看到 template 很容易有這個直覺：
+</p>
+
+<div class="code">
+<span class="kw">template</span> &lt;<span class="kw">class</span> <span class="tp">T</span>&gt;<br>
+<span class="kw">void</span> <span class="fn">process</span>(std::<span class="tp">vector</span>&lt;<span class="tp">T</span>&gt;&amp; xs);
+</div>
+
+<p>
+表面上 <code>T</code> 可以是任何型別。但 function body 只要做了一個操作，就已經開始要求 <code>T</code> 滿足某種語意：
+</p>
+
+<div class="code">
+<span class="tp">T</span> backup = xs[<span class="val">0</span>];  <span class="cmt">// T 必須 copy constructible</span><br>
+xs[<span class="val">0</span>] = xs[<span class="val">1</span>];     <span class="cmt">// T 必須 assignable</span><br>
+<span class="kw">if</span> (xs[<span class="val">0</span>] == backup) { } <span class="cmt">// T 必須 equality comparable</span>
+</div>
+
+<p>
+所以 template 的自由不是沒有規則，而是把規則從 concrete class 名稱改成 operation requirements。
+</p>
+
+<h2><span class="n">2</span> 從 ordinary value 開始</h2>
+
+<p>
+先看你直覺上最熟悉的 ordinary value：
+</p>
+
+<div class="code">
+<span class="tp">int</span> a = <span class="val">3</span>;<br>
+<span class="tp">int</span> b = a;<br>
+b = <span class="val">4</span>;<br>
+<span class="kw">bool</span> same = (a == b);
+</div>
+
+<p>
+你會期待幾件事：
+</p>
+
+<ul>
+<li>可以 default construct / copy / assign / destroy。</li>
+<li>copy 後兩邊都是獨立且有效的 value。</li>
+<li>assignment 後 destination 代表新 value，source 不被破壞。</li>
+<li>equality 有穩定語意：相等代表同一個 abstract value。</li>
+</ul>
+
+<p>
+Regular / Semiregular 就是把「像普通值」這件事變成比較精準的 vocabulary。
+</p>
+
+<h2><span class="n">3</span> Semiregular：像 value 一樣能被建立與複製</h2>
+
+<p>
+粗略地說，<strong>Semiregular</strong> type 像一般 value 一樣可以：
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>能力</th>
+      <th>直覺</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>default construct</td>
+      <td>可以建立一個預設有效狀態。</td>
+    </tr>
+    <tr>
+      <td>copy construct</td>
+      <td>可以從另一個 value 建立獨立 value。</td>
+    </tr>
+    <tr>
+      <td>copy assign</td>
+      <td>可以讓既有 object 變成另一個 value。</td>
+    </tr>
+    <tr>
+      <td>destruct</td>
+      <td>可以正常結束 lifetime，不需要外部儀式。</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+例如 renderer 裡的 <code>Color</code>、<code>Vec3</code>、<code>Matrix4x4</code> 通常就應該接近 semiregular：它們是 value type，不 owns unique external resource，copy 有清楚語意。
+</p>
+
+<h2><span class="n">4</span> Regular：再加上 equality</h2>
+
+<p>
+<strong>Regular</strong> 可以先理解成：
+</p>
+
+<div class="code">
+regular = semiregular + equality comparable
+</div>
+
+<p>
+也就是它不只可以像 value 一樣建立、複製、賦值，還可以問：
+</p>
+
+<div class="code">
+a == b
+</div>
+
+<p>
+而這個 equality 必須有穩定語意。對 <code>Vec3</code> 來說，equality 可能表示三個分量都相同；但浮點數有精度問題，所以在 renderer 中你可能不想對所有 math type 都隨便提供 <code>operator==</code>，或要非常清楚它是 bit-exact 還是 epsilon-based。
+</p>
+
+<div class="box box-yellow">
+<strong>設計提醒</strong> &mdash; Regular 不是「越 regular 越高級」。它是一組 operation contract。如果 equality 沒有穩定語意，不要為了符合概念而硬加 <code>operator==</code>。
+</div>
+
+<h2><span class="n">5</span> Resource owner 不一定該 regular</h2>
+
+<p>
+現在回到 resource owner：
+</p>
+
+<div class="code">
+std::<span class="tp">unique_ptr</span>&lt;<span class="tp">Texture</span>&gt; texture;
+</div>
+
+<p>
+<code>unique_ptr</code> 明確不是 copyable，因為它的語意是 unique ownership。這不是缺陷，而是正確設計：copy unique owner 沒有合理語意。
+</p>
+
+<p>
+同樣地，Pixel-Renderer 裡的 <code>DisplayBackend</code>、SDL texture wrapper、Win32 handle wrapper 可能也不該 regular。它們可能應該是 move-only：
+</p>
+
+<div class="code">
+copy: deleted<br>
+move: ownership transfer<br>
+destroy: release handle
+</div>
+
+<p>
+這說明一件事：regular / semiregular 是 vocabulary，不是所有 type 的目標。你要先問 type 的語意，再問它應該滿足哪組 requirements。
+</p>
+
+<h2><span class="n">6</span> Algorithm 需要 laws，不只是 syntax</h2>
+
+<p>
+Generic algorithm 不只需要語法上能編譯。它需要操作有合理 law。例如 sort 不是只要求你有 <code>operator&lt;</code>；它要求 ordering 像一個 strict weak ordering。否則 sort 可能編譯過，但結果沒有意義。
+</p>
+
+<div class="code">
+std::<span class="fn">sort</span>(items.<span class="fn">begin</span>(), items.<span class="fn">end</span>(), compare);
+</div>
+
+<p>
+<code>compare(a, b)</code> 必須表達穩定排序關係，而不是每次隨機回傳或依賴會突變的全域狀態。這和 Ch13 的 invariant 觀念是同一件事：operation 要有 laws，algorithm 才能推理。
+</p>
+
+<figure class="fig">
+<svg width="560" height="300" viewBox="0 0 560 300" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="560" height="300" rx="10" fill="#11111b"/>
+  <text x="280" y="30" text-anchor="middle" font-family="Consolas" font-size="12" fill="#6c7086">Generic algorithm sees requirements, not class names</text>
+
+  <rect x="48" y="80" width="140" height="70" rx="8" fill="#89b4fa" fill-opacity="0.12" stroke="#89b4fa"/>
+  <text x="118" y="108" text-anchor="middle" font-family="Consolas" font-size="10" fill="#89b4fa">algorithm</text>
+  <text x="118" y="130" text-anchor="middle" font-family="Consolas" font-size="9" fill="#cdd6f4">sort / copy / store</text>
+
+  <rect x="232" y="64" width="128" height="102" rx="8" fill="#cba6f7" fill-opacity="0.12" stroke="#cba6f7"/>
+  <text x="296" y="92" text-anchor="middle" font-family="Consolas" font-size="10" fill="#cba6f7">requirements</text>
+  <text x="296" y="116" text-anchor="middle" font-family="Consolas" font-size="9" fill="#cdd6f4">copyable</text>
+  <text x="296" y="136" text-anchor="middle" font-family="Consolas" font-size="9" fill="#cdd6f4">assignable</text>
+  <text x="296" y="156" text-anchor="middle" font-family="Consolas" font-size="9" fill="#cdd6f4">ordered</text>
+
+  <rect x="404" y="80" width="110" height="70" rx="8" fill="#a6e3a1" fill-opacity="0.12" stroke="#a6e3a1"/>
+  <text x="459" y="108" text-anchor="middle" font-family="Consolas" font-size="10" fill="#a6e3a1">type T</text>
+  <text x="459" y="130" text-anchor="middle" font-family="Consolas" font-size="9" fill="#cdd6f4">operations + laws</text>
+
+  <line x1="188" y1="115" x2="228" y2="115" stroke="#89b4fa" stroke-width="1.2" marker-end="url(#arrowB)"/>
+  <line x1="360" y1="115" x2="400" y2="115" stroke="#a6e3a1" stroke-width="1.2" marker-end="url(#arrowG)"/>
+
+  <text x="280" y="230" text-anchor="middle" font-family="Consolas" font-size="10" fill="#6c7086">template syntax opens the door; requirements decide whether the algorithm is meaningful</text>
+
+  <defs>
+    <marker id="arrowB" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="none" stroke="#89b4fa" stroke-width="1"/></marker>
+    <marker id="arrowG" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="none" stroke="#a6e3a1" stroke-width="1"/></marker>
+  </defs>
+</svg>
+<figcaption>Generic programming 是用 requirements 連接 algorithm 和 type。</figcaption>
+</figure>
+
+<h2><span class="n">7</span> Pixel-Renderer 的落點</h2>
+
+<p>
+這章可以直接幫 Pixel-Renderer 做 type 分類：
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>可能的 category</th>
+      <th>設計理由</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>Color</code> / <code>Vec3</code></td>
+      <td>Semiregular，可能 Regular</td>
+      <td>像普通 value，copy 合理；equality 要看 float 語意。</td>
+    </tr>
+    <tr>
+      <td><code>Framebuffer</code></td>
+      <td>視 ownership policy 而定</td>
+      <td>如果 owns pixels，copy 可能 deep copy 或 delete；move 應清楚。</td>
+    </tr>
+    <tr>
+      <td><code>DisplayBackend</code></td>
+      <td>Move-only</td>
+      <td>owns platform handle / SDL resource，不應複製。</td>
+    </tr>
+    <tr>
+      <td><code>UICommand</code></td>
+      <td>Semiregular</td>
+      <td>適合放進 vector、排序、批次處理；應避免藏 heavy ownership。</td>
+    </tr>
+    <tr>
+      <td><code>Shader</code> interface</td>
+      <td>通常不是 Regular</td>
+      <td>可能靠 dynamic dispatch / state / resource；要用 pointer/reference/handle 表達。</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="box box-blue">
+<strong>架構判斷</strong> &mdash; renderer 裡越靠近純資料流的 type，越適合 regular-like value semantics；越靠近 OS/GPU/backend resource 的 type，越可能是 move-only owner 或 non-owning view。
+</div>
+
+<h2><span class="n">8</span> 和下一章數學型別的關係</h2>
+
+<p>
+接下來會回到 renderer 最常見的 value type：<code>Vec3</code>、<code>Matrix4x4</code>、<code>Color</code>。這些型別看起來只是數學資料，但只要你替它們加上 operator、template、conversion，就開始在定義 operation laws。
+</p>
+
+<ul>
+<li><code>Vec3 + Vec3</code> 應該是 component-wise addition，且不改變 operands。</li>
+<li><code>Matrix4x4 * Vec4</code> 的乘法方向必須和你的座標慣例一致。</li>
+<li><code>operator==</code> 對 float math type 是否合理，要分清 bit-exact 和 epsilon-based equality。</li>
+</ul>
+
+<p>
+也就是說，Ch15 會把 Ch13 / Ch14 的 type contract 拉回 renderer math types：讓 type 像數學物件一樣好用，但不能讓 operator 破壞語意。
+</p>
+
+<hr>
+
+<div class="box box-yellow">
+<strong>常見陷阱</strong><br><br>
+<strong>1. 以為 template 沒有限制</strong> &mdash; function body 一旦 copy、assign、compare，就已經要求 type 滿足相應 operations。<br><br>
+<strong>2. 以為所有 type 都應該 regular</strong> &mdash; resource owner、backend handle、unique ownership type 不 regular 可能才是正確語意。<br><br>
+<strong>3. 只檢查能不能編譯</strong> &mdash; generic algorithm 需要 operation laws；錯誤的 equality / ordering 會讓程式編譯過但語意壞掉。
+</div>
+
+<div class="box box-green">
+<strong>本章學到的三件事</strong><br><br>
+<strong>1.</strong> Generic programming 的核心是 operation requirements；template syntax 只是讓 requirements 延後到型別代入時檢查。<br><br>
+<strong>2.</strong> Semiregular / Regular 是描述 ordinary value behavior 的 vocabulary，不是所有 type 的目標。<br><br>
+<strong>3.</strong> Pixel-Renderer 應該區分 value-like data、move-only resource owner、non-owning view、runtime interface，不能全部用同一種 copy/move policy。
+</div>
+
+<div class="box box-purple">
+<strong>下一步</strong> &mdash; 現在你知道 generic algorithm 需要 operation laws。下一章進入 <strong>Operator / Template 與數學型別</strong>：如何讓 <code>Vec</code> / <code>Mat</code> 像數學物件一樣使用，同時守住 type contract。
+</div>
+
+<div class="next-ch">
+  <div>
+    <div class="next-label">NEXT CHAPTER</div>
+    <div class="next-title">Ch15 &mdash; Operator / Template 與數學型別</div>
+    <div class="next-desc">Ch15 會拆 Vec/Mat operator、template dimension/type parameter，以及 renderer math type 的 laws 與 cost model。</div>
+  </div>
+  <a class="next-arrow" href="ch15_operator_template_math_types.html">&rarr;</a>
+</div>
+
+</body>
+</html>

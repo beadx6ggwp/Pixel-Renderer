@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>I-08 — Framebuffer Ownership Refactor</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#1e1e2e; --bg1:#181825; --bg2:#11111b; --border:#313244;
+  --muted:#6c7086; --text:#cdd6f4; --blue:#89b4fa; --green:#a6e3a1;
+  --yellow:#f9e2af; --orange:#fab387; --red:#f38ba8; --purple:#cba6f7; --teal:#94e2d5;
+}
+body { background: var(--bg); color: var(--text); font-family: 'Georgia', serif; font-size: 15px; padding: 0 20px 80px; max-width: 900px; margin: 0 auto; line-height: 1.9; }
+nav { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); padding: 14px 0; border-bottom: 1px solid var(--border); margin-bottom: 36px; display: flex; align-items: center; gap: 10px; }
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--orange); }
+.nav-sep { color: var(--border); }
+.nav-cur { color: var(--text); }
+.nav-right { margin-left: auto; display: flex; gap: 16px; }
+.ch-header { margin-bottom: 40px; }
+.ch-label { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px; }
+.ch-title { color: var(--orange); font-size: 1.7em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub { color: var(--muted); font-size: 0.88em; margin-bottom: 14px; }
+.ch-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.ch-tag { font-family: 'Consolas', monospace; font-size: 0.72em; padding: 1px 7px; border-radius: 4px; background: var(--bg2); color: var(--muted); border: 1px solid var(--border); }
+h2 { color: var(--purple); font-size: 1em; font-family: 'Consolas', monospace; letter-spacing: 0.05em; padding: 10px 0; border-bottom: 1px solid var(--border); margin: 44px 0 20px; display: flex; align-items: center; gap: 12px; }
+h2 .n { background: var(--purple); color: var(--bg2); font-weight: bold; border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.85em; }
+h3 { color: var(--yellow); font-size: 0.95em; margin: 24px 0 10px; }
+p { margin-bottom: 12px; }
+strong { color: var(--yellow); }
+em { color: var(--orange); font-style: normal; }
+code { font-family: 'Consolas', monospace; color: var(--teal); }
+ul, ol { margin: 8px 0 14px 26px; line-height: 2.2; }
+.box { border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 0.9em; line-height: 1.85; background: var(--bg1); }
+.box-blue { border-left: 4px solid var(--blue); }
+.box-green { border-left: 4px solid var(--green); }
+.box-yellow { border-left: 4px solid var(--yellow); }
+.box-red { border-left: 4px solid var(--red); }
+.box-purple { border-left: 4px solid var(--purple); }
+.code { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em; line-height: 2.1; margin: 14px 0; overflow-x: auto; }
+.code .cmt { color: var(--muted); } .code .kw { color: var(--purple); } .code .val { color: var(--orange); } .code .tp { color: var(--blue); } .code .fn { color: var(--teal); }
+.ascii { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.82em; line-height: 1.55; margin: 14px 0; overflow-x: auto; color: var(--text); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9em; }
+thead { background: var(--bg1); }
+th { color: var(--muted); font-family: 'Consolas', monospace; font-size: 0.85em; padding: 8px 14px; text-align: left; border-bottom: 2px solid var(--border); }
+td { padding: 8px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.next-ch { margin-top: 56px; padding: 20px 24px; background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 20px; }
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+.next-title { color: var(--blue); font-size: 1em; }
+.next-desc { color: var(--muted); font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: var(--blue); font-size: 1.6em; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">C++ for Pixel-Renderer</a>
+  <span class="nav-sep">/</span>
+  <span class="nav-cur">I-08 — Framebuffer Ownership Refactor</span>
+  <div class="nav-right">
+    <a href="i07_cmake_target_based_build.html">&larr; I-07</a>
+  </div>
+</nav>
+
+<div class="ch-header">
+  <div class="ch-label">IMPLEMENTATION TRACK &middot; I-08</div>
+  <div class="ch-title">Framebuffer Ownership Refactor</div>
+  <div class="ch-sub">RenderDevice 應該寫 renderer-owned CPU framebuffer，不該寫 platform-owned DIB memory</div>
+  <div class="ch-tags">
+    <span class="ch-tag">framebuffer</span>
+    <span class="ch-tag">ownership</span>
+    <span class="ch-tag">backend</span>
+  </div>
+</div>
+
+<p>
+前面幾章把 C++ 語意、toolchain、Make、CMake target graph 都鋪好。現在開始碰 Pixel-Renderer 架構本體：目前 <code>RenderDevice::SetPixel()</code> 能畫圖，但它寫的 memory 其實是 <code>ScreenManager</code> 透過 Win32 <code>CreateDIBSection()</code> 建出來的 DIB backing memory。這讓 renderer core 和 Win32 present path 綁在一起。
+</p>
+
+<p>
+這章不直接改 code，而是把 refactor 的「正確切割線」講清楚：<strong>software renderer 應該擁有自己的 CPU framebuffer；Win32、SDL、macOS backend 只負責把這份 framebuffer present 到 window。</strong>
+</p>
+
+<div class="box box-blue">
+<strong>本章範圍</strong> &mdash; 讀目前 <code>ScreenManager</code>、<code>RenderDevice</code>、<code>Application</code> 的 framebuffer flow，指出 coupling；設計 <code>Framebuffer</code> / <code>FramebufferView</code> / <code>RenderDevice</code> / <code>DisplayBackend::Present()</code> 的責任；比較 Win32 DIBSection、owned <code>std::vector&lt;uint32_t&gt;</code>、SDL_UpdateTexture 三種 present path；最後給出可逐步落地的 refactor sequence。
+</div>
+
+<h2><span class="n">1</span> naive model：現在已經有前後端分離了</h2>
+
+<p>
+目前 code 看起來已經有幾層：
+</p>
+
+<pre class="ascii">Application
+  owns ScreenManager
+  owns RenderDevice
+  owns Rasterizer
+
+Rasterizer -> RenderDevice::SetPixel()
+ScreenManager -> UpdateScreen() -> BitBlt()</pre>
+
+<p>
+這確實比所有 code 都塞在 <code>main.cpp</code> 好。但「有 class 分層」不等於「rendering backend 和 platform backend 已經分離」。判斷分離要看 ownership 和 data boundary，不是看檔案數量。
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>問題</th>
+      <th>目前答案</th>
+      <th>分離後應該答案</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>誰 owns color framebuffer memory？</td>
+      <td><code>ScreenManager</code> / Win32 DIBSection。</td>
+      <td><code>Framebuffer</code> in renderer/core。</td>
+    </tr>
+    <tr>
+      <td><code>RenderDevice</code> 寫哪塊 memory？</td>
+      <td><code>ScreenManager::GetFrameBuffer()</code> 回傳的 platform memory。</td>
+      <td>renderer-owned CPU framebuffer。</td>
+    </tr>
+    <tr>
+      <td>換 SDL/macOS 要改哪裡？</td>
+      <td>會牽動 framebuffer owner 與 present memory。</td>
+      <td>只換 <code>DisplayBackend::Present()</code> implementation。</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="box box-yellow">
+<strong>第一個修正</strong> &mdash; 抽象分離不是「有一個 RenderDevice class」就完成。只要 renderer core 寫的是 Win32-created memory，平台 display resource 仍然滲進 rendering path。
+</div>
+
+<h2><span class="n">2</span> 目前實際資料流</h2>
+
+<p>
+目前 <code>ScreenManager::Init()</code> 做了這件事：
+</p>
+
+<div class="code">
+dib_bitmap = <span class="fn">CreateDIBSection</span>(mem_dc, &amp;bi, DIB_RGB_COLORS, &amp;ptr, NULL, <span class="val">0</span>);<br>
+old_bitmap = (HBITMAP)<span class="fn">SelectObject</span>(mem_dc, dib_bitmap);<br>
+frame_buffer = (<span class="tp">unsigned char</span>*)ptr;<br>
+pitch = w * <span class="val">4</span>;
+</div>
+
+<p>
+接著 <code>Application</code> 把這個 pointer 包成 <code>FramebufferConfig</code>：
+</p>
+
+<div class="code">
+<span class="tp">FramebufferConfig</span> config;<br>
+config.buffer = screen.<span class="fn">GetFrameBuffer</span>();<br>
+config.width  = screen.<span class="fn">GetWidth</span>();<br>
+config.height = screen.<span class="fn">GetHeight</span>();<br>
+config.pitch  = screen.<span class="fn">GetPitch</span>();<br>
+device = <span class="kw">new</span> <span class="tp">RenderDevice</span>(config);
+</div>
+
+<p>
+<code>RenderDevice::SetPixel()</code> 直接寫這塊 memory：
+</p>
+
+<div class="code">
+*(<span class="tp">uint32_t</span>*)(frame_buffer + y * pitch + x * <span class="val">4</span>) = color;
+</div>
+
+<p>
+最後 <code>ScreenManager::UpdateScreen()</code> present：
+</p>
+
+<div class="code">
+<span class="fn">BitBlt</span>(window_dc, <span class="val">0</span>, <span class="val">0</span>, width, height, mem_dc, <span class="val">0</span>, <span class="val">0</span>, SRCCOPY);
+</div>
+
+<p>
+完整資料流如下：
+</p>
+
+<pre class="ascii">Win32 CreateDIBSection()
+  |
+  | returns ptr to DIB backing memory
+  v
+ScreenManager::frame_buffer
+  |
+  | GetFrameBuffer()
+  v
+FramebufferConfig::buffer
+  |
+  | injected into RenderDevice
+  v
+RenderDevice::frame_buffer
+  |
+  | SetPixel writes bytes
+  v
+same DIBSection memory
+  |
+  | selected into mem_dc
+  v
+BitBlt(mem_dc -> window_dc)</pre>
+
+<div class="box box-red">
+<strong>耦合點</strong> &mdash; <code>RenderDevice</code> 看似不知道 Win32 type，但它的 framebuffer lifetime、pitch、pixel format、present path 都由 Win32 DIBSection 決定。這是 semantic coupling，不一定會出現在 include dependency 上。
+</div>
+
+<h2><span class="n">3</span> 正確切割：rendering memory vs present resource</h2>
+
+<p>
+要支援 SDL/macOS，不能把 <code>SetPixel</code> 換成 <code>SDL_RenderDrawPoint</code>，也不能讓 <code>Rasterizer</code> 知道 backend。正確切割是：
+</p>
+
+<pre class="ascii">Rasterizer / RenderDevice
+  decides pixels and writes CPU memory
+
+Framebuffer
+  owns color buffer
+  exposes data + width + height + pitch + format
+
+DisplayBackend
+  reads/copies/uploads final pixels
+  presents to OS window</pre>
+
+<p>
+換句話說，renderer backend 和 display backend 不是同一層：
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>層</th>
+      <th>回答的問題</th>
+      <th>例子</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Software renderer core</td>
+      <td>哪些 pixel 應該是什麼顏色？</td>
+      <td><code>DrawTriangle</code>, depth test, shader, alpha blend。</td>
+    </tr>
+    <tr>
+      <td>Framebuffer</td>
+      <td>final pixels 存在哪裡？layout 是什麼？</td>
+      <td><code>std::vector&lt;uint32_t&gt;</code>, pitch, format。</td>
+    </tr>
+    <tr>
+      <td>Display backend</td>
+      <td>這份 pixels 怎麼交給 OS/window/compositor？</td>
+      <td>Win32 <code>BitBlt</code>, SDL <code>UpdateTexture</code>, macOS upload。</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="box box-green">
+<strong>核心方向</strong> &mdash; <code>RenderDevice::SetPixel()</code> 保留，但它寫入的 destination 要從 platform-owned DIB memory 改成 renderer-owned CPU framebuffer。
+</div>
+
+<h2><span class="n">4</span> 目標資料流</h2>
+
+<pre class="ascii">Application
+  |
+  +-- owns Framebuffer
+  |
+  +-- owns RenderDevice(framebuffer view)
+  |
+  +-- owns DisplayBackend
+
+Frame loop:
+  DisplayBackend::PollEvents()
+  Framebuffer::Clear()
+  Application::OnRender()
+      Rasterizer -> RenderDevice::SetPixel()
+  DisplayBackend::Present(framebuffer)</pre>
+
+<p>
+和現在相比，關鍵差異是：present 不再是 framebuffer 的 owner。
+</p>
+
+<pre class="ascii">BEFORE
+======
+
+ScreenManager
+  owns DIBSection memory
+  owns window
+  owns input
+  owns present
+        |
+        | pointer
+        v
+RenderDevice writes platform memory
+
+
+AFTER
+=====
+
+Framebuffer
+  owns CPU pixels
+        ^
+        | writes
+RenderDevice
+
+DisplayBackend
+  owns window/backend resources
+  reads/copies/uploads Framebuffer during Present()</pre>
+
+<h2><span class="n">5</span> Framebuffer 的第一版 contract</h2>
+
+<p>
+第一版不要過度抽象。Pixel-Renderer 目前可以先固定 32-bit color buffer：
+</p>
+
+<div class="code">
+<span class="kw">class</span> <span class="tp">Framebuffer</span> {<br>
+<span class="kw">public</span>:<br>
+&nbsp;&nbsp;<span class="fn">Framebuffer</span>(<span class="tp">int</span> width, <span class="tp">int</span> height)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;: width_(width), height_(height), pixels_(<span class="kw">static_cast</span>&lt;<span class="tp">size_t</span>&gt;(width) * height) {}<br>
+<br>
+&nbsp;&nbsp;<span class="tp">uint32_t</span>* <span class="fn">Data</span>() { <span class="kw">return</span> pixels_.<span class="fn">data</span>(); }<br>
+&nbsp;&nbsp;<span class="kw">const</span> <span class="tp">uint32_t</span>* <span class="fn">Data</span>() <span class="kw">const</span> { <span class="kw">return</span> pixels_.<span class="fn">data</span>(); }<br>
+&nbsp;&nbsp;<span class="tp">int</span> <span class="fn">Width</span>() <span class="kw">const</span> { <span class="kw">return</span> width_; }<br>
+&nbsp;&nbsp;<span class="tp">int</span> <span class="fn">Height</span>() <span class="kw">const</span> { <span class="kw">return</span> height_; }<br>
+&nbsp;&nbsp;<span class="tp">int</span> <span class="fn">PitchBytes</span>() <span class="kw">const</span> { <span class="kw">return</span> width_ * <span class="kw">static_cast</span>&lt;<span class="tp">int</span>&gt;(<span class="kw">sizeof</span>(<span class="tp">uint32_t</span>)); }<br>
+&nbsp;&nbsp;<span class="kw">void</span> <span class="fn">Clear</span>(<span class="tp">uint32_t</span> color) { std::<span class="fn">fill</span>(pixels_.<span class="fn">begin</span>(), pixels_.<span class="fn">end</span>(), color); }<br>
+<br>
+<span class="kw">private</span>:<br>
+&nbsp;&nbsp;<span class="tp">int</span> width_ = <span class="val">0</span>;<br>
+&nbsp;&nbsp;<span class="tp">int</span> height_ = <span class="val">0</span>;<br>
+&nbsp;&nbsp;std::<span class="tp">vector</span>&lt;<span class="tp">uint32_t</span>&gt; pixels_;<br>
+};
+</div>
+
+<p>
+這個 type 的 contract 很清楚：
+</p>
+
+<ul>
+  <li><code>Framebuffer</code> owns pixel memory。</li>
+  <li><code>Data()</code> 回傳的是 borrowed pointer，不應比 <code>Framebuffer</code> 活得更久。</li>
+  <li>第一版 pitch 可以等於 <code>width * 4</code>，之後若要 alignment 再改。</li>
+  <li>pixel format 要先固定，例如 <code>0xAARRGGBB</code> 或目前 Win32 實際使用的 byte layout。</li>
+</ul>
+
+<div class="box box-yellow">
+<strong>copy policy 要明確</strong> &mdash; <code>Framebuffer</code> 是否允許 copy 是設計選擇。教學工具可以允許 copy；renderer hot path 可先 <code>= delete</code> copy，保留 <code>noexcept</code> move，避免不小心複製整張畫面。
+</div>
+
+<h2><span class="n">6</span> RenderDevice 應該借用 Framebuffer，而不是 owns pointer</h2>
+
+<p>
+<code>RenderDevice</code> 的定位是 pixel write API，不是 framebuffer owner。它可以在建構時拿 <code>Framebuffer&amp;</code>，或拿一個 lightweight view：
+</p>
+
+<div class="code">
+<span class="kw">struct</span> <span class="tp">FramebufferView</span> {<br>
+&nbsp;&nbsp;<span class="tp">uint32_t</span>* pixels = <span class="kw">nullptr</span>;<br>
+&nbsp;&nbsp;<span class="tp">int</span> width = <span class="val">0</span>;<br>
+&nbsp;&nbsp;<span class="tp">int</span> height = <span class="val">0</span>;<br>
+&nbsp;&nbsp;<span class="tp">int</span> pitch_bytes = <span class="val">0</span>;<br>
+};<br>
+<br>
+<span class="kw">class</span> <span class="tp">RenderDevice</span> {<br>
+<span class="kw">public</span>:<br>
+&nbsp;&nbsp;<span class="kw">explicit</span> <span class="fn">RenderDevice</span>(<span class="tp">FramebufferView</span> target) : target_(target) {}<br>
+&nbsp;&nbsp;<span class="kw">void</span> <span class="fn">SetPixel</span>(<span class="tp">int</span> x, <span class="tp">int</span> y, <span class="tp">uint32_t</span> color);<br>
+<br>
+<span class="kw">private</span>:<br>
+&nbsp;&nbsp;<span class="tp">FramebufferView</span> target_; <span class="cmt">// borrowed view, not owner</span><br>
+};
+</div>
+
+<p>
+這裡要用 T-04/T-05 的語意看：<code>FramebufferView</code> 是 cheap-copy borrowed view，不 owns lifetime。真正 owner 是 <code>Framebuffer</code>。這個 distinction 會避免很多後續 bug。
+</p>
+
+<pre class="ascii">Framebuffer owns:
+  vector<uint32_t> pixels
+
+FramebufferView borrows:
+  uint32_t* pixels
+  width / height / pitch
+
+RenderDevice stores:
+  borrowed FramebufferView
+  uses it only while Framebuffer is alive</pre>
+
+<h2><span class="n">7</span> Win32 backend 第一版：copy owned framebuffer into DIBSection</h2>
+
+<p>
+如果 Win32 backend 還想用目前 <code>BitBlt</code> path，第一版可以保留 DIBSection，但它不再是 renderer framebuffer owner。它只是 present staging resource。
+</p>
+
+<pre class="ascii">Owned Framebuffer
+  |
+  | memcpy row by row
+  v
+Win32 DIBSection memory
+  |
+  | BitBlt
+  v
+Window DC</pre>
+
+<p>
+概念 code：
+</p>
+
+<div class="code">
+<span class="kw">void</span> <span class="tp">Win32DisplayBackend</span>::<span class="fn">Present</span>(<span class="kw">const</span> <span class="tp">Framebuffer</span>&amp; fb) {<br>
+&nbsp;&nbsp;<span class="kw">for</span> (<span class="tp">int</span> y = <span class="val">0</span>; y &lt; fb.<span class="fn">Height</span>(); ++y) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">auto</span>* dst = dib_pixels_ + y * dib_pitch_bytes_;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">auto</span>* src = <span class="kw">reinterpret_cast</span>&lt;<span class="kw">const</span> <span class="tp">uint8_t</span>*&gt;(fb.<span class="fn">Data</span>()) + y * fb.<span class="fn">PitchBytes</span>();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;std::<span class="fn">memcpy</span>(dst, src, fb.<span class="fn">PitchBytes</span>());<br>
+&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;<span class="fn">BitBlt</span>(window_dc_, <span class="val">0</span>, <span class="val">0</span>, fb.<span class="fn">Width</span>(), fb.<span class="fn">Height</span>(), mem_dc_, <span class="val">0</span>, <span class="val">0</span>, SRCCOPY);<br>
+}
+</div>
+
+<p>
+這看起來多了一次 copy，但它換來一個重要能力：renderer core 不再依賴 Win32-created memory。之後 SDL backend 也可以用同一份 <code>Framebuffer</code>：
+</p>
+
+<pre class="ascii">SDLDisplayBackend::Present(fb)
+  |
+  | SDL_UpdateTexture(texture, nullptr, fb.Data(), fb.PitchBytes())
+  v
+SDL_Texture -> SDL_RenderCopy -> SDL_RenderPresent</pre>
+
+<div class="box box-purple">
+<strong>第一版先選穩定 lifetime</strong> &mdash; 先用 application-owned <code>std::vector&lt;uint32_t&gt;</code> + backend copy/upload。等架構穩定後，再評估 SDL_LockTexture 或 zero-copy-ish path。不要一開始就讓 RenderDevice 的 target pointer 跟 lock/unlock lifetime 綁在一起。
+</div>
+
+<h2><span class="n">8</span> Refactor sequence：不要一次切太多</h2>
+
+<p>
+這種改動容易把 window、input、framebuffer、present、build system 全攪在一起。比較穩的順序是：
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>階段</th>
+      <th>改什麼</th>
+      <th>不改什麼</th>
+      <th>驗證</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Step 1</td>
+      <td>新增 <code>Framebuffer</code> type，暫不接入。</td>
+      <td>現有 Win32 path。</td>
+      <td>unit-like test: create/clear/check pixels。</td>
+    </tr>
+    <tr>
+      <td>Step 2</td>
+      <td>讓 <code>RenderDevice</code> 可寫 <code>FramebufferView</code>。</td>
+      <td><code>ScreenManager</code> 還可保留舊 DIB present。</td>
+      <td><code>Clear</code>、<code>SetPixel</code> 對 CPU buffer 正確。</td>
+    </tr>
+    <tr>
+      <td>Step 3</td>
+      <td><code>Application</code> owns <code>Framebuffer</code>，不再從 <code>ScreenManager</code> 取 render target。</td>
+      <td>Window/input 還在 <code>ScreenManager</code>。</td>
+      <td>畫面仍可 present。</td>
+    </tr>
+    <tr>
+      <td>Step 4</td>
+      <td><code>ScreenManager::UpdateScreen</code> 改成接收 <code>const Framebuffer&amp;</code> 並 copy 到 DIB。</td>
+      <td>還不急著命名 <code>DisplayBackend</code>。</td>
+      <td>Win32 畫面和 refactor 前一致。</td>
+    </tr>
+    <tr>
+      <td>Step 5</td>
+      <td>把 <code>ScreenManager</code> 拆成 window/input + <code>Win32DisplayBackend</code>。</td>
+      <td>Rasterizer math。</td>
+      <td>core target 不 include Windows headers。</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="box box-yellow">
+<strong>工程原則</strong> &mdash; 先改 ownership，再改 interface 名字。否則很容易產生一個叫 <code>DisplayBackend</code> 的 class，但裡面仍然讓 renderer 寫 platform memory。
+</div>
+
+<h2><span class="n">9</span> Resize、pitch、format：不要偷省的三件事</h2>
+
+<p>
+Framebuffer refactor 不是只有 pointer 變成 vector。還要明確三個 contract。
+</p>
+
+<h3>Resize</h3>
+
+<p>
+resize 會使 <code>std::vector</code> reallocate，舊的 <code>Data()</code> pointer 可能失效。因此 <code>RenderDevice</code> 如果長期保存 <code>FramebufferView</code>，resize 後要 rebind target，或讓 <code>RenderDevice</code> 每次從 <code>Framebuffer&amp;</code> 取 view。
+</p>
+
+<pre class="ascii">Framebuffer::Resize()
+  |
+  | vector reallocates
+  v
+old pixels pointer invalid
+  |
+  v
+RenderDevice target view must be refreshed</pre>
+
+<h3>Pitch</h3>
+
+<p>
+第一版 pitch 可以是 <code>width * 4</code>。但不要把這個假設散落在所有 code 裡。用 <code>PitchBytes()</code> 集中管理，未來 alignment、subsurface、texture upload 才有位置調整。
+</p>
+
+<h3>Pixel format</h3>
+
+<p>
+Win32 DIBSection、SDL texture、你的 <code>Color</code> packing 不一定用同一個命名。第一版要明確說 <code>uint32_t</code> 裡每個 byte 的意義。否則換 SDL 後最常見 bug 不是 crash，而是紅藍顛倒或 alpha 不對。
+</p>
+
+<div class="box box-red">
+<strong>不要讓 hidden assumptions 變成 ABI</strong> &mdash; <code>x * 4</code>、<code>width * 4</code>、<code>uint32_t color</code> 的 byte order、top-down/bottom-up buffer 都是 contract。若不命名，之後 backend 會各自猜。
+</div>
+
+<h2><span class="n">10</span> build target 也要跟著反映架構</h2>
+
+<p>
+I-07 的 CMake target model 到這裡開始有用。重構後 build graph 應該長這樣：
+</p>
+
+<pre class="ascii">pixel_core
+  framebuffer.cpp
+  render_device.cpp
+  rasterizer.cpp
+  no windows.h
+
+pixel_platform_win32
+  win32_display_backend.cpp
+  includes windows.h
+  links gdi32 user32
+
+pixel_renderer_app
+  main.cpp
+  application.cpp
+  links pixel_core + selected backend</pre>
+
+<p>
+這讓 compile boundary 可以檢查 architecture boundary。如果 <code>pixel_core</code> 需要 include <code>windows.h</code>，表示 refactor 還沒完成。
+</p>
+
+<h2><span class="n">11</span> verification：怎麼知道真的分離了</h2>
+
+<p>
+Refactor 完成不是「畫面還會動」而已。要用幾個具體檢查：
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>檢查</th>
+      <th>通過條件</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>ownership</td>
+      <td><code>Framebuffer</code> owns pixels；<code>RenderDevice</code> 不 owns，也不從 <code>ScreenManager</code> 取 pointer。</td>
+    </tr>
+    <tr>
+      <td>include boundary</td>
+      <td>core/render source 不 include <code>windows.h</code>、SDL headers、macOS headers。</td>
+    </tr>
+    <tr>
+      <td>present boundary</td>
+      <td>Win32/SDL/macOS code 只在 <code>Present(const Framebuffer&amp;)</code> 讀/copy/upload pixels。</td>
+    </tr>
+    <tr>
+      <td>output</td>
+      <td>refactor 前後同一個 test pattern 顯示一致。</td>
+    </tr>
+    <tr>
+      <td>resize</td>
+      <td>resize 後不使用舊 pointer；framebuffer size、backend staging resource 一起更新。</td>
+    </tr>
+  </tbody>
+</table>
+
+<pre class="ascii">test pattern:
+  clear black
+  set four corner pixels
+  draw diagonal line
+  draw filled rectangle
+
+expected:
+  same pixels before/after ownership refactor</pre>
+
+<div class="box box-green">
+<strong>本章學到的三件事：</strong>
+<ol>
+  <li>目前耦合點不是 <code>RenderDevice</code> 名字，而是它寫入 Win32 DIBSection memory；真正分離要先改 framebuffer ownership。</li>
+  <li>第一版目標是 <code>Framebuffer</code> owns CPU pixels，<code>RenderDevice</code> 借用 view 寫入，<code>DisplayBackend::Present</code> 讀/copy/upload final pixels。</li>
+  <li>refactor 要分階段做：先 ownership，再 present signature，再 backend interface；同時明確處理 resize、pitch、pixel format、include/build target boundary。</li>
+</ol>
+</div>
+
+<p>
+下一章可以回到 theory，把 RAII、Rule of Zero/Five、smart pointer、custom deleter、exception safety 補完整。那會讓 <code>Framebuffer</code>、<code>Win32DisplayBackend</code>、<code>SDLDisplayBackend</code> 這些 resource-owning type 的設計更穩。
+</p>
+
+<div class="next-ch">
+  <div>
+    <div class="next-label">NEXT THEORY</div>
+    <div class="next-title">T-06 &mdash; RAII / Resource Ownership / Exception Safety</div>
+    <div class="next-desc">下一章回到 C++ 語意，把 resource acquisition/release、Rule of Zero/Five、smart pointer、custom deleter、exception safety 整理成 backend resource 的設計地基。</div>
+  </div>
+  <a class="next-arrow" href="../theory/t06_raii_resource_ownership_exception_safety.html">&rarr;</a>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>I-10 — Win32DisplayBackend</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#1e1e2e; --bg1:#181825; --bg2:#11111b; --border:#313244;
+  --muted:#6c7086; --text:#cdd6f4; --blue:#89b4fa; --green:#a6e3a1;
+  --yellow:#f9e2af; --orange:#fab387; --red:#f38ba8; --purple:#cba6f7; --teal:#94e2d5;
+}
+body { background: var(--bg); color: var(--text); font-family: 'Georgia', serif; font-size: 15px; padding: 0 20px 80px; max-width: 900px; margin: 0 auto; line-height: 1.9; }
+nav { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); padding: 14px 0; border-bottom: 1px solid var(--border); margin-bottom: 36px; display: flex; align-items: center; gap: 10px; }
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--orange); }
+.nav-sep { color: var(--border); }
+.nav-cur { color: var(--text); }
+.nav-right { margin-left: auto; display: flex; gap: 16px; }
+.ch-header { margin-bottom: 40px; }
+.ch-label { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px; }
+.ch-title { color: var(--orange); font-size: 1.7em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub { color: var(--muted); font-size: 0.88em; margin-bottom: 14px; }
+.ch-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.ch-tag { font-family: 'Consolas', monospace; font-size: 0.72em; padding: 1px 7px; border-radius: 4px; background: var(--bg2); color: var(--muted); border: 1px solid var(--border); }
+h2 { color: var(--purple); font-size: 1em; font-family: 'Consolas', monospace; letter-spacing: 0.05em; padding: 10px 0; border-bottom: 1px solid var(--border); margin: 44px 0 20px; display: flex; align-items: center; gap: 12px; }
+h2 .n { background: var(--purple); color: var(--bg2); font-weight: bold; border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.85em; }
+h3 { color: var(--yellow); font-size: 0.95em; margin: 24px 0 10px; }
+p { margin-bottom: 12px; }
+strong { color: var(--yellow); }
+em { color: var(--orange); font-style: normal; }
+code { font-family: 'Consolas', monospace; color: var(--teal); }
+ul, ol { margin: 8px 0 14px 26px; line-height: 2.2; }
+.box { border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 0.9em; line-height: 1.85; background: var(--bg1); }
+.box-blue { border-left: 4px solid var(--blue); }
+.box-green { border-left: 4px solid var(--green); }
+.box-yellow { border-left: 4px solid var(--yellow); }
+.box-red { border-left: 4px solid var(--red); }
+.code { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em; line-height: 2.1; margin: 14px 0; overflow-x: auto; }
+.code .cmt { color: var(--muted); } .code .kw { color: var(--purple); } .code .val { color: var(--orange); } .code .tp { color: var(--blue); } .code .fn { color: var(--teal); }
+.ascii { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.82em; line-height: 1.55; margin: 14px 0; overflow-x: auto; color: var(--text); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9em; }
+thead { background: var(--bg1); }
+th { color: var(--muted); font-family: 'Consolas', monospace; font-size: 0.85em; padding: 8px 14px; text-align: left; border-bottom: 2px solid var(--border); }
+td { padding: 8px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.next-ch { margin-top: 56px; padding: 20px 24px; background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 20px; }
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+.next-title { color: var(--orange); font-size: 1em; }
+.next-desc { color: var(--muted); font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: var(--orange); font-size: 1.6em; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">C++ for Pixel-Renderer</a>
+  <span class="nav-sep">/</span>
+  <span class="nav-cur">I-10 — Win32DisplayBackend</span>
+  <div class="nav-right">
+    <a href="i09_display_backend_interface.html">&larr; I-09</a>
+    <a href="i11_sdl_display_backend.html">I-11 &rarr;</a>
+  </div>
+</nav>
+
+<div class="ch-header">
+  <div class="ch-label">IMPLEMENTATION TRACK &middot; I-10</div>
+  <div class="ch-title">Win32DisplayBackend</div>
+  <div class="ch-sub">把 DIBSection / memory DC / BitBlt 保留在 Win32 present path，而不是讓 renderer core 依賴它</div>
+  <div class="ch-tags">
+    <span class="ch-tag">Win32</span>
+    <span class="ch-tag">GDI</span>
+    <span class="ch-tag">BitBlt</span>
+    <span class="ch-tag">backend</span>
+  </div>
+</div>
+
+<p>
+I-09 已經決定 interface 邊界：<code>RenderDevice</code> 寫自己的 CPU framebuffer，<code>DisplayBackend::Present</code> 只負責把 finished pixels 顯示出去。現在要把這個抽象落到目前專案最熟的 backend：Win32 + GDI。
+</p>
+
+<p>
+這章不是要把 Win32 API 全部背起來，而是要回答一個更底層的問題：<strong>如果 framebuffer 不再由 Win32 DIBSection 擁有，Win32 backend 內部到底還剩下什麼？</strong>
+</p>
+
+<div class="box box-blue">
+<strong>本章範圍</strong> &mdash; 從目前 <code>ScreenManager</code> 拆出 <code>Win32DisplayBackend</code>：它 owns <code>HWND</code>、<code>HDC</code>、<code>HBITMAP</code>、DIBSection staging memory；它不 owns renderer framebuffer。每幀 <code>Present(const Framebuffer&amp;)</code> 會把 project-owned pixels copy 到 DIBSection，再用 <code>BitBlt</code> 從 memory DC 複製到 window DC。
+</div>
+
+<h2><span class="n">1</span> concrete case：現在 ScreenManager 做了什麼</h2>
+
+<p>
+目前 <code>src/core/screen_manager.cpp</code> 的流程可以簡化成這樣：
+</p>
+
+<pre class="ascii">ScreenManager::Init()
+  RegisterClass()
+  CreateWindow()
+  GetDC(window)
+  CreateCompatibleDC(window_dc)
+  CreateDIBSection(mem_dc, BITMAPINFO, &ptr)
+  SelectObject(mem_dc, dib_bitmap)
+  frame_buffer = ptr
+
+RenderDevice
+  gets frame_buffer from ScreenManager
+  writes pixels directly into DIBSection memory
+
+ScreenManager::UpdateScreen()
+  BitBlt(window_dc, 0,0,w,h, mem_dc, 0,0, SRCCOPY)</pre>
+
+<p>
+這條路能運作，因為 <code>CreateDIBSection</code> 給你一段 CPU 可以寫的 bitmap memory，GDI 也能把同一個 bitmap selected into memory DC。也就是說，這塊 memory 同時扮演兩種角色：
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>角色</th>
+      <th>目前誰使用</th>
+      <th>問題</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>renderer target</td>
+      <td><code>RenderDevice::SetPixel</code></td>
+      <td>renderer core 被 Win32-created memory 綁住。</td>
+    </tr>
+    <tr>
+      <td>GDI present source</td>
+      <td><code>BitBlt</code></td>
+      <td>這其實是 platform backend 的 staging resource。</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="box box-red">
+<strong>naive model 的失敗點</strong> &mdash; 如果把 <code>ScreenManager</code> 改名成 <code>Win32DisplayBackend</code>，但仍然提供 <code>GetFrameBuffer()</code> 給 <code>RenderDevice</code>，那只是改名字。真正的耦合仍然存在：renderer target lifetime 由 Win32 resource 決定。
+</div>
+
+<h2><span class="n">2</span> 新模型：DIBSection 變成 present staging buffer</h2>
+
+<p>
+抽出 owned <code>Framebuffer</code> 後，Win32 DIBSection 不再是唯一 framebuffer。它只是 Win32 backend 內部為了 <code>BitBlt</code> 準備的 staging bitmap。
+</p>
+
+<pre class="ascii">Project-owned CPU memory                         Win32/GDI-owned resources
+------------------------                         -------------------------
+
+Framebuffer                                      Win32DisplayBackend
+  pixels: vector&lt;uint32_t&gt;                         HWND window
+  width/height/pitch                               HDC  window_dc
+        |                                          HDC  mem_dc
+        | RenderDevice::SetPixel                   HBITMAP dib_bitmap
+        v                                          uint8_t* dib_pixels
+  final frame pixels                                      ^
+        |                                                 |
+        | Present(fb) copies rows                         |
+        +-------------------------------------------------+
+                                                          |
+                                                          | BitBlt
+                                                          v
+                                                   window client area</pre>
+
+<p>
+這個設計刻意多留一次 CPU copy。第一版這是可接受的，因為它讓 boundary 很乾淨：
+</p>
+
+<ul>
+  <li><code>Framebuffer</code> 的 lifetime 由 project 控制，不由 Win32 控制。</li>
+  <li><code>RenderDevice</code> 的 memory layout 不依賴 <code>windows.h</code>。</li>
+  <li>之後 SDL backend 可以把同一份 <code>Framebuffer</code> upload 到 <code>SDL_Texture</code>。</li>
+  <li>之後 macOS backend 可以把同一份 <code>Framebuffer</code> upload 到 Metal texture 或 CoreGraphics image path。</li>
+</ul>
+
+<h2><span class="n">3</span> Win32DisplayBackend owns 什麼</h2>
+
+<p>
+從 RAII 角度看，<code>Win32DisplayBackend</code> 是一個 resource-owning type。它 owns 的不是 renderer pixels，而是 Win32/GDI handles：
+</p>
+
+<div class="code">
+<span class="kw">class</span> <span class="tp">Win32DisplayBackend</span> : <span class="kw">public</span> <span class="tp">DisplayBackend</span> {<br>
+<span class="kw">public</span>:<br>
+&nbsp;&nbsp;<span class="fn">Win32DisplayBackend</span>() = <span class="kw">default</span>;<br>
+&nbsp;&nbsp;~<span class="fn">Win32DisplayBackend</span>() <span class="kw">override</span> { <span class="fn">Shutdown</span>(); }<br>
+<br>
+&nbsp;&nbsp;<span class="tp">bool</span> <span class="fn">Init</span>(<span class="tp">int</span> width, <span class="tp">int</span> height, <span class="kw">const</span> <span class="tp">char</span>* title) <span class="kw">override</span>;<br>
+&nbsp;&nbsp;<span class="kw">void</span> <span class="fn">Shutdown</span>() <span class="kw">override</span>;<br>
+&nbsp;&nbsp;<span class="kw">void</span> <span class="fn">PollEvents</span>() <span class="kw">override</span>;<br>
+&nbsp;&nbsp;<span class="kw">void</span> <span class="fn">Present</span>(<span class="kw">const</span> <span class="tp">Framebuffer</span>&amp; fb) <span class="kw">override</span>;<br>
+<br>
+<span class="kw">private</span>:<br>
+&nbsp;&nbsp;<span class="tp">HWND</span> window_ = <span class="val">nullptr</span>;<br>
+&nbsp;&nbsp;<span class="tp">HDC</span> window_dc_ = <span class="val">nullptr</span>;<br>
+&nbsp;&nbsp;<span class="tp">HDC</span> mem_dc_ = <span class="val">nullptr</span>;<br>
+&nbsp;&nbsp;<span class="tp">HBITMAP</span> dib_bitmap_ = <span class="val">nullptr</span>;<br>
+&nbsp;&nbsp;<span class="tp">HBITMAP</span> old_bitmap_ = <span class="val">nullptr</span>;<br>
+&nbsp;&nbsp;<span class="tp">uint8_t</span>* dib_pixels_ = <span class="val">nullptr</span>;<br>
+&nbsp;&nbsp;<span class="tp">int</span> width_ = <span class="val">0</span>;<br>
+&nbsp;&nbsp;<span class="tp">int</span> height_ = <span class="val">0</span>;<br>
+&nbsp;&nbsp;<span class="tp">int</span> dib_pitch_ = <span class="val">0</span>;<br>
+};
+</div>
+
+<p>
+注意這裡沒有 <code>GetFrameBuffer()</code>。這是最關鍵的差異。DIBSection memory 是 backend private staging memory，不是 renderer public target。
+</p>
+
+<div class="box box-green">
+<strong>ownership invariant</strong> &mdash; <code>Win32DisplayBackend</code> 可以 owns <code>dib_pixels_</code> 的存取權，但不能把它借給 <code>RenderDevice</code> 當長期 render target。
+</div>
+
+<h2><span class="n">4</span> Init：建立 window 與 DIBSection</h2>
+
+<p>
+<code>Init</code> 做的事和目前 <code>ScreenManager::Init</code> 很像，但語意不同：它是在建立 present path，不是在建立 renderer framebuffer。
+</p>
+
+<pre class="ascii">Win32DisplayBackend::Init(w, h)
+  create OS window
+  get window DC
+  create compatible memory DC
+  create top-down 32-bit DIBSection
+  select DIBSection into memory DC
+  keep dib_pixels_ as private staging pointer</pre>
+
+<div class="code">
+<span class="tp">BITMAPINFO</span> bi = {};<br>
+bi.bmiHeader.biSize = <span class="kw">sizeof</span>(<span class="tp">BITMAPINFOHEADER</span>);<br>
+bi.bmiHeader.biWidth = width;<br>
+bi.bmiHeader.biHeight = -height; <span class="cmt">// top-down: row 0 is top row</span><br>
+bi.bmiHeader.biPlanes = <span class="val">1</span>;<br>
+bi.bmiHeader.biBitCount = <span class="val">32</span>;<br>
+bi.bmiHeader.biCompression = BI_RGB;<br>
+<br>
+<span class="tp">void</span>* ptr = <span class="val">nullptr</span>;<br>
+dib_bitmap_ = <span class="fn">CreateDIBSection</span>(mem_dc_, &amp;bi, DIB_RGB_COLORS, &amp;ptr, <span class="val">nullptr</span>, <span class="val">0</span>);<br>
+old_bitmap_ = (<span class="tp">HBITMAP</span>)<span class="fn">SelectObject</span>(mem_dc_, dib_bitmap_);<br>
+dib_pixels_ = <span class="kw">static_cast</span>&lt;<span class="tp">uint8_t</span>*&gt;(ptr);<br>
+dib_pitch_ = width * <span class="val">4</span>;
+</div>
+
+<p>
+<code>biHeight = -height</code> 很重要。Windows bitmap 傳統上可以是 bottom-up；如果用正高度，row 0 代表影像底部。software renderer 通常把 <code>y = 0</code> 當上方，所以用 negative height 建 top-down DIB 可以避免 present 時上下顛倒。
+</p>
+
+<h2><span class="n">5</span> Present：copy rows，再 BitBlt</h2>
+
+<p>
+第一版 <code>Present</code> 可以很直接：檢查尺寸，逐列 copy framebuffer pixels 到 DIBSection，最後 <code>BitBlt</code>。
+</p>
+
+<div class="code">
+<span class="kw">void</span> <span class="tp">Win32DisplayBackend</span>::<span class="fn">Present</span>(<span class="kw">const</span> <span class="tp">Framebuffer</span>&amp; fb) {<br>
+&nbsp;&nbsp;<span class="kw">if</span> (fb.<span class="fn">Width</span>() != width_ || fb.<span class="fn">Height</span>() != height_) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="cmt">// first version: reject or recreate DIBSection</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span>;<br>
+&nbsp;&nbsp;}<br>
+<br>
+&nbsp;&nbsp;<span class="kw">for</span> (<span class="tp">int</span> y = <span class="val">0</span>; y &lt; height_; ++y) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">const</span> <span class="tp">uint8_t</span>* src = fb.<span class="fn">Bytes</span>() + y * fb.<span class="fn">Pitch</span>();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="tp">uint8_t</span>* dst = dib_pixels_ + y * dib_pitch_;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;std::<span class="fn">memcpy</span>(dst, src, width_ * <span class="val">4</span>);<br>
+&nbsp;&nbsp;}<br>
+<br>
+&nbsp;&nbsp;<span class="fn">BitBlt</span>(window_dc_, <span class="val">0</span>, <span class="val">0</span>, width_, height_, mem_dc_, <span class="val">0</span>, <span class="val">0</span>, SRCCOPY);<br>
+}
+</div>
+
+<p>
+這裡不要把 <code>memcpy</code> 視為倒退。它是架構切割的代價。等語意穩定後，才評估少 copy 的 path，例如讓 Win32 backend 用 <code>StretchDIBits</code> 從 project-owned memory 直接 present，或讓 backend 提供 transient mapped target。但第一版不應該為了省 copy 又把 ownership 混回去。
+</p>
+
+<h2><span class="n">6</span> BitBlt 之後發生什麼</h2>
+
+<p>
+<code>BitBlt</code> 的名字容易讓人以為它等於「把東西送到螢幕」。更精確地說，它是要求 GDI 把一個 device context 的矩形像素複製到另一個 device context。
+</p>
+
+<pre class="ascii">CPU / process memory
+  Framebuffer::pixels
+        |
+        | memcpy in Present()
+        v
+Win32 DIBSection memory
+  selected into mem_dc
+        |
+        | BitBlt(mem_dc -> window_dc)
+        v
+GDI / display driver / DWM path
+  copies or composites into the window surface
+        |
+        | desktop compositor picks final desktop image
+        v
+GPU scanout / monitor
+  user sees the frame later</pre>
+
+<p>
+實際底層可能依 Windows 版本、driver、DWM compositor、視窗是否被遮擋而不同。對 Pixel-Renderer 的工程判準是：<code>BitBlt</code> 之後，<code>Present</code> 的責任已經結束。renderer core 不應該假設它立刻等於 physical monitor scanout。
+</p>
+
+<div class="box box-yellow">
+<strong>這不是 GPU pipeline</strong> &mdash; 你手寫的 triangle rasterization 已經在 CPU 完成。Win32/GDI 這裡只是 present final pixels。即使 OS/driver 後面用 GPU compositing，也不代表你的 triangle 被 GPU rasterizer 重畫一次。
+</div>
+
+<h2><span class="n">7</span> event/input：先保留簡單 query</h2>
+
+<p>
+目前 <code>ScreenManager::DispatchEvents</code> 用 <code>PeekMessage</code>、<code>TranslateMessage</code>、<code>DispatchMessage</code> pump Win32 message queue，<code>WindowProc</code> 更新 key/mouse state。這也可以搬進 <code>Win32DisplayBackend</code>：
+</p>
+
+<pre class="ascii">Win32DisplayBackend::PollEvents()
+  while PeekMessage(...)
+    TranslateMessage(...)
+    DispatchMessage(...)
+
+WindowProc(hwnd, msg, wParam, lParam)
+  self = GetWindowLongPtr(hwnd, GWLP_USERDATA)
+  update self->keys_
+  update self->mouse_
+  set self->should_close_ on WM_CLOSE/WM_DESTROY</pre>
+
+<p>
+這裡要分清楚兩層：
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Win32 mechanism</th>
+      <th>project-facing meaning</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>WM_KEYDOWN</code> / <code>WM_KEYUP</code></td>
+      <td><code>IsKeyDown(KeyCode)</code></td>
+    </tr>
+    <tr>
+      <td><code>WM_MOUSEMOVE</code></td>
+      <td>mouse position in client area</td>
+    </tr>
+    <tr>
+      <td><code>WM_CLOSE</code> / <code>WM_DESTROY</code></td>
+      <td><code>ShouldClose()</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+第一版可以讓 <code>Win32DisplayBackend</code> 同時處理 input。之後如果 UI 系統長大，再把平台事件轉成 project-level <code>InputState</code> 或 event queue。
+</p>
+
+<h2><span class="n">8</span> Shutdown：resource release order</h2>
+
+<p>
+Win32/GDI resource 的釋放順序不是裝飾細節。<code>mem_dc_</code> 目前選入了 <code>dib_bitmap_</code>，所以 destroy 前要先把 <code>old_bitmap_</code> select 回去。
+</p>
+
+<pre class="ascii">Shutdown()
+  if mem_dc_ and old_bitmap_
+    SelectObject(mem_dc_, old_bitmap_)
+
+  if dib_bitmap_
+    DeleteObject(dib_bitmap_)
+
+  if mem_dc_
+    DeleteDC(mem_dc_)
+
+  if window_dc_
+    ReleaseDC(window_, window_dc_)
+
+  if window_
+    DestroyWindow(window_)</pre>
+
+<p>
+這就是 T-06 RAII 的實作場景：一個 resource-owning type 要能在 partially initialized state 下安全 shutdown。也就是說，如果 <code>CreateDIBSection</code> 失敗，<code>Shutdown</code> 仍然不能 double free 或使用 invalid handle。
+</p>
+
+<h2><span class="n">9</span> build boundary：Win32 檔案只在 Windows 編譯</h2>
+
+<p>
+<code>Win32DisplayBackend.h/.cpp</code> 會 include <code>windows.h</code>。因此它不應該被 macOS build target 編譯，也不應該被 renderer core header 間接 include。
+</p>
+
+<pre class="ascii">include/
+  display_backend.h        no windows.h
+  framebuffer.h            no windows.h
+
+src/platform/win32/
+  win32_display_backend.h  may include windows.h
+  win32_display_backend.cpp
+
+src/platform/sdl/
+  sdl_display_backend.h
+  sdl_display_backend.cpp</pre>
+
+<p>
+CMake 或 Makefile 之後要做的是 platform source selection，而不是在每個 core header 裡塞 <code>#ifdef _WIN32</code>。
+</p>
+
+<div class="box box-green">
+<strong>工程判準</strong> &mdash; 如果 macOS 編譯 <code>render_device.cpp</code>、<code>rasterizer.cpp</code>、<code>framebuffer.cpp</code> 時完全不需要知道 <code>HWND</code>、<code>HDC</code>、<code>HBITMAP</code>，這才算 backend boundary 有切乾淨。
+</div>
+
+<h2><span class="n">10</span> 實作 commit sequence</h2>
+
+<p>
+真的要改 code 時，不建議一次把所有東西改成最終型。比較穩的順序是：
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Step</th>
+      <th>Change</th>
+      <th>驗證</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td>新增 <code>Framebuffer</code>，讓 <code>RenderDevice</code> 寫 project-owned pixels。</td>
+      <td><code>Clear</code> / <code>SetPixel</code> 對 memory layout 正確。</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>保留 <code>ScreenManager</code>，但 <code>UpdateScreen(const Framebuffer&amp;)</code> copy 到 DIB 再 <code>BitBlt</code>。</td>
+      <td>畫面仍能顯示，顏色與上下方向正確。</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>抽出 <code>DisplayBackend</code> interface。</td>
+      <td><code>Application</code> 只依賴 interface。</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>把 Win32 code 移到 <code>Win32DisplayBackend</code>。</td>
+      <td>core headers 不再 include <code>windows.h</code>。</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>調整 build system，只在 Windows target 編譯 Win32 backend。</td>
+      <td>Windows build 跑 Win32 backend；macOS build 不碰 Win32 source。</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2><span class="n">11</span> 這和 SDL backend 的關係</h2>
+
+<p>
+Win32 backend 與 SDL backend 的差異不在 <code>SetPixel</code>。差異只在 <code>Present</code>：
+</p>
+
+<pre class="ascii">same:
+  Rasterizer -> RenderDevice -> Framebuffer
+
+different:
+  Win32DisplayBackend::Present(fb)
+    memcpy rows to DIBSection
+    BitBlt mem_dc to window_dc
+
+  SDLDisplayBackend::Present(fb)
+    SDL_UpdateTexture(texture, fb.Bytes(), fb.Pitch())
+    SDL_RenderTexture / SDL_RenderCopy
+    SDL_RenderPresent</pre>
+
+<p>
+這就是為什麼第一版應該先用 <code>Framebuffer + Present</code> 的抽象，而不是把 <code>DrawLine</code> 換成 <code>SDL_RenderDrawLine</code> 或 <code>GDI LineTo</code>。那會替換掉 rasterizer core，不是替換 display backend。
+</p>
+
+<h2><span class="n">12</span> Summary</h2>
+
+<div class="box box-green">
+<strong>本章三件事</strong><br>
+1. <code>Win32DisplayBackend</code> owns window/GDI resources；<code>Framebuffer</code> owns renderer pixels。<br>
+2. 第一版 <code>Present</code> 可以 copy project-owned pixels 到 DIBSection，再用 <code>BitBlt</code> 顯示。多一次 copy 換來乾淨 boundary。<br>
+3. Win32 / SDL / macOS 應替換的是 present path，不是 <code>SetPixel</code>、line rasterization、triangle rasterization、shader pipeline。
+</div>
+
+<div class="next-ch">
+  <div>
+    <div class="next-label">NEXT</div>
+    <div class="next-title">I-11 &mdash; SDLDisplayBackend</div>
+    <div class="next-desc">下一章用同一個 <code>Framebuffer</code> 接到 SDL：比較 <code>SDL_UpdateTexture</code> 與 <code>SDL_LockTexture</code>，並說明 SDL backend 為什麼仍然不應該 owns renderer core。</div>
+  </div>
+  <a class="next-arrow" href="i11_sdl_display_backend.html">&rarr;</a>
+</div>
+
+</body>
+</html>

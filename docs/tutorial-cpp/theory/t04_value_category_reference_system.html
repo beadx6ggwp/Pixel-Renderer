@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>T-04 — Value Category / Reference System</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#1e1e2e; --bg1:#181825; --bg2:#11111b; --border:#313244;
+  --muted:#6c7086; --text:#cdd6f4; --blue:#89b4fa; --green:#a6e3a1;
+  --yellow:#f9e2af; --orange:#fab387; --red:#f38ba8; --purple:#cba6f7; --teal:#94e2d5;
+}
+body { background: var(--bg); color: var(--text); font-family: 'Georgia', serif; font-size: 15px; padding: 0 20px 80px; max-width: 900px; margin: 0 auto; line-height: 1.9; }
+nav { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); padding: 14px 0; border-bottom: 1px solid var(--border); margin-bottom: 36px; display: flex; align-items: center; gap: 10px; }
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--blue); }
+.nav-sep { color: var(--border); }
+.nav-cur { color: var(--text); }
+.nav-right { margin-left: auto; display: flex; gap: 16px; }
+.ch-header { margin-bottom: 40px; }
+.ch-label { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px; }
+.ch-title { color: var(--blue); font-size: 1.7em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub { color: var(--muted); font-size: 0.88em; margin-bottom: 14px; }
+.ch-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.ch-tag { font-family: 'Consolas', monospace; font-size: 0.72em; padding: 1px 7px; border-radius: 4px; background: var(--bg2); color: var(--muted); border: 1px solid var(--border); }
+h2 { color: var(--purple); font-size: 1em; font-family: 'Consolas', monospace; letter-spacing: 0.05em; padding: 10px 0; border-bottom: 1px solid var(--border); margin: 44px 0 20px; display: flex; align-items: center; gap: 12px; }
+h2 .n { background: var(--purple); color: var(--bg2); font-weight: bold; border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.85em; }
+h3 { color: var(--yellow); font-size: 0.95em; margin: 24px 0 10px; }
+p { margin-bottom: 12px; }
+strong { color: var(--yellow); }
+em { color: var(--orange); font-style: normal; }
+code { font-family: 'Consolas', monospace; color: var(--teal); }
+ul, ol { margin: 8px 0 14px 26px; line-height: 2.2; }
+.box { border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 0.9em; line-height: 1.85; background: var(--bg1); }
+.box-blue { border-left: 4px solid var(--blue); }
+.box-green { border-left: 4px solid var(--green); }
+.box-yellow { border-left: 4px solid var(--yellow); }
+.box-red { border-left: 4px solid var(--red); }
+.box-purple { border-left: 4px solid var(--purple); }
+.code { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em; line-height: 2.1; margin: 14px 0; overflow-x: auto; }
+.code .cmt { color: var(--muted); } .code .kw { color: var(--purple); } .code .val { color: var(--orange); } .code .tp { color: var(--blue); } .code .fn { color: var(--teal); }
+.ascii { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.82em; line-height: 1.55; margin: 14px 0; overflow-x: auto; color: var(--text); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9em; }
+thead { background: var(--bg1); }
+th { color: var(--muted); font-family: 'Consolas', monospace; font-size: 0.85em; padding: 8px 14px; text-align: left; border-bottom: 2px solid var(--border); }
+td { padding: 8px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.next-ch { margin-top: 56px; padding: 20px 24px; background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 20px; }
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+.next-title { color: var(--orange); font-size: 1em; }
+.next-desc { color: var(--muted); font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: var(--orange); font-size: 1.6em; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">C++ for Pixel-Renderer</a>
+  <span class="nav-sep">/</span>
+  <span class="nav-cur">T-04 — Value Category / Reference System</span>
+  <div class="nav-right">
+    <a href="t03_object_model_storage_lifetime_ub.html">&larr; T-03</a>
+    <a href="t05_copy_move_object_transfer.html">T-05 &rarr;</a>
+  </div>
+</nav>
+
+<div class="ch-header">
+  <div class="ch-label">THEORY TRACK &middot; T-04</div>
+  <div class="ch-title">Value Category / Reference System</div>
+  <div class="ch-sub">expression 有 type，也有 value category；reference 是 access policy，不是 ownership</div>
+  <div class="ch-tags">
+    <span class="ch-tag">lvalue</span>
+    <span class="ch-tag">xvalue</span>
+    <span class="ch-tag">std::forward</span>
+  </div>
+</div>
+
+<p>
+你之前已經理解過 move、xvalue、prvalue，但一段時間沒寫 C++ 後，最容易忘的是：<code>T&amp;&amp;</code> 不是「一定會 move」，<code>std::move</code> 不會自己搬東西，operator 回傳 reference 可能直接製造 dangling。這些問題未來會出現在 renderer math types、shader interface、UI callback、command buffer 裡。
+</p>
+
+<p>
+這章要把 value category 和 reference system 重新完整接回來。核心不是背名詞，而是回答一個工程問題：<strong>當某段 code 拿到一個 expression，它到底是在借用 existing object、消耗 expiring object，還是建構一個新 value？</strong>
+</p>
+
+<div class="box box-blue">
+<strong>本章範圍</strong> &mdash; 建立 expression 的雙軸模型：type 與 value category。你會分清 lvalue、xvalue、prvalue、<code>T&amp;</code>、<code>const T&amp;</code>、<code>T&amp;&amp;</code>、forwarding reference、reference collapsing、<code>std::move</code>、<code>std::forward</code>、temporary materialization、lifetime extension、operator return category，以及它們對 Pixel-Renderer UI/shader/math type 的後果。
+</div>
+
+<h2><span class="n">1</span> naive model：左邊是 lvalue，右邊是 rvalue</h2>
+
+<p>
+很多人第一次學 value category 時會得到這種說法：
+</p>
+
+<pre class="ascii">lvalue: can appear on the left side of =
+rvalue: can appear on the right side of =</pre>
+
+<p>
+這個模型有歷史直覺，但對現代 C++ 太粗。看這些例子：
+</p>
+
+<div class="code">
+<span class="tp">int</span> x = <span class="val">1</span>;<br>
+x = <span class="val">2</span>;                 <span class="cmt">// x 是 lvalue</span><br>
+<br>
+<span class="fn">get_ref</span>() = <span class="val">3</span>;         <span class="cmt">// function call 也可能是 lvalue</span><br>
+<span class="tp">Vec3</span>{} = <span class="tp">Vec3</span>{};      <span class="cmt">// class prvalue 也可能可被賦值，但不代表它是 lvalue</span>
+</div>
+
+<p>
+更精準的問法不是「能不能放等號左邊」，而是：
+</p>
+
+<ul>
+<li>這個 expression 是否指向一個可識別的 existing object？</li>
+<li>這個 expression 是否表示那個 object 可以被消耗？</li>
+<li>這個 expression 是否只是用來初始化一個 result object 的 value？</li>
+</ul>
+
+<div class="box box-yellow">
+<strong>第一個修正</strong> &mdash; value category 是 expression 的性質，不是 object 的性質。Object 有 lifetime；expression 有 type 和 value category。
+</div>
+
+<h2><span class="n">2</span> expression 的兩個軸：type 與 value category</h2>
+
+<p>
+每個 C++ expression 都有 type，也有 value category。這兩個軸要分開。
+</p>
+
+<pre class="ascii">expression
+  |
+  +-- type
+  |     e.g. Buffer, const Buffer, int, Vec3
+  |
+  +-- value category
+        e.g. lvalue, xvalue, prvalue</pre>
+
+<p>
+同一個 object 可以被不同 expression 指到：
+</p>
+
+<div class="code">
+<span class="tp">Buffer</span> b;<br>
+<br>
+b;                  <span class="cmt">// expression type: Buffer, category: lvalue</span><br>
+std::<span class="fn">move</span>(b);       <span class="cmt">// expression type: Buffer, category: xvalue</span>
+</div>
+
+<p>
+這兩個 expression 都指向同一個 object <code>b</code>。不同的是你給 compiler 的語意訊號：
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Expression</th>
+      <th>指向誰</th>
+      <th>value category</th>
+      <th>語意訊號</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>b</code></td>
+      <td>existing object <code>b</code></td>
+      <td>lvalue</td>
+      <td>這個 object 還有身份，不要假設我願意放棄它。</td>
+    </tr>
+    <tr>
+      <td><code>std::move(b)</code></td>
+      <td>same object <code>b</code></td>
+      <td>xvalue</td>
+      <td>這個 object 可以被當作 expiring source。</td>
+    </tr>
+    <tr>
+      <td><code>Buffer{}</code></td>
+      <td>result object</td>
+      <td>prvalue</td>
+      <td>產生一個 value，用來初始化目標 object。</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2><span class="n">3</span> lvalue、xvalue、prvalue 的工作模型</h2>
+
+<p>
+完整標準 taxonomy 還有 glvalue/rvalue，但工程上先抓住三個分類就能解大多數問題：
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Category</th>
+      <th>是否有 identity</th>
+      <th>是否可被消耗</th>
+      <th>例子</th>
+      <th>renderer 直覺</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>lvalue</td>
+      <td>有</td>
+      <td>通常否</td>
+      <td><code>fb</code>, <code>device</code>, <code>pixels[i]</code></td>
+      <td>借用一個還會繼續存在的 object。</td>
+    </tr>
+    <tr>
+      <td>xvalue</td>
+      <td>有</td>
+      <td>是</td>
+      <td><code>std::move(texture)</code></td>
+      <td>把 resource handle 交出去，source 之後只剩 valid-but-unspecified state。</td>
+    </tr>
+    <tr>
+      <td>prvalue</td>
+      <td>不是以 identity 為主</td>
+      <td>用來初始化 result</td>
+      <td><code>Vec3{1,2,3}</code>, <code>a + b</code></td>
+      <td>產生新的 math value 或 command value。</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+這裡的 aha moment 是：<code>std::move</code> 不改 object lifetime，也不搬 resource。它只把 expression 轉成 xvalue，讓後續 overload resolution 可以選到 <code>T&amp;&amp;</code> overload。
+</p>
+
+<div class="code">
+std::<span class="fn">move</span>(b);             <span class="cmt">// no move operation by itself</span><br>
+<span class="tp">Buffer</span> c = std::<span class="fn">move</span>(b); <span class="cmt">// move constructor may run here</span>
+</div>
+
+<h2><span class="n">4</span> reference binding：access policy</h2>
+
+<p>
+Reference 不是 ownership。Reference 是「這個 function 可以怎麼接觸一個 object/value」的語意限制。
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parameter</th>
+      <th>能綁到</th>
+      <th>語意</th>
+      <th>常見用途</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>T&amp;</code></td>
+      <td>non-const lvalue</td>
+      <td>借用並可能修改 existing object。</td>
+      <td><code>void Clear(Framebuffer&amp; fb)</code></td>
+    </tr>
+    <tr>
+      <td><code>const T&amp;</code></td>
+      <td>lvalue、xvalue、prvalue</td>
+      <td>只讀借用；可延長 temporary lifetime 到 reference lifetime。</td>
+      <td><code>void DrawMesh(const Mesh&amp; mesh)</code></td>
+    </tr>
+    <tr>
+      <td><code>T&amp;&amp;</code></td>
+      <td>xvalue、prvalue</td>
+      <td>接收可被消耗的 source。</td>
+      <td><code>Texture(Texture&amp;&amp;)</code></td>
+    </tr>
+    <tr>
+      <td><code>T</code></td>
+      <td>copy/move into parameter</td>
+      <td>function 擁有自己的 local object。</td>
+      <td>small value、sink parameter、command value。</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+對 renderer API，這張表很實用：
+</p>
+
+<ul>
+<li>你只是畫一個 mesh，不拿走它：用 <code>const Mesh&amp;</code> 或 view。</li>
+<li>你要讓 function 修改 framebuffer：用 <code>Framebuffer&amp;</code>。</li>
+<li>你要把 texture/resource handle 交給 cache：可以用 <code>Texture&amp;&amp;</code> 或 by value sink。</li>
+<li>你要存一份 UI command：通常 by value，讓 command buffer 擁有資料。</li>
+</ul>
+
+<h2><span class="n">5</span> named rvalue reference 是 lvalue expression</h2>
+
+<p>
+這是很多 move bug 的來源：
+</p>
+
+<div class="code">
+<span class="kw">void</span> <span class="fn">Consume</span>(<span class="tp">Texture</span>&amp;&amp; tex) {<br>
+&nbsp;&nbsp;<span class="fn">Store</span>(tex);              <span class="cmt">// tex expression is lvalue</span><br>
+&nbsp;&nbsp;<span class="fn">Store</span>(std::<span class="fn">move</span>(tex));  <span class="cmt">// now xvalue</span><br>
+}
+</div>
+
+<p>
+雖然 <code>tex</code> 的 declared type 是 <code>Texture&amp;&amp;</code>，但 expression <code>tex</code> 本身有名字，所以是 lvalue。這不是語法陷阱，而是保護機制：只要一個 object 有名字，compiler 不會自動假設每次使用都可以消耗它。
+</p>
+
+<pre class="ascii">declared type of tex:
+  Texture&&
+
+expression:
+  tex             -> lvalue
+  std::move(tex)  -> xvalue</pre>
+
+<div class="box box-yellow">
+<strong>第二個修正</strong> &mdash; 不要用 variable declared type 直接推 expression category。Named variable expression 幾乎都是 lvalue，即使它的 type 是 <code>T&amp;&amp;</code>。
+</div>
+
+<h2><span class="n">6</span> forwarding reference 與 reference collapsing</h2>
+
+<p>
+Template 裡的 <code>T&amp;&amp;</code> 有一個特殊情況：
+</p>
+
+<div class="code">
+<span class="kw">template</span> &lt;<span class="kw">class</span> <span class="tp">T</span>&gt;<br>
+<span class="kw">void</span> <span class="fn">Push</span>(<span class="tp">T</span>&amp;&amp; value);
+</div>
+
+<p>
+當 <code>T</code> 是被推導出來的 template parameter，而且寫成 <code>T&amp;&amp;</code>，這通常叫 <strong>forwarding reference</strong>。它可以接 lvalue，也可以接 rvalue，因為 reference collapsing 規則會把結果折疊。
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Call</th>
+      <th>T deduced as</th>
+      <th>Parameter type after collapsing</th>
+      <th>value category preserved?</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>Push(x)</code></td>
+      <td><code>Buffer&amp;</code></td>
+      <td><code>Buffer&amp;</code></td>
+      <td>lvalue 被保留。</td>
+    </tr>
+    <tr>
+      <td><code>Push(Buffer{})</code></td>
+      <td><code>Buffer</code></td>
+      <td><code>Buffer&amp;&amp;</code></td>
+      <td>rvalue 被保留。</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+Reference collapsing 規則可以簡化記成：
+</p>
+
+<pre class="ascii">&  + &  -> &
+&  + && -> &
+&& + &  -> &
+&& + && -> &&
+
+any lvalue reference wins</pre>
+
+<p>
+這就是 <code>std::forward</code> 的用途：在 template wrapper 裡保留 caller 傳進來時的 category。
+</p>
+
+<div class="code">
+<span class="kw">template</span> &lt;<span class="kw">class</span> <span class="tp">T</span>&gt;<br>
+<span class="kw">void</span> <span class="fn">Push</span>(<span class="tp">T</span>&amp;&amp; value) {<br>
+&nbsp;&nbsp;commands.<span class="fn">emplace_back</span>(std::<span class="fn">forward</span>&lt;<span class="tp">T</span>&gt;(value));<br>
+}
+</div>
+
+<p>
+如果這裡寫 <code>std::move(value)</code>，你會把所有東西都當成 expiring source，包括 caller 傳進來的 lvalue。這在 wrapper / factory / emplace API 裡通常是錯的。
+</p>
+
+<div class="box box-purple">
+<strong>std::move vs std::forward</strong><br><br>
+<code>std::move(x)</code>：無條件把 expression 轉成 xvalue。<br>
+<code>std::forward&lt;T&gt;(x)</code>：根據 deduced <code>T</code> 還原 caller 的 value category。
+</div>
+
+<h2><span class="n">7</span> temporary materialization 與 lifetime extension</h2>
+
+<p>
+C++17 之後，prvalue 的模型更像是「用來初始化 result object 的 value」，不要再簡單想成每個 prvalue 都先生成一個 temporary 再 move。看這個：
+</p>
+
+<div class="code">
+<span class="tp">Vec3</span> <span class="fn">MakeVec</span>() {<br>
+&nbsp;&nbsp;<span class="kw">return</span> <span class="tp">Vec3</span>{<span class="val">1</span>, <span class="val">2</span>, <span class="val">3</span>};<br>
+}<br>
+<br>
+<span class="tp">Vec3</span> v = <span class="fn">MakeVec</span>();
+</div>
+
+<p>
+這不應該被想成「先做一個 temporary Vec3，再 move 到 v」。更好的模型是：<code>MakeVec()</code> 的 prvalue 直接初始化 <code>v</code> 的 storage。
+</p>
+
+<p>
+但當 prvalue 需要被當成 glvalue 使用時，會發生 temporary materialization。最常見是綁到 reference：
+</p>
+
+<div class="code">
+<span class="kw">const</span> <span class="tp">Vec3</span>&amp; ref = <span class="tp">Vec3</span>{<span class="val">1</span>, <span class="val">2</span>, <span class="val">3</span>};<br>
+<span class="cmt">// temporary lifetime is extended to ref's lifetime</span>
+</div>
+
+<p>
+這個 lifetime extension 很有用，但不要過度依賴。尤其不要回傳 reference 指向 local temporary：
+</p>
+
+<div class="code">
+<span class="kw">const</span> <span class="tp">Vec3</span>&amp; <span class="fn">Bad</span>() {<br>
+&nbsp;&nbsp;<span class="kw">return</span> <span class="tp">Vec3</span>{<span class="val">1</span>, <span class="val">2</span>, <span class="val">3</span>}; <span class="cmt">// dangling</span><br>
+}
+</div>
+
+<div class="box box-red">
+<strong>不要把 lifetime extension 當成 ownership 策略</strong> &mdash; 它是局部語言規則，不是跨 frame、跨 callback、跨 command buffer 的資料生命週期管理方式。
+</div>
+
+<h2><span class="n">8</span> operator return category：數學型別最容易踩坑</h2>
+
+<p>
+Operator 不是只讓語法漂亮，它也決定 expression category。對 math value type，最常見正確方向是：non-mutating operator 回傳 by value。
+</p>
+
+<div class="code">
+<span class="kw">inline</span> <span class="tp">Vec3</span> <span class="kw">operator</span>+(<span class="kw">const</span> <span class="tp">Vec3</span>&amp; a, <span class="kw">const</span> <span class="tp">Vec3</span>&amp; b) {<br>
+&nbsp;&nbsp;<span class="kw">return</span> <span class="tp">Vec3</span>{a.x + b.x, a.y + b.y, a.z + b.z};<br>
+}
+</div>
+
+<p>
+這讓 <code>a + b</code> 是一個新的 value，適合拿來初始化下一個 object：
+</p>
+
+<div class="code">
+<span class="tp">Vec3</span> c = a + b; <span class="cmt">// prvalue initializes c</span>
+</div>
+
+<p>
+危險的是為了「避免 copy」亂回傳 reference：
+</p>
+
+<div class="code">
+<span class="kw">const</span> <span class="tp">Vec3</span>&amp; <span class="kw">operator</span>+(<span class="kw">const</span> <span class="tp">Vec3</span>&amp; a, <span class="kw">const</span> <span class="tp">Vec3</span>&amp; b) {<br>
+&nbsp;&nbsp;<span class="tp">Vec3</span> result{a.x + b.x, a.y + b.y, a.z + b.z};<br>
+&nbsp;&nbsp;<span class="kw">return</span> result; <span class="cmt">// dangling reference</span><br>
+}
+</div>
+
+<p>
+這種 bug 很適合拿 T-03 的 object lifetime 來看：<code>result</code> 的 lifetime 在 function return 時結束，回傳的 reference 只剩一個指向已死亡 object 的 access path。
+</p>
+
+<div class="box box-yellow">
+<strong>math type 預設</strong> &mdash; 小型 value type，例如 <code>Vec2</code>、<code>Vec3</code>、<code>Color</code>、<code>Rect</code>，non-mutating operator 通常 by value 回傳。不要為了省 imaginary copy 製造 dangling reference；copy elision 和 register passing 通常已經很有效。
+</div>
+
+<h2><span class="n">9</span> Pixel-Renderer 後果：UI command、shader、backend view</h2>
+
+<p>
+Value category 不是語言冷知識。它會直接影響你之後幾個設計。
+</p>
+
+<h3>UI command buffer</h3>
+
+<p>
+Immediate-mode UI 常會每 frame 產生 draw commands。Command buffer 應該擁有 command data，不應保存指向 temporary widget state 的 reference。
+</p>
+
+<div class="code">
+<span class="kw">struct</span> <span class="tp">DrawTextCmd</span> {<br>
+&nbsp;&nbsp;<span class="tp">Rect</span> bounds;<br>
+&nbsp;&nbsp;std::<span class="tp">string</span> text; <span class="cmt">// owns text if command outlives caller expression</span><br>
+};<br>
+<br>
+commands.<span class="fn">emplace_back</span>(bounds, std::<span class="tp">string</span>(label));
+</div>
+
+<p>
+如果改成保存 <code>const char*</code> 或 <code>std::string_view</code>，就要非常清楚 referenced storage 的 lifetime 是否跨過 render phase。
+</p>
+
+<h3>Shader interface</h3>
+
+<p>
+如果 shader object 是 expensive resource 或持有 state，你要決定 API 是借用、複製，還是消耗：
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>API</th>
+      <th>語意</th>
+      <th>適合情況</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>SetShader(const Shader&amp;)</code></td>
+      <td>只借用，不取得 ownership。</td>
+      <td>shader lifetime 由 caller 或 registry 管。</td>
+    </tr>
+    <tr>
+      <td><code>SetShader(Shader)</code></td>
+      <td>by value sink，function 取得自己的 copy/move 版本。</td>
+      <td>小型 value shader 或 type-erased wrapper。</td>
+    </tr>
+    <tr>
+      <td><code>AddShader(Shader&amp;&amp;)</code></td>
+      <td>消耗 caller 的 shader resource。</td>
+      <td>resource cache 接手 ownership。</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Framebuffer/backend view</h3>
+
+<p>
+<code>Framebuffer&amp;</code>、<code>std::span&lt;uint32_t&gt;</code>、raw pointer + pitch 都是 borrowed view，不是 ownership。不要把 borrowed view 存到比 owner 更長壽的地方。
+</p>
+
+<pre class="ascii">good:
+  RenderDevice renders using Framebuffer& during a frame
+
+risky:
+  RenderDevice stores pixels.data()
+  Framebuffer resizes
+  stored pointer now dangles</pre>
+
+<h2><span class="n">10</span> verification：怎麼檢查 category / dangling 問題</h2>
+
+<p>
+這類 bug 不一定會馬上 crash，所以要用幾個工程手段防守。
+</p>
+
+<h3>開警告</h3>
+
+<div class="code">
+-Wall -Wextra -Wreturn-local-addr
+</div>
+
+<p>
+GCC/Clang 可以抓到一些回傳 local reference/address 的問題。後面 I-06 Make Workflow 應該把 debug warnings 明確整理進 makefile。
+</p>
+
+<h3>在 API 名字上標出 ownership</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>名字</th>
+      <th>暗示</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>SetX(const X&amp;)</code></td>
+      <td>借用或觀察，不一定取得 ownership。</td>
+    </tr>
+    <tr>
+      <td><code>TakeX(X&amp;&amp;)</code></td>
+      <td>明確消耗 caller 的 object。</td>
+    </tr>
+    <tr>
+      <td><code>CreateX()</code></td>
+      <td>通常 return by value，讓 caller 擁有 result。</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>用 debugger 看 move 後 state</h3>
+
+<div class="code">
+break Texture::Texture(Texture&amp;&amp;)<br>
+run<br>
+backtrace<br>
+print other.handle<br>
+next<br>
+print other.handle
+</div>
+
+<p>
+對 move-only resource handle，move constructor 應該把 source 放回 destructible state，例如 handle 變成 null / invalid sentinel，避免 double release。
+</p>
+
+<div class="box box-green">
+<strong>本章學到的三件事：</strong>
+<ol>
+<li>Expression 有 type 和 value category；value category 是 expression 的性質，不是 object 本身的性質。</li>
+<li><code>std::move</code> 是無條件 xvalue cast，<code>std::forward</code> 是在 forwarding reference 裡保留 caller 的 value category。</li>
+<li>Renderer API 要用 reference/value category 表達 ownership 和 lifetime：UI command 應擁有跨 frame 資料，math operator 預設 by value，backend/framebuffer view 不能比 owner 活得更久。</li>
+</ol>
+</div>
+
+<div class="next-ch">
+  <div>
+    <div class="next-label">NEXT THEORY</div>
+    <div class="next-title">T-05 &mdash; Copy / Move / Object Transfer</div>
+    <div class="next-desc">下一章把 value category 接到真正的 object transfer：copy、move、moved-from state、return by value、copy elision 與 noexcept move。</div>
+  </div>
+  <a class="next-arrow" href="t05_copy_move_object_transfer.html">&rarr;</a>
+</div>
+
+</body>
+</html>

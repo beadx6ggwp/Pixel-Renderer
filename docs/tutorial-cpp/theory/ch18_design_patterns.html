@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Ch18 — 設計模式速查</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#1e1e2e; --bg1:#181825; --bg2:#11111b; --border:#313244;
+  --muted:#6c7086; --text:#cdd6f4; --blue:#89b4fa; --green:#a6e3a1;
+  --yellow:#f9e2af; --orange:#fab387; --red:#f38ba8; --purple:#cba6f7; --teal:#94e2d5;
+}
+body { background: var(--bg); color: var(--text); font-family: 'Georgia', serif; font-size: 15px; padding: 0 20px 80px; max-width: 900px; margin: 0 auto; line-height: 1.9; }
+nav { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); padding: 14px 0; border-bottom: 1px solid var(--border); margin-bottom: 36px; display: flex; align-items: center; gap: 10px; }
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--blue); }
+.nav-sep { color: var(--border); }
+.nav-cur { color: var(--text); }
+.nav-right { margin-left: auto; display: flex; gap: 16px; }
+.ch-header { margin-bottom: 40px; }
+.ch-label { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px; }
+.ch-title { color: var(--blue); font-size: 1.7em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub { color: var(--muted); font-size: 0.88em; margin-bottom: 14px; }
+.ch-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.ch-tag { font-family: 'Consolas', monospace; font-size: 0.72em; padding: 1px 7px; border-radius: 4px; background: var(--bg2); color: var(--muted); border: 1px solid var(--border); }
+h2 { color: var(--purple); font-size: 1em; font-family: 'Consolas', monospace; letter-spacing: 0.05em; padding: 10px 0; border-bottom: 1px solid var(--border); margin: 44px 0 20px; display: flex; align-items: center; gap: 12px; }
+h2 .n { background: var(--purple); color: var(--bg2); font-weight: bold; border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.85em; }
+h3 { color: var(--yellow); font-size: 0.95em; margin: 24px 0 10px; }
+p { margin-bottom: 12px; }
+strong { color: var(--yellow); }
+em { color: var(--orange); font-style: normal; }
+code { font-family: 'Consolas', monospace; color: var(--teal); }
+ul, ol { margin: 8px 0 14px 26px; line-height: 2.2; }
+.box { border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 0.9em; line-height: 1.85; background: var(--bg1); }
+.box-blue { border-left: 4px solid var(--blue); }
+.box-green { border-left: 4px solid var(--green); }
+.box-yellow { border-left: 4px solid var(--yellow); }
+.box-red { border-left: 4px solid var(--red); }
+.box-purple { border-left: 4px solid var(--purple); }
+.code { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em; line-height: 2.1; margin: 14px 0; overflow-x: auto; }
+.code .cmt { color: var(--muted); } .code .kw { color: var(--purple); } .code .val { color: var(--orange); } .code .tp { color: var(--blue); } .code .fn { color: var(--teal); }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+.two-col > div { background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; }
+.col-title { font-family: 'Consolas', monospace; font-size: 0.85em; margin-bottom: 10px; color: var(--muted); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9em; }
+thead { background: var(--bg1); }
+th { color: var(--muted); font-family: 'Consolas', monospace; font-size: 0.85em; padding: 8px 14px; text-align: left; border-bottom: 2px solid var(--border); }
+td { padding: 8px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.fig { margin: 24px auto; text-align: center; }
+.fig figcaption { color: var(--muted); font-size: 0.88em; margin-top: 8px; font-style: italic; }
+.next-ch { margin-top: 56px; padding: 20px 24px; background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 20px; }
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+.next-title { color: var(--blue); font-size: 1em; }
+.next-desc { color: var(--muted); font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: var(--blue); font-size: 1.6em; text-decoration: none; }
+@media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">C++ 複習</a>
+  <span class="nav-sep">/</span>
+  <span class="nav-cur">Ch18 — 設計模式速查</span>
+  <div class="nav-right">
+    <a href="ch17_polymorphism_vtable.html">&larr; Ch17</a>
+    <a href="../impl/ch01_renderer_walkthrough.html">I-01 &rarr;</a>
+  </div>
+</nav>
+
+<div class="ch-header">
+  <div class="ch-label">PART 6 &middot; CHAPTER 18</div>
+  <div class="ch-title">設計模式速查</div>
+  <div class="ch-sub">pattern 不是模板，而是替 architecture constraint 命名</div>
+  <div class="ch-tags">
+    <span class="ch-tag">design-pattern</span>
+    <span class="ch-tag">architecture</span>
+    <span class="ch-tag">RAII</span>
+  </div>
+</div>
+
+<p>
+前面幾章已經講了 ownership、move、smart pointer、virtual dispatch。這些不是分散的語法點，而是 C++ 用來描述大型程式架構的基本材料。
+</p>
+<p>
+這章把它們收束成幾個對 Pixel-Renderer 真的有用的 design patterns：<code>Strategy</code>、<code>Template Method</code>、<code>RAII</code>、<code>type erasure</code>、<code>Command Buffer</code>。重點不是背名字，而是知道每個 pattern 解決哪一種約束。
+</p>
+
+<div class="box box-blue">
+<strong>本章範圍</strong> &mdash; 用 Pixel-Renderer 的未來擴充需求重新理解 design patterns：DisplayBackend 要替換 Win32/SDL/macOS，Application 要固定 frame lifecycle，window/texture/framebuffer handle 要有明確 lifetime，shader/UI layer 需要可替換行為，render frontend/backend 之間可能需要 command stream。
+</div>
+
+<h2><span class="n">1</span> naive model：design pattern = 套模板</h2>
+
+<p>
+很多人第一次學 design pattern 會得到一種很危險的模型：
+</p>
+
+<div class="code">
+我知道一個 pattern 的名字<br>
+所以我要在 code 裡塞進這個 pattern
+</div>
+
+<p>
+這會讓架構變重，卻沒有讓語意變清楚。比較好的模型是：
+</p>
+
+<div class="code">
+repeated engineering constraint<br>
+&nbsp;&nbsp;- who owns this object?<br>
+&nbsp;&nbsp;- who decides the implementation?<br>
+&nbsp;&nbsp;- who controls the lifecycle?<br>
+&nbsp;&nbsp;- is this behavior or data?<br>
+&nbsp;&nbsp;- must concrete type be hidden?<br>
+pattern name is the vocabulary for that shape
+</div>
+
+<p>
+也就是說，pattern 不是「貼上某個 class diagram」。pattern 是你在 code review 或設計筆記裡，快速說明某段設計正在解決什麼問題的詞彙。
+</p>
+
+<h2><span class="n">2</span> Strategy：替換行為</h2>
+
+<p>
+<code>Strategy</code> 的核心是：caller 只依賴一個 interface，具體 algorithm 或 backend 可以被替換。
+</p>
+
+<div class="code">
+<span class="kw">class</span> <span class="tp">DisplayBackend</span> {<br>
+<span class="kw">public</span>:<br>
+&nbsp;&nbsp;<span class="kw">virtual</span> ~<span class="fn">DisplayBackend</span>() = <span class="kw">default</span>;<br>
+&nbsp;&nbsp;<span class="kw">virtual</span> <span class="kw">void</span> <span class="fn">PollEvents</span>() = <span class="val">0</span>;<br>
+&nbsp;&nbsp;<span class="kw">virtual</span> <span class="kw">bool</span> <span class="fn">ShouldClose</span>() <span class="kw">const</span> = <span class="val">0</span>;<br>
+&nbsp;&nbsp;<span class="kw">virtual</span> <span class="kw">void</span> <span class="fn">Present</span>(<span class="kw">const</span> <span class="tp">Framebuffer</span>&amp; fb) = <span class="val">0</span>;<br>
+};
+</div>
+
+<p>
+<code>Win32DisplayBackend</code> 可以用 <code>CreateDIBSection</code> 和 <code>BitBlt</code>。<code>SDLDisplayBackend</code> 可以用 <code>SDL_Texture</code> 和 <code>SDL_UpdateTexture</code>。macOS 版本可以用 Cocoa/Metal/Quartz 的路徑。對上層 <code>Application</code> 來說，它只知道：
+</p>
+
+<div class="code">
+backend-&gt;<span class="fn">PollEvents</span>();<br>
+rasterizer.<span class="fn">Draw</span>(framebuffer);<br>
+backend-&gt;<span class="fn">Present</span>(framebuffer);
+</div>
+
+<p>
+這就是 Strategy 的價值：<strong>替換 platform behavior，但不讓 rasterizer 被 platform API 污染</strong>。
+</p>
+
+<div class="box box-yellow">
+<strong>不是所有地方都該用 Strategy</strong><br><br>
+如果你在 <code>SetPixel</code> 或每個 triangle fragment 上都做 virtual dispatch，成本和 locality 都會變差。Strategy 適合放在 frame boundary、backend boundary、shader stage boundary；不適合無腦塞進 per-pixel hot loop。
+</div>
+
+<h2><span class="n">3</span> Template Method：固定流程，開放步驟</h2>
+
+<p>
+<code>Template Method</code> 不是 C++ template。它是一種 object-oriented pattern：base class 固定演算法骨架，derived class override 某些步驟。
+</p>
+
+<p>
+目前 <code>Application</code> 的 <code>Run()</code> 就接近這個形狀：
+</p>
+
+<div class="code">
+<span class="kw">void</span> <span class="tp">Application</span>::<span class="fn">Run</span>() {<br>
+&nbsp;&nbsp;<span class="fn">OnInit</span>();<br>
+&nbsp;&nbsp;<span class="kw">while</span> (!screen.<span class="fn">ShouldClose</span>()) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="fn">OnUpdate</span>(delta_time);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="fn">OnRender</span>();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;screen.<span class="fn">Present</span>();<br>
+&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;<span class="fn">OnClose</span>();<br>
+}
+</div>
+
+<p>
+Base class 控制順序：init、loop、update、render、present、close。Derived app 只填「這個 demo 要怎麼 update/render」。這種 pattern 適合 engine/application lifecycle，因為 frame loop 順序通常不應該讓每個 demo 隨便改。
+</p>
+
+<div class="box box-purple">
+<strong>Template Method 和 Strategy 的差別</strong><br><br>
+Template Method 是「base class 控制流程，derived class 填步驟」。Strategy 是「caller 持有一個可替換物件，把某個行為委派出去」。前者偏 lifecycle skeleton，後者偏 behavior replacement。
+</div>
+
+<h2><span class="n">4</span> RAII：resource lifetime 的預設語言</h2>
+
+<p>
+<code>RAII</code> 常被放進 design pattern 清單，但在 C++ 裡它更像是 resource 管理的基本語法。它的規則很簡單：
+</p>
+
+<div class="code">
+constructor acquires resource<br>
+destructor releases resource<br>
+object lifetime == resource lifetime
+</div>
+
+<p>
+對 Pixel-Renderer 來說，resource 不只 heap memory。這些都應該被 RAII 包起來：
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Resource</th>
+      <th>Acquire</th>
+      <th>Release</th>
+      <th>可能的 wrapper</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Win32 window / DIBSection</td>
+      <td><code>CreateWindow</code>, <code>CreateDIBSection</code></td>
+      <td><code>DestroyWindow</code>, <code>DeleteObject</code></td>
+      <td><code>Win32DisplayBackend</code></td>
+    </tr>
+    <tr>
+      <td>SDL window / renderer / texture</td>
+      <td><code>SDL_CreateWindow</code>, <code>SDL_CreateTexture</code></td>
+      <td><code>SDL_Destroy*</code></td>
+      <td><code>SDLDisplayBackend</code></td>
+    </tr>
+    <tr>
+      <td>CPU framebuffer</td>
+      <td><code>std::vector&lt;uint32_t&gt;</code> allocation</td>
+      <td>vector destructor</td>
+      <td><code>Framebuffer</code></td>
+    </tr>
+    <tr>
+      <td>future texture/shader resource</td>
+      <td>backend-specific create</td>
+      <td>backend-specific destroy</td>
+      <td><code>TextureHandle</code>, <code>ShaderHandle</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+這也是為什麼 Ch16 的 <code>unique_ptr</code> 很重要。它是 heap object 的 RAII handle；而你自己寫的 backend class，則是 OS/SDL resource 的 RAII handle。
+</p>
+
+<h2><span class="n">5</span> Type erasure：藏起 concrete type</h2>
+
+<p>
+<code>type erasure</code> 的問題意識是：caller 想操作「某種能做 X 的東西」，但不想知道 concrete type。
+</p>
+
+<p>
+Virtual interface 其實就是 type erasure 的一種形式：
+</p>
+
+<div class="code">
+std::<span class="tp">unique_ptr</span>&lt;<span class="tp">DisplayBackend</span>&gt; backend;<br>
+<span class="cmt">// caller 不知道它實際是 Win32DisplayBackend 或 SDLDisplayBackend</span>
+</div>
+
+<p>
+<code>std::function</code> 也是 type-erased callable：
+</p>
+
+<div class="code">
+std::<span class="tp">function</span>&lt;<span class="tp">Vec4</span>(<span class="kw">const</span> <span class="tp">Vertex</span>&amp;)&gt; vertex_shader;<br>
+<span class="cmt">// 可以裝 lambda、function pointer、function object</span>
+</div>
+
+<p>
+它和 template 的差別在於：
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>方法</th>
+      <th>concrete type 何時決定</th>
+      <th>常見代價</th>
+      <th>適合位置</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>template</td>
+      <td>compile time</td>
+      <td>code bloat、編譯期增加</td>
+      <td>math type、hot path、inline shader kernel</td>
+    </tr>
+    <tr>
+      <td>virtual interface</td>
+      <td>runtime</td>
+      <td>indirection、vtable dispatch</td>
+      <td>backend、tool layer、coarse renderer stage</td>
+    </tr>
+    <tr>
+      <td><code>std::function</code></td>
+      <td>runtime</td>
+      <td>可能 allocation、type-erased call overhead</td>
+      <td>callback、editor tool、低頻事件</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+所以 type erasure 不是「比較高級」。它只是把 concrete type 從使用端拿掉，換來 ABI/API 穩定、runtime 替換能力，並付出 indirection 成本。
+</p>
+
+<h2><span class="n">6</span> Command Buffer：把行為變成資料</h2>
+
+<p>
+如果你未來要做 immediate-mode UI、render frontend/backend 分離，或把 software renderer 當成 FPGA golden model，<code>Command Buffer</code> 會比單純 virtual call 更接近 GPU 的世界觀。
+</p>
+
+<p>
+直覺上，frontend 不直接呼叫 backend 畫東西，而是產生一串 commands：
+</p>
+
+<div class="code">
+<span class="kw">struct</span> <span class="tp">DrawTriangleCmd</span> {<br>
+&nbsp;&nbsp;<span class="tp">Vertex</span> v0, v1, v2;<br>
+&nbsp;&nbsp;<span class="tp">ShaderId</span> shader;<br>
+};<br>
+<br>
+<span class="kw">struct</span> <span class="tp">ClearCmd</span> {<br>
+&nbsp;&nbsp;<span class="tp">Color</span> color;<br>
+};<br>
+<br>
+std::<span class="tp">vector</span>&lt;<span class="tp">RenderCommand</span>&gt; commands;
+</div>
+
+<p>
+然後 backend 或 renderer 在某個時間點 consume：
+</p>
+
+<div class="code">
+<span class="kw">for</span> (<span class="kw">const</span> <span class="tp">RenderCommand</span>&amp; cmd : commands) {<br>
+&nbsp;&nbsp;renderer.<span class="fn">Execute</span>(cmd, framebuffer);<br>
+}
+</div>
+
+<p>
+這個設計的本質是：
+</p>
+
+<ul>
+<li>UI layer 可以先產生 <code>DrawRect</code>、<code>DrawText</code>、<code>ClipRect</code> commands。</li>
+<li>Render frontend 可以收集 <code>Clear</code>、<code>SetShader</code>、<code>DrawIndexed</code> commands。</li>
+<li>Render backend 可以排序、batch、debug dump、或轉成另一種 backend-specific representation。</li>
+<li>未來 FPGA 方向也能把 command stream 對應到 command processor 的輸入。</li>
+</ul>
+
+<figure class="fig">
+<svg width="620" height="340" viewBox="0 0 620 340" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="620" height="340" rx="10" fill="#11111b"/>
+  <text x="310" y="30" text-anchor="middle" font-family="Consolas" font-size="12" fill="#6c7086">Command Buffer: behavior becomes data</text>
+
+  <rect x="34" y="82" width="140" height="84" rx="8" fill="#89b4fa" fill-opacity="0.12" stroke="#89b4fa"/>
+  <text x="104" y="112" text-anchor="middle" font-family="Consolas" font-size="10" fill="#89b4fa">Frontend</text>
+  <text x="104" y="136" text-anchor="middle" font-family="Consolas" font-size="9" fill="#cdd6f4">scene / UI / app</text>
+
+  <rect x="238" y="68" width="144" height="112" rx="8" fill="#cba6f7" fill-opacity="0.12" stroke="#cba6f7"/>
+  <text x="310" y="98" text-anchor="middle" font-family="Consolas" font-size="10" fill="#cba6f7">Command Buffer</text>
+  <text x="310" y="122" text-anchor="middle" font-family="Consolas" font-size="9" fill="#cdd6f4">Clear</text>
+  <text x="310" y="144" text-anchor="middle" font-family="Consolas" font-size="9" fill="#cdd6f4">SetShader</text>
+  <text x="310" y="166" text-anchor="middle" font-family="Consolas" font-size="9" fill="#cdd6f4">DrawTriangle</text>
+
+  <rect x="446" y="82" width="140" height="84" rx="8" fill="#a6e3a1" fill-opacity="0.12" stroke="#a6e3a1"/>
+  <text x="516" y="112" text-anchor="middle" font-family="Consolas" font-size="10" fill="#a6e3a1">Backend</text>
+  <text x="516" y="136" text-anchor="middle" font-family="Consolas" font-size="9" fill="#cdd6f4">software / SDL / FPGA</text>
+
+  <rect x="238" y="234" width="144" height="52" rx="8" fill="#f9e2af" fill-opacity="0.12" stroke="#f9e2af"/>
+  <text x="310" y="264" text-anchor="middle" font-family="Consolas" font-size="10" fill="#f9e2af">CPU framebuffer</text>
+
+  <line x1="174" y1="124" x2="234" y2="124" stroke="#89b4fa" stroke-width="1.2" marker-end="url(#arrowB)"/>
+  <line x1="382" y1="124" x2="442" y2="124" stroke="#a6e3a1" stroke-width="1.2" marker-end="url(#arrowG)"/>
+  <line x1="516" y1="166" x2="382" y2="248" stroke="#a6e3a1" stroke-width="1.2" marker-end="url(#arrowG)"/>
+
+  <text x="310" y="315" text-anchor="middle" font-family="Consolas" font-size="10" fill="#6c7086">frontend records intent; backend decides execution</text>
+
+  <defs>
+    <marker id="arrowB" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="none" stroke="#89b4fa" stroke-width="1"/></marker>
+    <marker id="arrowG" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="none" stroke="#a6e3a1" stroke-width="1"/></marker>
+  </defs>
+</svg>
+<figcaption>Command Buffer 把「現在呼叫某函式」變成「記錄一筆資料，之後由 backend 解釋」。這也是現代 GPU API 的核心形狀。</figcaption>
+</figure>
+
+<h2><span class="n">7</span> Pixel-Renderer 的 pattern map</h2>
+
+<p>
+把 pattern 放回專案裡，可以得到這張決策表：
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>需求</th>
+      <th>適合 pattern</th>
+      <th>C++ 工具</th>
+      <th>判斷重點</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>替換 Win32 / SDL / macOS display</td>
+      <td>Strategy</td>
+      <td><code>DisplayBackend</code> + virtual + <code>unique_ptr</code></td>
+      <td>frame boundary 上的替換，成本可接受。</td>
+    </tr>
+    <tr>
+      <td>固定 init/update/render/present 順序</td>
+      <td>Template Method</td>
+      <td><code>Application::Run</code> + virtual hooks</td>
+      <td>流程由 engine 控制，demo 只填行為。</td>
+    </tr>
+    <tr>
+      <td>管理 window、texture、framebuffer resource</td>
+      <td>RAII</td>
+      <td>destructor、move-only wrapper、Rule of Zero/Five</td>
+      <td>resource lifetime 必須跟 object lifetime 綁定。</td>
+    </tr>
+    <tr>
+      <td>讓 shader / callback / tool 行為可替換</td>
+      <td>Strategy 或 type erasure</td>
+      <td>template、virtual、<code>std::function</code></td>
+      <td>先判斷 hot path 還是 editor/tool path。</td>
+    </tr>
+    <tr>
+      <td>把 UI/render intent 傳給 backend</td>
+      <td>Command Buffer</td>
+      <td><code>std::vector&lt;RenderCommand&gt;</code>、variant、handle id</td>
+      <td>command 要盡量 self-contained，避免 dangling pointer。</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+這張表也回答一個常見問題：不是「PixelBuffer 是否就是前後端分離」。PixelBuffer 或 Framebuffer 是資料所有權與 memory layout 的問題；前後端分離還需要清楚的 boundary：誰產生 draw intent？誰持有 resource？誰把 framebuffer present 到 OS/window？
+</p>
+
+<div class="code">
+Application / UI / Scene<br>
+&nbsp;&nbsp;- produces intent<br>
+&nbsp;&nbsp;- maybe records commands<br>
+<br>
+Rasterizer / RenderDevice<br>
+&nbsp;&nbsp;- executes software rendering<br>
+&nbsp;&nbsp;- writes owned CPU framebuffer<br>
+<br>
+DisplayBackend<br>
+&nbsp;&nbsp;- owns platform resources<br>
+&nbsp;&nbsp;- presents CPU framebuffer to window
+</div>
+
+<h2><span class="n">8</span> 不要過早抽象</h2>
+
+<p>
+Pattern 最容易被濫用的地方，是你還沒有真實變化點，就先把所有東西切成 interface。這會讓 code 看起來很「架構化」，但每次修改都要穿過更多檔案。
+</p>
+
+<p>
+比較務實的規則是：先找出真的會改變的軸。
+</p>
+
+<ul>
+<li>Win32 / SDL / macOS 一定會變，所以 <code>DisplayBackend</code> 是合理 boundary。</li>
+<li>per-pixel <code>SetPixel</code> 目前只需要穩定、可 inline、memory layout 清楚，不需要 virtual。</li>
+<li>Shader 如果未來要學 GPU pipeline，初期可用簡單 interface；等 hot path 成本明確，再評估 template 或 function object。</li>
+<li>UI 如果要 immediate-mode，command list 很自然，因為 UI 每 frame 產生的是 draw intent。</li>
+</ul>
+
+<div class="box box-yellow">
+<strong>常見陷阱</strong>
+<ul>
+<li>先選 pattern，再硬把問題塞進 pattern。</li>
+<li>用 <code>shared_ptr</code> 或 type erasure 掩蓋 ownership 邊界不清楚。</li>
+<li>在 per-pixel hot loop 使用 virtual dispatch，讓抽象成本進入最內層。</li>
+<li>Command Buffer 裡塞裸 pointer，卻沒有定義 pointer 指向資料的 lifetime。</li>
+</ul>
+</div>
+
+<div class="box box-green">
+<strong>本章三個 takeaways</strong>
+<ol>
+<li>Design pattern 是 recurring constraint 的名稱，不是要貼進 code 的模板。</li>
+<li>Strategy、Template Method、RAII、type erasure、Command Buffer 分別處理 dispatch、lifecycle、ownership、type hiding、behavior-as-data。</li>
+<li>Pixel-Renderer 應該把 pattern 放在真實邊界：DisplayBackend、Application loop、resource handles、shader stage、UI/render command stream。</li>
+</ol>
+</div>
+
+<div class="next-ch">
+  <div>
+    <div class="next-label">IMPLEMENTATION CHAPTER</div>
+    <div class="next-title">I-01 &mdash; 渲染器架構導覽</div>
+    <div class="next-desc">下一章開始把 C++ object semantics 帶回目前專案，從 Application、ScreenManager、RenderDevice、Rasterizer 讀出真正的 ownership 與 backend boundary。</div>
+  </div>
+  <a class="next-arrow" href="../impl/ch01_renderer_walkthrough.html">&rarr;</a>
+</div>
+
+</body>
+</html>

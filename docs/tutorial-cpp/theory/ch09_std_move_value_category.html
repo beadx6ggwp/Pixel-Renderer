@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Ch09 — std::move 與 value category</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#1e1e2e; --bg1:#181825; --bg2:#11111b; --border:#313244;
+  --muted:#6c7086; --text:#cdd6f4; --blue:#89b4fa; --green:#a6e3a1;
+  --yellow:#f9e2af; --orange:#fab387; --red:#f38ba8; --purple:#cba6f7; --teal:#94e2d5;
+}
+body { background: var(--bg); color: var(--text); font-family: 'Georgia', serif; font-size: 15px; padding: 0 20px 80px; max-width: 900px; margin: 0 auto; line-height: 1.9; }
+nav { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); padding: 14px 0; border-bottom: 1px solid var(--border); margin-bottom: 36px; display: flex; align-items: center; gap: 10px; }
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--blue); }
+.nav-sep { color: var(--border); }
+.nav-cur { color: var(--text); }
+.nav-right { margin-left: auto; display: flex; gap: 16px; }
+.ch-header { margin-bottom: 40px; }
+.ch-label { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px; }
+.ch-title { color: var(--blue); font-size: 1.7em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub { color: var(--muted); font-size: 0.88em; margin-bottom: 14px; }
+.ch-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.ch-tag { font-family: 'Consolas', monospace; font-size: 0.72em; padding: 1px 7px; border-radius: 4px; background: var(--bg2); color: var(--muted); border: 1px solid var(--border); }
+h2 { color: var(--purple); font-size: 1em; font-family: 'Consolas', monospace; letter-spacing: 0.05em; padding: 10px 0; border-bottom: 1px solid var(--border); margin: 44px 0 20px; display: flex; align-items: center; gap: 12px; }
+h2 .n { background: var(--purple); color: var(--bg2); font-weight: bold; border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.85em; }
+h3 { color: var(--yellow); font-size: 0.95em; margin: 24px 0 10px; }
+p { margin-bottom: 12px; }
+strong { color: var(--yellow); }
+em { color: var(--orange); font-style: normal; }
+code { font-family: 'Consolas', monospace; color: var(--teal); }
+ul, ol { margin: 8px 0 14px 26px; line-height: 2.2; }
+.box { border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 0.9em; line-height: 1.85; background: var(--bg1); }
+.box-blue { border-left: 4px solid var(--blue); }
+.box-green { border-left: 4px solid var(--green); }
+.box-yellow { border-left: 4px solid var(--yellow); }
+.box-red { border-left: 4px solid var(--red); }
+.box-purple { border-left: 4px solid var(--purple); }
+.code { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em; line-height: 2.1; margin: 14px 0; overflow-x: auto; }
+.code .cmt { color: var(--muted); } .code .kw { color: var(--purple); } .code .val { color: var(--orange); } .code .tp { color: var(--blue); } .code .fn { color: var(--teal); }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+.two-col > div { background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; }
+.col-title { font-family: 'Consolas', monospace; font-size: 0.85em; margin-bottom: 10px; color: var(--muted); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9em; }
+thead { background: var(--bg1); }
+th { color: var(--muted); font-family: 'Consolas', monospace; font-size: 0.85em; padding: 8px 14px; text-align: left; border-bottom: 2px solid var(--border); }
+td { padding: 8px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.fig { margin: 24px auto; text-align: center; }
+.fig figcaption { color: var(--muted); font-size: 0.88em; margin-top: 8px; font-style: italic; }
+.next-ch { margin-top: 56px; padding: 20px 24px; background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 20px; }
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+.next-title { color: var(--blue); font-size: 1em; }
+.next-desc { color: var(--muted); font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: var(--blue); font-size: 1.6em; text-decoration: none; }
+@media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">C++ 複習</a>
+  <span class="nav-sep">/</span>
+  <span class="nav-cur">Ch09 — std::move 與 value category</span>
+  <div class="nav-right">
+    <a href="ch08_move_ownership.html">&larr; Ch08</a>
+    <a href="ch10_return_value_rvo.html">Ch10 &rarr;</a>
+  </div>
+</nav>
+
+<div class="ch-header">
+  <div class="ch-label">PART 3 &middot; CHAPTER 09</div>
+  <div class="ch-title">std::move 與 value category</div>
+  <div class="ch-sub">std::move does not move; it changes the expression</div>
+  <div class="ch-tags">
+    <span class="ch-tag">std::move</span>
+    <span class="ch-tag">xvalue</span>
+    <span class="ch-tag">prvalue</span>
+  </div>
+</div>
+
+<p>
+上一章說 move 的本質是 ownership transfer。但 C++ 不是看到一個 type 有 move constructor，就自動從所有地方把 resource 搬走。Compiler 必須先知道：這個 expression 能不能被當成「source 可以被放棄」。
+</p>
+<p>
+所以這章要處理一個名字很誤導的工具：<strong>std::move</strong>。最重要的句子先放在前面：<code>std::move(x)</code> 本身不會 move <code>x</code>。
+</p>
+
+<div class="box box-blue">
+<strong>本章範圍</strong> &mdash; 建立 <code>std::move</code> 與 value category 的最小模型。你會區分 object lifetime、expression category、move constructor 這三層，並知道為什麼 <code>std::move</code> 只是讓後續 operation 有機會選到 move path。
+</div>
+
+<h2><span class="n">1</span> naive model：std::move(x) 會 move x</h2>
+
+<p>
+先看這段 code：
+</p>
+
+<div class="code">
+<span class="kw">#include</span> &lt;utility&gt;<br>
+<br>
+<span class="tp">Buffer</span> x(<span class="val">1024</span>);<br>
+std::<span class="fn">move</span>(x);
+</div>
+
+<p>
+很多人的直覺是：
+</p>
+
+<div class="code">
+std::move(x)<br>
+&nbsp;&nbsp;-&gt; move x<br>
+&nbsp;&nbsp;-&gt; x 變成 moved-from
+</div>
+
+<p>
+這是錯的。上面這段 code 沒有建立另一個 <code>Buffer</code>，也沒有把 <code>x</code> assign 給另一個 <code>Buffer</code>。所以沒有 move constructor，也沒有 move assignment。
+</p>
+
+<div class="box box-yellow">
+<strong>第一個分離</strong> &mdash; <code>std::move</code> 不是 move operation。真正 transfer resource 的 operation 是 <code>T(T&amp;&amp;)</code> 或 <code>T&amp; operator=(T&amp;&amp;)</code>。
+</div>
+
+<h2><span class="n">2</span> 用 logging type 看發生什麼</h2>
+
+<p>
+用一個會印出 copy / move 的 type 觀察：
+</p>
+
+<div class="code">
+<span class="kw">struct</span> <span class="tp">Trace</span> {<br>
+&nbsp;&nbsp;<span class="fn">Trace</span>() { <span class="fn">print</span>(<span class="val">"default"</span>); }<br>
+&nbsp;&nbsp;<span class="fn">Trace</span>(<span class="kw">const</span> <span class="tp">Trace</span>&amp;) { <span class="fn">print</span>(<span class="val">"copy"</span>); }<br>
+&nbsp;&nbsp;<span class="fn">Trace</span>(<span class="tp">Trace</span>&amp;&amp;) <span class="kw">noexcept</span> { <span class="fn">print</span>(<span class="val">"move"</span>); }<br>
+};
+</div>
+
+<div class="code">
+<span class="tp">Trace</span> x;<br>
+std::<span class="fn">move</span>(x);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cmt">// 沒有建立新 object，通常不印 move</span><br>
+<span class="tp">Trace</span> y = std::<span class="fn">move</span>(x); <span class="cmt">// 初始化 y，這裡才可能印 move</span>
+</div>
+
+<p>
+差別不是 <code>std::move</code> 這個 token 有魔法，而是第二行多了一個需要建構 <code>y</code> 的語境。初始化 <code>y</code> 時，overload resolution 看見 source expression 是可以 move-from 的形式，於是選到 move constructor。
+</p>
+
+<h2><span class="n">3</span> std::move 真正做的是 cast</h2>
+
+<p>
+概念上，<code>std::move(x)</code> 幾乎就是：
+</p>
+
+<div class="code">
+<span class="kw">static_cast</span>&lt;<span class="tp">T</span>&amp;&amp;&gt;(x)
+</div>
+
+<p>
+也就是把 expression <code>x</code> 轉成 <strong>xvalue expression</strong>。這裡要小心：改變的是 expression，不是 object 本身。
+</p>
+
+<figure class="fig">
+<svg width="560" height="280" viewBox="0 0 560 280" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="560" height="280" rx="10" fill="#11111b"/>
+  <text x="280" y="30" text-anchor="middle" font-family="Consolas" font-size="12" fill="#6c7086">std::move changes expression category, not object lifetime</text>
+
+  <rect x="44" y="76" width="160" height="86" rx="8" fill="#89b4fa" fill-opacity="0.12" stroke="#89b4fa"/>
+  <text x="124" y="104" text-anchor="middle" font-family="Consolas" font-size="11" fill="#89b4fa">object x</text>
+  <text x="124" y="128" text-anchor="middle" font-family="Consolas" font-size="10" fill="#cdd6f4">storage + lifetime</text>
+  <text x="124" y="148" text-anchor="middle" font-family="Consolas" font-size="10" fill="#cdd6f4">alive until scope ends</text>
+
+  <rect x="292" y="58" width="220" height="58" rx="8" fill="#a6e3a1" fill-opacity="0.10" stroke="#a6e3a1"/>
+  <text x="402" y="84" text-anchor="middle" font-family="Consolas" font-size="11" fill="#a6e3a1">expression: x</text>
+  <text x="402" y="103" text-anchor="middle" font-family="Consolas" font-size="10" fill="#cdd6f4">value category = lvalue</text>
+
+  <rect x="292" y="158" width="220" height="58" rx="8" fill="#cba6f7" fill-opacity="0.12" stroke="#cba6f7"/>
+  <text x="402" y="184" text-anchor="middle" font-family="Consolas" font-size="11" fill="#cba6f7">expression: std::move(x)</text>
+  <text x="402" y="203" text-anchor="middle" font-family="Consolas" font-size="10" fill="#cdd6f4">value category = xvalue</text>
+
+  <line x1="204" y1="110" x2="288" y2="88" stroke="#89b4fa" stroke-width="1.2" marker-end="url(#arrowA)"/>
+  <line x1="204" y1="130" x2="288" y2="186" stroke="#cba6f7" stroke-width="1.2" marker-end="url(#arrowB)"/>
+  <text x="248" y="78" text-anchor="middle" font-family="Consolas" font-size="9" fill="#6c7086">names</text>
+  <text x="248" y="205" text-anchor="middle" font-family="Consolas" font-size="9" fill="#6c7086">casts</text>
+
+  <defs>
+    <marker id="arrowA" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="none" stroke="#89b4fa" stroke-width="1"/>
+    </marker>
+    <marker id="arrowB" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="none" stroke="#cba6f7" stroke-width="1"/>
+    </marker>
+  </defs>
+</svg>
+<figcaption>同一個 object 可以被不同 expression 指到；value category 是 expression 的性質。</figcaption>
+</figure>
+
+<div class="box box-blue">
+<strong>第二個分離</strong> &mdash; object 有 storage 和 lifetime；expression 有 type 和 value category。<code>x</code> 和 <code>std::move(x)</code> 指向同一個 object，但它們是不同 category 的 expression。
+</div>
+
+<h2><span class="n">4</span> 最小 value category 模型</h2>
+
+<p>
+完整 C++ taxonomy 有 <code>glvalue</code>、<code>rvalue</code>、<code>lvalue</code>、<code>xvalue</code>、<code>prvalue</code>。這章先不背表，先抓住 renderer 開發最常碰到的三種：
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Expression</th>
+      <th>Category</th>
+      <th>直覺</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>x</code></td>
+      <td>lvalue</td>
+      <td>有名字、可辨識的 existing object；compiler 不會假設你願意放棄它。</td>
+    </tr>
+    <tr>
+      <td><code>std::move(x)</code></td>
+      <td>xvalue</td>
+      <td>仍然指向 existing object，但表達「可以把它當成 expiring source」。</td>
+    </tr>
+    <tr>
+      <td><code>T{}</code></td>
+      <td>prvalue</td>
+      <td>直接產生一個 <code>T</code> value，用來初始化 object；C++17 後不能再簡單想成先 temporary 再 move。</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+這三個 category 會影響 overload resolution：
+</p>
+
+<div class="code">
+<span class="kw">void</span> <span class="fn">use</span>(<span class="kw">const</span> <span class="tp">T</span>&amp;);<br>
+<span class="kw">void</span> <span class="fn">use</span>(<span class="tp">T</span>&amp;&amp;);<br>
+<br>
+<span class="tp">T</span> x;<br>
+<span class="fn">use</span>(x);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cmt">// x 是 lvalue，通常選 const T&amp;</span><br>
+<span class="fn">use</span>(std::<span class="fn">move</span>(x)); <span class="cmt">// xvalue，可以選 T&amp;&amp;</span><br>
+<span class="fn">use</span>(<span class="tp">T</span>{});&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cmt">// prvalue，可以選 T&amp;&amp;</span>
+</div>
+
+<h2><span class="n">5</span> type 和 value category 是兩個軸</h2>
+
+<p>
+一個最容易卡住的 case 是 named rvalue reference：
+</p>
+
+<div class="code">
+<span class="kw">void</span> <span class="fn">consume</span>(<span class="tp">Buffer</span>&amp;&amp; b) {<br>
+&nbsp;&nbsp;<span class="fn">use</span>(b);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cmt">// b 這個 expression 是 lvalue</span><br>
+&nbsp;&nbsp;<span class="fn">use</span>(std::<span class="fn">move</span>(b)); <span class="cmt">// 這裡才是 xvalue</span><br>
+}
+</div>
+
+<p>
+<code>b</code> 的 declared type 是 <code>Buffer&amp;&amp;</code>，但 expression <code>b</code> 有名字，所以它是 lvalue expression。這就是為什麼 move constructor 裡如果要把 member 繼續 move 到下一層，也常常要寫 <code>std::move(member)</code>。
+</p>
+
+<div class="box box-yellow">
+<strong>常見陷阱</strong> &mdash; 不要把 <code>T&amp;&amp;</code> 這個 type spelling 和 expression 的 value category 混成同一件事。C++ overload resolution 看的是 expression category，不只是 variable 宣告時的 type。
+</div>
+
+<h2><span class="n">6</span> value category 不是 lifetime</h2>
+
+<p>
+再看一次：
+</p>
+
+<div class="code">
+<span class="tp">Buffer</span> x(<span class="val">1024</span>);<br>
+std::<span class="fn">move</span>(x);
+</div>
+
+<p>
+<code>std::move(x)</code> 是 xvalue expression，但 object <code>x</code> 沒有死掉，也沒有自動進入 moved-from state。它的 lifetime 還是到 scope 結束。
+</p>
+
+<p>
+只有當後續 operation 真的使用這個 xvalue source，例如：
+</p>
+
+<div class="code">
+<span class="tp">Buffer</span> y = std::<span class="fn">move</span>(x);
+</div>
+
+<p>
+move constructor 才可能 transfer resource，然後把 <code>x</code> 留在 safe-to-destroy 的 moved-from state。
+</p>
+
+<div class="box box-blue">
+<strong>第三個分離</strong> &mdash; value category 描述 expression；lifetime 描述 object；moved-from state 是 move operation 執行後的 object state。這三件事相關，但不是同一件事。
+</div>
+
+<h2><span class="n">7</span> Pixel-Renderer 的落點</h2>
+
+<p>
+這章的目的不是讓你背 value category 表，而是讓你之後能讀懂 renderer 裡的 ownership API：
+</p>
+
+<ul>
+<li><strong>Framebuffer owner</strong>：如果 function 接收 <code>Framebuffer&amp;&amp;</code>，它不是借用 pixels，而是在表達「callee 可以接手 ownership」。</li>
+<li><strong>Resource cache</strong>：loader 產生 <code>TextureData</code> 後，可以用 <code>std::move(data)</code> 交給 cache；真正搬的是 <code>TextureData</code> 的 move constructor。</li>
+<li><strong>DisplayBackend</strong>：window handle / SDL texture 這種 resource 通常 move-only。你要看清楚 API 是 borrow <code>&amp;</code>，還是 consume <code>&amp;&amp;</code>。</li>
+<li><strong>Return path</strong>：<code>return obj;</code> 和 <code>return std::move(obj);</code> 不只是風格不同，它們會改變 return expression category。下一章會處理 RVO / NRVO。</li>
+</ul>
+
+<div class="box box-red">
+<strong>對 renderer API 的警告</strong> &mdash; 不要為了看起來 modern 到處加 <code>std::move</code>。如果 object 後面還要用，就不要 move；如果 return local object，先不要直覺寫 <code>return std::move(obj);</code>，因為它可能破壞 NRVO shape。
+</div>
+
+<hr>
+
+<div class="box box-yellow">
+<strong>常見陷阱</strong><br><br>
+<strong>1. 以為 <code>std::move(x);</code> 會改變 x</strong> &mdash; 沒有後續 construction / assignment，就沒有 transfer。<br><br>
+<strong>2. 以為 xvalue 等於 object 快死了</strong> &mdash; <code>std::move(x)</code> 指向的 <code>x</code> 還活著；只是 expression 被標成可 move-from。<br><br>
+<strong>3. 以為 <code>T&amp;&amp; name</code> 在 expression 中仍是 rvalue</strong> &mdash; named rvalue reference expression 是 lvalue，需要 <code>std::move(name)</code> 才變 xvalue。
+</div>
+
+<div class="box box-green">
+<strong>本章學到的三件事</strong><br><br>
+<strong>1.</strong> <code>std::move</code> 本身不 move；它大致是 <code>static_cast&lt;T&amp;&amp;&gt;</code>，把 expression 變成 xvalue。<br><br>
+<strong>2.</strong> object 有 lifetime；expression 有 value category。<code>x</code> 和 <code>std::move(x)</code> 可以指向同一個 object，但 category 不同。<br><br>
+<strong>3.</strong> 真正 transfer resource 的是 move constructor / move assignment；moved-from state 是 operation 執行後才出現的 object state。
+</div>
+
+<div class="box box-purple">
+<strong>下一步</strong> &mdash; 你現在知道 <code>std::move</code> 只是改變 expression category。下一章回到 return by value：<code>return T{};</code>、<code>return x;</code>、<code>return std::move(x);</code> 到底差在哪裡？哪些情況連 move 都不需要？
+</div>
+
+<div class="next-ch">
+  <div>
+    <div class="next-label">NEXT CHAPTER</div>
+    <div class="next-title">Ch10 &mdash; Return by value 與 RVO</div>
+    <div class="next-desc">Ch10 會用本章的 value category vocabulary，拆 RVO、NRVO、implicit move 與 return std::move 的代價。</div>
+  </div>
+  <a class="next-arrow" href="ch10_return_value_rvo.html">&rarr;</a>
+</div>
+
+</body>
+</html>

@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<title>C++ 複習 — 系列教學</title>
+<title>C++ for Pixel-Renderer — 系列教學</title>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
@@ -147,6 +147,72 @@ body {
 .prereq-name { color: var(--text); margin-bottom: 2px; }
 .prereq-desc { color: var(--muted); font-size: 0.88em; line-height: 1.5; }
 
+/* ── Roadmap */
+.roadmap {
+  margin-bottom: 48px;
+}
+.roadmap-intro {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 8px;
+  padding: 24px 28px; margin-bottom: 18px;
+}
+.roadmap-intro h3 { color: var(--yellow); font-size: 0.9em; margin-bottom: 12px; font-family: 'Consolas', monospace; }
+.roadmap-intro p { color: var(--muted); font-size: 0.92em; line-height: 1.8; }
+.track-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px; }
+.track {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 8px;
+  padding: 22px 24px;
+}
+.track-title {
+  display: flex; align-items: center; gap: 10px; color: var(--text);
+  font-size: 1em; margin-bottom: 8px;
+}
+.track-kicker {
+  font-family: 'Consolas', monospace; font-size: 0.72em; letter-spacing: 0.1em;
+  color: var(--muted); text-transform: uppercase; margin-bottom: 6px;
+}
+.track-desc { color: var(--muted); font-size: 0.86em; line-height: 1.7; margin-bottom: 16px; }
+.road-list { display: flex; flex-direction: column; gap: 10px; }
+.road-item {
+  border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px;
+  background: var(--bg2);
+}
+.road-name {
+  color: var(--text); font-size: 0.9em; margin-bottom: 3px;
+  display: flex; align-items: center; gap: 8px;
+}
+.road-desc { color: var(--muted); font-size: 0.8em; line-height: 1.55; }
+.road-tag {
+  font-family: 'Consolas', monospace; font-size: 0.65em;
+  padding: 1px 6px; border-radius: 4px; border: 1px solid var(--border);
+  color: var(--muted); background: var(--bg1); flex-shrink: 0;
+}
+.road-status {
+  font-family: 'Consolas', monospace; font-size: 0.65em;
+  padding: 1px 7px; border-radius: 4px; margin-left: auto; flex-shrink: 0;
+}
+.road-status-done { color: var(--green); border: 1px solid var(--green); background: #1a2d1a; }
+.road-status-plan { color: var(--muted); border: 1px solid var(--border); background: var(--bg1); }
+.status-strip {
+  display: grid; grid-template-columns: 1.1fr 1fr; gap: 16px; margin-bottom: 48px;
+}
+.status-panel {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 8px;
+  padding: 20px 22px;
+}
+.status-title { color: var(--yellow); font-family: 'Consolas', monospace; font-size: 0.88em; margin-bottom: 10px; }
+.status-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.status-pill {
+  font-family: 'Consolas', monospace; font-size: 0.74em;
+  padding: 3px 9px; border-radius: 4px; border: 1px solid var(--border);
+  background: var(--bg2); color: var(--muted);
+}
+.status-pill.done { color: var(--green); border-color: var(--green); background: #1a2d1a; }
+.status-pill.next { color: var(--orange); border-color: var(--orange); background: #2f2018; }
+.track-theory { border-top: 3px solid var(--blue); }
+.track-impl { border-top: 3px solid var(--orange); }
+.track-theory .track-title { color: var(--blue); }
+.track-impl .track-title { color: var(--orange); }
+
 /* ── Footer */
 .footer {
   border-top: 1px solid var(--border);
@@ -158,6 +224,8 @@ body {
 @media (max-width: 700px) {
   .overview { grid-template-columns: 1fr 1fr; }
   .prereq-grid { grid-template-columns: 1fr; }
+  .track-grid { grid-template-columns: 1fr; }
+  .status-strip { grid-template-columns: 1fr; }
   .hero { padding: 36px 20px; }
   .container { padding: 32px 16px; }
 }
@@ -166,13 +234,13 @@ body {
 <body>
 
 <div class="hero">
-  <div class="hero-label">系列教學</div>
-  <h1>C++ 複習：從記憶喚醒到渲染器實戰</h1>
-  <p class="hero-sub">以你的軟體渲染器專案為主軸，快速恢復 C++ 手感。<br>不是從零開始的教科書，而是一份幫你「想起來」的複習筆記。</p>
+  <div class="hero-label">整合版課程入口</div>
+  <h1>C++ for Pixel-Renderer</h1>
+  <p class="hero-sub">兩條線並行：Theory Track 把 C++ 語意講深，Implementation Track 把語意落到 Pixel-Renderer 的工程化、工具鏈與 backend abstraction。</p>
   <div class="hero-tags">
-    <span class="tag tag-blue">C++11/14</span>
-    <span class="tag tag-green">Software Renderer</span>
-    <span class="tag tag-purple">Refresher</span>
+    <span class="tag tag-blue">Theory Track</span>
+    <span class="tag tag-green">Engineering Track</span>
+    <span class="tag tag-purple">Pixel-Renderer</span>
   </div>
 </div>
 
@@ -180,57 +248,671 @@ body {
 
   <div class="overview">
     <div class="ov-card">
-      <div class="ov-num" style="color:var(--blue)">0</div>
-      <div class="ov-label">章節已完成</div>
+      <div class="ov-num" style="color:var(--blue)">9</div>
+      <div class="ov-label">新版 Theory</div>
     </div>
     <div class="ov-card">
-      <div class="ov-num" style="color:var(--yellow)">19</div>
-      <div class="ov-label">章節總計</div>
+      <div class="ov-num" style="color:var(--orange)">11</div>
+      <div class="ov-label">新版 Impl</div>
     </div>
     <div class="ov-card">
-      <div class="ov-num" style="color:var(--purple)">6</div>
-      <div class="ov-label">學習模組</div>
+      <div class="ov-num" style="color:var(--purple)">19</div>
+      <div class="ov-label">第一階段素材</div>
     </div>
     <div class="ov-card">
-      <div class="ov-num" style="color:var(--green)">1</div>
-      <div class="ov-label">實作章節</div>
+      <div class="ov-num" style="color:var(--green)">2</div>
+      <div class="ov-label">並行起點</div>
+    </div>
+  </div>
+
+  <div class="status-strip">
+    <div class="status-panel">
+      <div class="status-title">▌ 新版已完成章節</div>
+      <div class="status-list">
+        <span class="status-pill done">T-01 Compilation / Linkage / ABI</span>
+        <span class="status-pill done">T-02 Type System / Initialization</span>
+        <span class="status-pill done">T-03 Object Model / Storage / Lifetime / UB</span>
+        <span class="status-pill done">T-04 Value Category / Reference System</span>
+        <span class="status-pill done">T-05 Copy / Move / Object Transfer</span>
+        <span class="status-pill done">T-06 RAII / Resource Ownership</span>
+        <span class="status-pill done">T-07 Callable / Overload / Lambda</span>
+        <span class="status-pill done">T-08 Templates / Concepts</span>
+        <span class="status-pill done">T-09 STL / Containers</span>
+        <span class="status-pill done">I-02 Toolchain Map</span>
+        <span class="status-pill done">I-03 Build Workflow</span>
+        <span class="status-pill done">I-04 Debugger Fundamentals</span>
+        <span class="status-pill done">I-05 VSCode Setup</span>
+        <span class="status-pill done">I-06 Make Workflow</span>
+        <span class="status-pill done">I-07 CMake Target-based Build</span>
+        <span class="status-pill done">I-08 Framebuffer Ownership Refactor</span>
+        <span class="status-pill done">I-09 DisplayBackend Interface</span>
+        <span class="status-pill done">I-10 Win32DisplayBackend</span>
+        <span class="status-pill done">I-11 SDLDisplayBackend</span>
+        <span class="status-pill done">I-12 Cross-platform Development Path</span>
+      </div>
+    </div>
+    <div class="status-panel">
+      <div class="status-title">▌ 接下來優先生成</div>
+      <div class="status-list">
+        <span class="status-pill next">I-13 Frontend / Backend Boundary</span>
+        <span class="status-pill next">T-10 Error Handling / Contracts</span>
+        <span class="status-pill next">T-11 Runtime Polymorphism</span>
+      </div>
     </div>
   </div>
 
   <div class="prereq">
-    <h3>▌ 前置知識（分階段）</h3>
+    <h3>▌ 這份教學的定位</h3>
+    <p style="color:var(--muted);font-size:0.92em;line-height:1.8;margin-bottom:14px;">
+      這不是「從零學 C++ 語法」，而是把你曾經理解過的 C++ 語意重新接回來。每章會先問一個工程問題：
+      為什麼 C++ 需要這個機制？它解決了 C 的哪個語意缺口？如果要做 renderer、framebuffer、resource、UI 或 backend abstraction，
+      這個機制到底幫你保證了什麼？
+    </p>
     <div class="prereq-grid">
       <div class="prereq-item">
-        <div class="prereq-name">Part 1-2 所需</div>
-        <div class="prereq-desc">曾經寫過任何程式語言，知道變數、函數、迴圈是什麼</div>
+        <div class="prereq-name">Part 1-2</div>
+        <div class="prereq-desc">程式如何被建構、物件如何存在、型別如何建立語意邊界</div>
       </div>
       <div class="prereq-item">
-        <div class="prereq-name">Part 3-4 所需</div>
-        <div class="prereq-desc">能讀懂基本的 class 定義，知道什麼是陣列和函數呼叫</div>
+        <div class="prereq-name">Part 3-4</div>
+        <div class="prereq-desc">把數學型別、資源擁有權、泛型演算法放進 renderer 設計裡</div>
       </div>
       <div class="prereq-item">
-        <div class="prereq-name">Part 5-6 所需</div>
-        <div class="prereq-desc">完成前四個 Part，對指標和 OOP 有基本感覺</div>
+        <div class="prereq-name">Part 5-6</div>
+        <div class="prereq-desc">回到 Modern C++ 的核心：RAII、smart pointer、move semantics、abstraction cost</div>
       </div>
+    </div>
+  </div>
+
+  <div class="prereq">
+    <h3>▌ 章節寫法</h3>
+    <p style="color:var(--muted);font-size:0.92em;line-height:1.8;margin-bottom:14px;">
+      章節會依照你的 Obsidian vault 裡的 writing principles：先從具體現象或小段 code 開始，
+      讓 naive model 失敗，再往下拆 execution / memory / object lifetime，往上收束到 semantic rule、invariant 與 design tradeoff。
+      最後必須回到 implementation 與 verification，而不是停在名詞定義。
+    </p>
+    <div class="prereq-grid">
+      <div class="prereq-item">
+        <div class="prereq-name">Phenomenon</div>
+        <div class="prereq-desc">先看一段會讓人疑惑的 code 或 renderer 場景</div>
+      </div>
+      <div class="prereq-item">
+        <div class="prereq-name">Naive Model</div>
+        <div class="prereq-desc">明確展示直覺模型哪裡不夠精準或會出錯</div>
+      </div>
+      <div class="prereq-item">
+        <div class="prereq-name">Semantic Rule</div>
+        <div class="prereq-desc">再補正式語意、invariant、cost model 與可驗證方式</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="prereq">
+    <h3>▌ 思考深度判準</h3>
+    <p style="color:var(--muted);font-size:0.92em;line-height:1.8;margin-bottom:14px;">
+      後續章節不應被固定成同一種模板。I-04 的價值不是形式，而是思考深度：不能只列 API、語法或配置步驟。
+      每章要依主題選擇自己的鋪陳，但必須讓 naive model 被檢驗，往下拆到必要的 machine / memory / object / process / ABI / build graph 等機制，
+      再回到 C++ 語意或工程規則，最後落到 Pixel-Renderer 的設計後果與可驗證方法。
+    </p>
+    <div class="prereq-grid">
+      <div class="prereq-item">
+        <div class="prereq-name">Mechanism</div>
+        <div class="prereq-desc">先問底層實際發生什麼：compiler transform、OS process、debug trap、object lifetime、buffer ownership</div>
+      </div>
+      <div class="prereq-item">
+        <div class="prereq-name">Semantic Rule</div>
+        <div class="prereq-desc">再收束成 C++ 語意：type/value category、RAII、invariant、contract、generic requirement</div>
+      </div>
+      <div class="prereq-item">
+        <div class="prereq-name">Verification</div>
+        <div class="prereq-desc">最後給出能在專案裡檢查的東西：GDB 指令、build command、設定檔、refactor checklist</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="prereq">
+    <h3>▌ 前向編排</h3>
+    <p style="color:var(--muted);font-size:0.92em;line-height:1.8;margin-bottom:14px;">
+      接下來不會把舊 Ch01-Ch18 當成最終線性順序，也不會只沿著 implementation 一路寫到 backend。
+      新版會分成六個 Part：先理解 program/binary，再理解 object/lifetime，再處理 value transfer 和泛型合約，
+      最後才進入 renderer architecture、UI/shader boundary、low-level performance。
+    </p>
+    <div class="prereq-grid">
+      <div class="prereq-item">
+        <div class="prereq-name">Foundation</div>
+        <div class="prereq-desc">T-01 到 T-05 建立 binary、type、object lifetime、value category、copy/move 的地基</div>
+      </div>
+      <div class="prereq-item">
+        <div class="prereq-name">Engineering</div>
+        <div class="prereq-desc">I-02 到 I-07 先把 toolchain、debugger、VSCode、Make、CMake 整理成可維護工作流</div>
+      </div>
+      <div class="prereq-item">
+        <div class="prereq-name">Architecture</div>
+        <div class="prereq-desc">I-08 之後才進入 Framebuffer、DisplayBackend、Win32/SDL/macOS、UI 與 shader interface</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="prereq">
+    <h3>▌ 服務的專案擴充方向</h3>
+    <p style="color:var(--muted);font-size:0.92em;line-height:1.8;margin-bottom:14px;">
+      這份 C++ 複習最終要服務 Pixel-Renderer 的下一階段，而不是停在語言本身。每個概念都要能回到 renderer 的設計問題：
+      誰擁有 framebuffer？shader object 如何被複製或禁止複製？UI state 放在哪裡？Win32 / SDL / macOS backend 如何替換？
+      render frontend 與 backend 的邊界應該用 value、reference、pointer、virtual interface，還是 template？
+    </p>
+    <div class="prereq-grid">
+      <div class="prereq-item">
+        <div class="prereq-name">Render Backend</div>
+        <div class="prereq-desc">owned framebuffer、DisplayBackend、Win32/SDL/macOS present path 的 lifetime 與 ownership</div>
+      </div>
+      <div class="prereq-item">
+        <div class="prereq-name">Shader Pipeline</div>
+        <div class="prereq-desc">shader interface、vertex/fragment data、copy/move policy、polymorphism cost</div>
+      </div>
+      <div class="prereq-item">
+        <div class="prereq-name">Immediate UI</div>
+        <div class="prereq-desc">UI command buffer、widget state、resource cache、renderer-facing draw data 的型別設計</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="roadmap">
+    <div class="roadmap-intro">
+      <h3>▌ 下一階段：拆成兩條學習線</h3>
+      <p>
+        目前 19 章已經完成第一階段：把 C++ object semantics 接回 Pixel-Renderer。下一階段要明確拆成兩條線：
+        <strong>C++ 深度複習</strong> 負責把語言本身講完整，<strong>Pixel-Renderer 工程實作</strong> 負責處理抽象分離、跨平台編譯、VSCode 配置與 backend refactor。
+      </p>
+    </div>
+
+    <div class="track-grid">
+      <div class="track track-theory">
+        <div class="track-kicker">Theory Track</div>
+        <div class="track-title">C++ 深度複習：語意、型別、效能</div>
+        <div class="track-desc">
+          這條線不應只停在 move。它要完整補齊 C++ 對程式存在方式、object model、value category、generic programming、STL、error handling、low-level performance 的規範。
+        </div>
+        <div class="road-list">
+          <div class="road-item">
+            <div class="road-name"><span class="road-tag">T-01</span> <a href="theory/t01_compilation_linkage_abi.html" style="color:inherit;text-decoration:none;">Compilation / Linkage / ABI</a><span class="road-status road-status-done">完成</span></div>
+            <div class="road-desc">declaration vs definition、ODR、translation unit、name mangling、static/extern、library linking、MSVC/GCC/Clang ABI 差異。</div>
+          </div>
+          <div class="road-item">
+            <div class="road-name"><span class="road-tag">T-02</span> <a href="theory/t02_type_system_initialization.html" style="color:inherit;text-decoration:none;">Type System / Initialization</a><span class="road-status road-status-done">完成</span></div>
+            <div class="road-desc">implicit conversion、explicit、enum class、const/constexpr、brace initialization、narrowing、aggregate 與 uniform initialization 的坑。</div>
+          </div>
+          <div class="road-item">
+            <div class="road-name"><span class="road-tag">T-03</span> <a href="theory/t03_object_model_storage_lifetime_ub.html" style="color:inherit;text-decoration:none;">Object Model / Storage / Lifetime / UB</a><span class="road-status road-status-done">完成</span></div>
+            <div class="road-desc">storage duration、object lifetime、placement new、alignment、strict aliasing、object representation、trivial/standard-layout、undefined behavior。</div>
+          </div>
+          <div class="road-item">
+            <div class="road-name"><span class="road-tag">T-04</span> <a href="theory/t04_value_category_reference_system.html" style="color:inherit;text-decoration:none;">Value Category 完整版</a><span class="road-status road-status-done">完成</span></div>
+            <div class="road-desc">lvalue/xvalue/prvalue、temporary materialization、lifetime extension、reference collapsing、forwarding reference、std::forward、operator return category。</div>
+          </div>
+          <div class="road-item">
+            <div class="road-name"><span class="road-tag">T-05</span> <a href="theory/t05_copy_move_object_transfer.html" style="color:inherit;text-decoration:none;">Copy / Move / Object Transfer</a><span class="road-status road-status-done">完成</span></div>
+            <div class="road-desc">copy、move、moved-from state、copy elision、return by value、noexcept move，整理 object 如何被交付與轉移。</div>
+          </div>
+          <div class="road-item">
+            <div class="road-name"><span class="road-tag">T-06</span> <a href="theory/t06_raii_resource_ownership_exception_safety.html" style="color:inherit;text-decoration:none;">RAII / Resource Ownership</a><span class="road-status road-status-done">完成</span></div>
+            <div class="road-desc">destructor、Rule of Zero/Five、unique_ptr/shared_ptr/custom deleter、exception safety、move-only resource handle。</div>
+          </div>
+          <div class="road-item">
+            <div class="road-name"><span class="road-tag">T-07</span> <a href="theory/t07_callable_overload_lambda.html" style="color:inherit;text-decoration:none;">Callable / Overload / Lambda</a><span class="road-status road-status-done">完成</span></div>
+            <div class="road-desc">function pointer、member function pointer、functor、lambda capture lifetime、std::function、overload resolution、default argument、inline function。</div>
+          </div>
+          <div class="road-item">
+            <div class="road-name"><span class="road-tag">T-08</span> <a href="theory/t08_templates_concepts_type_traits.html" style="color:inherit;text-decoration:none;">Templates / Concepts / Type Traits</a><span class="road-status road-status-done">完成</span></div>
+            <div class="road-desc">function/class template、specialization、SFINAE、concepts、constexpr if、CRTP、policy-based design，連到 shader/math type 泛型化。</div>
+          </div>
+          <div class="road-item">
+            <div class="road-name"><span class="road-tag">T-09</span> <a href="theory/t09_stl_containers_iterators_allocator.html" style="color:inherit;text-decoration:none;">STL / Containers / Iterators</a><span class="road-status road-status-done">完成</span></div>
+            <div class="road-desc">vector/array/span/string_view、iterator invalidation、erase-remove、contiguous storage、allocator basics，連到 command buffer 和 vertex buffer。</div>
+          </div>
+          <div class="road-item">
+            <div class="road-name"><span class="road-tag">T-10</span> Error Handling / Contracts<span class="road-status road-status-plan">規劃中</span></div>
+            <div class="road-desc">assert、optional、expected-like pattern、exception、noexcept、error code、precondition/postcondition、type invariant。</div>
+          </div>
+          <div class="road-item">
+            <div class="road-name"><span class="road-tag">T-11</span> Runtime Polymorphism Alternatives<span class="road-status road-status-plan">規劃中</span></div>
+            <div class="road-desc">virtual、type erasure、variant、visitor、command buffer、template dispatch 的取捨，避免把所有抽象都塞進 vtable。</div>
+          </div>
+          <div class="road-item">
+            <div class="road-name"><span class="road-tag">T-12</span> Low-level Performance / Memory Layout<span class="road-status road-status-plan">規劃中</span></div>
+            <div class="road-desc">cache locality、alignment、padding、branch prediction、SIMD intro、AoS vs SoA、memory bandwidth，連到 rasterizer hot loop。</div>
+          </div>
+          <div class="road-item">
+            <div class="road-name"><span class="road-tag">T-13</span> Concurrency / Memory Model<span class="road-status road-status-plan">規劃中</span></div>
+            <div class="road-desc">thread、mutex、atomic、data race、producer-consumer、job system intro；先理解規則，再談 tile-based parallel rasterization。</div>
+          </div>
+          <div class="road-item">
+            <div class="road-name"><span class="road-tag">T-14</span> Modern C++ Boundaries<span class="road-status road-status-plan">規劃中</span></div>
+            <div class="road-desc">哪些 C++20/23 特性值得提前知道：span、concepts、expected、modules、ranges、coroutine；哪些先不用深入。</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="track track-impl">
+        <div class="track-kicker">Implementation Track</div>
+        <div class="track-title">Pixel-Renderer 工程實作：抽象、工具鏈、跨平台</div>
+        <div class="track-desc">
+          這條線不重講 C++ 語法，而是把 theory 用在專案演進：先切乾淨 ownership，再處理 compiler/toolchain，再實作 Win32/SDL/macOS backend。
+        </div>
+        <div class="road-list">
+          <div class="road-item">
+            <div class="road-name"><span class="road-tag">I-02</span> <a href="impl/i02_toolchain_map.html" style="color:inherit;text-decoration:none;">Toolchain 地圖</a><span class="road-status road-status-done">完成</span></div>
+            <div class="road-desc">MSVC、MinGW GCC、Apple Clang、standard library、ABI、debug symbols、compiler flags，以及 OpenGL/D3D/SDL/ImGui 這類 library 的接入層次。</div>
+          </div>
+          <div class="road-item">
+            <div class="road-name"><span class="road-tag">I-03</span> <a href="impl/i03_build_workflow_to_cmake.html" style="color:inherit;text-decoration:none;">Build Workflow：Compiler 到 CMake</a><span class="road-status road-status-done">完成</span></div>
+            <div class="road-desc">從手動 compiler/linker、VSCode task/launch、GDB/LLDB、makefile 工作流，循序走到 CMake target graph。</div>
+          </div>
+          <div class="road-item">
+            <div class="road-name"><span class="road-tag">I-04</span> <a href="impl/i04_debugger_fundamentals_gdb_lldb.html" style="color:inherit;text-decoration:none;">Debugger Fundamentals: GDB / LLDB</a><span class="road-status road-status-done">完成</span></div>
+            <div class="road-desc">process、breakpoint、stack frame、debug symbols、memory inspect、watchpoint，以及 Pixel-Renderer debug recipes。</div>
+          </div>
+          <div class="road-item">
+            <div class="road-name"><span class="road-tag">I-05</span> <a href="impl/i05_vscode_build_debug_intellisense.html" style="color:inherit;text-decoration:none;">VSCode 配置</a><span class="road-status road-status-done">完成</span></div>
+            <div class="road-desc">tasks.json、launch.json、c_cpp_properties.json、CMake Tools、Windows/macOS debug workflow，處理 clang/gcc include path 問題。</div>
+          </div>
+          <div class="road-item">
+            <div class="road-name"><span class="road-tag">I-06</span> <a href="impl/i06_make_workflow.html" style="color:inherit;text-decoration:none;">Make Workflow</a><span class="road-status road-status-done">完成</span></div>
+            <div class="road-desc">從手動編譯命令走到 make rule、dependency、debug/release target，理解目前 makefile 的邊界。</div>
+          </div>
+          <div class="road-item">
+            <div class="road-name"><span class="road-tag">I-07</span> <a href="impl/i07_cmake_target_based_build.html" style="color:inherit;text-decoration:none;">CMake Target-based Build</a><span class="road-status road-status-done">完成</span></div>
+            <div class="road-desc">target、include path、compile definitions、platform-specific source、library linking，避免用全域設定堆出不可維護 build。</div>
+          </div>
+          <div class="road-item">
+            <div class="road-name"><span class="road-tag">I-08</span> <a href="impl/i08_framebuffer_ownership_refactor.html" style="color:inherit;text-decoration:none;">Framebuffer ownership refactor</a><span class="road-status road-status-done">完成</span></div>
+            <div class="road-desc">抽出 owned <code>Framebuffer</code>，讓 <code>RenderDevice</code> 借用它，而不是借用 <code>ScreenManager</code> 的 Win32 DIB memory。</div>
+          </div>
+          <div class="road-item">
+            <div class="road-name"><span class="road-tag">I-09</span> <a href="impl/i09_display_backend_interface.html" style="color:inherit;text-decoration:none;">DisplayBackend Interface</a><span class="road-status road-status-done">完成</span></div>
+            <div class="road-desc">定義 window/event/present 的替換點，讓 Win32/SDL/macOS backend 只接收 <code>const Framebuffer&amp;</code> 做 present。</div>
+          </div>
+          <div class="road-item">
+            <div class="road-name"><span class="road-tag">I-10</span> <a href="impl/i10_win32_display_backend.html" style="color:inherit;text-decoration:none;">Win32DisplayBackend</a><span class="road-status road-status-done">完成</span></div>
+            <div class="road-desc">把目前 <code>ScreenManager</code> 的 DIBSection、memory DC、window DC、message pump 與 <code>BitBlt</code> 落到 Win32 backend present path。</div>
+          </div>
+          <div class="road-item">
+            <div class="road-name"><span class="road-tag">I-11</span> <a href="impl/i11_sdl_display_backend.html" style="color:inherit;text-decoration:none;">SDLDisplayBackend</a><span class="road-status road-status-done">完成</span></div>
+            <div class="road-desc">整理 SDL2/3、SDL_Renderer backend、UpdateTexture/LockTexture、OS compositor，最後收束到 SDL present backend 的實作邊界。</div>
+          </div>
+          <div class="road-item">
+            <div class="road-name"><span class="road-tag">I-12</span> <a href="impl/i12_macos_development_path.html" style="color:inherit;text-decoration:none;">Cross-platform Development Path</a><span class="road-status road-status-done">完成</span></div>
+            <div class="road-desc">以 Windows / macOS / Ubuntu 為主軸，整理 toolchain、debugger、SDL dependency、CMake preset、VSCode 與 backend selection。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="part">
+    <div class="part-header">
+      <span class="part-num">Current Sequence</span>
+      <span class="part-title">新版並行起點</span>
+      <span class="part-desc">binary model ↔ object lifetime ↔ toolchain and build engineering</span>
+    </div>
+    <div class="chapters">
+      <a class="ch done" href="theory/t01_compilation_linkage_abi.html">
+        <div class="ch-num">T-01</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            Compilation / Linkage / ABI
+            <span class="badge badge-done">完成</span>
+          </div>
+          <div class="ch-desc">從 translation unit、symbol、ODR、linkage 到 ABI，建立 C++ 程式如何變成 binary 的完整模型</div>
+          <div class="ch-tags">
+            <span class="ch-tag">translation-unit</span>
+            <span class="ch-tag">linkage</span>
+            <span class="ch-tag">ABI</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch done" href="theory/t02_type_system_initialization.html">
+        <div class="ch-num">T-02</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            Type System / Initialization
+            <span class="badge badge-done">完成</span>
+          </div>
+          <div class="ch-desc">type 是 valid states、operations、invariants、conversion rules 的邊界；initialization 是 object 進入第一個合法狀態</div>
+          <div class="ch-tags">
+            <span class="ch-tag">type-system</span>
+            <span class="ch-tag">initialization</span>
+            <span class="ch-tag">explicit</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch done" href="theory/t03_object_model_storage_lifetime_ub.html">
+        <div class="ch-num">T-03</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            Object Model / Storage / Lifetime / UB
+            <span class="badge badge-done">完成</span>
+          </div>
+          <div class="ch-desc">從 raw storage、object lifetime、alignment、object representation、strict aliasing 到 UB，建立 framebuffer ownership 的語意地基</div>
+          <div class="ch-tags">
+            <span class="ch-tag">object-lifetime</span>
+            <span class="ch-tag">storage</span>
+            <span class="ch-tag">UB</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch done" href="theory/t04_value_category_reference_system.html">
+        <div class="ch-num">T-04</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            Value Category / Reference System
+            <span class="badge badge-done">完成</span>
+          </div>
+          <div class="ch-desc">把 expression 的 type/value category、reference binding、std::move/std::forward、operator return category 接回 UI/shader/backend lifetime 設計</div>
+          <div class="ch-tags">
+            <span class="ch-tag">lvalue</span>
+            <span class="ch-tag">xvalue</span>
+            <span class="ch-tag">forwarding</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch done" href="theory/t05_copy_move_object_transfer.html">
+        <div class="ch-num">T-05</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            Copy / Move / Object Transfer
+            <span class="badge badge-done">完成</span>
+          </div>
+          <div class="ch-desc">把 copy、move、moved-from state、return by value、copy elision、noexcept move 接成 object 在 renderer 中流動的決策樹</div>
+          <div class="ch-tags">
+            <span class="ch-tag">copy</span>
+            <span class="ch-tag">move</span>
+            <span class="ch-tag">copy-elision</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch done" href="theory/t06_raii_resource_ownership_exception_safety.html">
+        <div class="ch-num">T-06</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            RAII / Resource Ownership / Exception Safety
+            <span class="badge badge-done">完成</span>
+          </div>
+          <div class="ch-desc">把 resource lifetime 綁到 object lifetime，整理 Rule of Zero/Five、unique_ptr/shared_ptr、custom deleter、move-only handle 與 backend resource ownership</div>
+          <div class="ch-tags">
+            <span class="ch-tag">RAII</span>
+            <span class="ch-tag">unique_ptr</span>
+            <span class="ch-tag">ownership</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch done" href="theory/t07_callable_overload_lambda.html">
+        <div class="ch-num">T-07</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            Callable / Overload / Lambda
+            <span class="badge badge-done">完成</span>
+          </div>
+          <div class="ch-desc">把 function pointer、functor、lambda closure、capture lifetime、std::function 與 overload set 接回 UI command、render callback、shader hook 的語意邊界</div>
+          <div class="ch-tags">
+            <span class="ch-tag">callable</span>
+            <span class="ch-tag">lambda</span>
+            <span class="ch-tag">callback</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch done" href="theory/t08_templates_concepts_type_traits.html">
+        <div class="ch-num">T-08</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            Templates / Concepts / Type Traits
+            <span class="badge badge-done">完成</span>
+          </div>
+          <div class="ch-desc">把 template 從語法工具提升成 type requirement：concepts、traits、if constexpr、policy-based design 如何服務 shader、math type、pixel format 與 backend boundary</div>
+          <div class="ch-tags">
+            <span class="ch-tag">template</span>
+            <span class="ch-tag">concepts</span>
+            <span class="ch-tag">traits</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch done" href="theory/t09_stl_containers_iterators_allocator.html">
+        <div class="ch-num">T-09</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            STL / Containers / Iterators / Allocator
+            <span class="badge badge-done">完成</span>
+          </div>
+          <div class="ch-desc">把 std::vector、std::array、std::span、iterator invalidation、erase-remove、allocator basics 接回 framebuffer、vertex buffer、UI command buffer 的 ownership 與 lifetime 設計</div>
+          <div class="ch-tags">
+            <span class="ch-tag">vector</span>
+            <span class="ch-tag">span</span>
+            <span class="ch-tag">allocator</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch impl done" href="impl/i02_toolchain_map.html">
+        <div class="ch-num">I-02</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            Toolchain 地圖
+            <span class="badge badge-done">完成</span>
+          </div>
+          <div class="ch-desc">讀目前 makefile 與 VSCode 設定，把 MinGW GCC、MSVC、Apple Clang、linker、debugger、platform SDK 與 graphics libraries 分清楚</div>
+          <div class="ch-tags">
+            <span class="ch-tag">toolchain</span>
+            <span class="ch-tag">VSCode</span>
+            <span class="ch-tag">cross-platform</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch impl done" href="impl/i03_build_workflow_to_cmake.html">
+        <div class="ch-num">I-03</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            Build Workflow：Compiler 到 CMake
+            <span class="badge badge-done">完成</span>
+          </div>
+          <div class="ch-desc">先拆開 g++ driver、preprocess/compile/assemble/link，再接 VSCode task/launch、GDB process control、makefile 與 CMake target graph</div>
+          <div class="ch-tags">
+            <span class="ch-tag">VSCode</span>
+            <span class="ch-tag">make</span>
+            <span class="ch-tag">CMake</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch impl done" href="impl/i04_debugger_fundamentals_gdb_lldb.html">
+        <div class="ch-num">I-04</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            Debugger Fundamentals: GDB / LLDB
+            <span class="badge badge-done">完成</span>
+          </div>
+          <div class="ch-desc">從 process、debug symbols、breakpoint、stack frame、memory inspect 重新理解 debugger，並用 Pixel-Renderer 的 SetPixel/DrawTriangle/UpdateScreen 當例子</div>
+          <div class="ch-tags">
+            <span class="ch-tag">GDB</span>
+            <span class="ch-tag">LLDB</span>
+            <span class="ch-tag">debugger</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch impl done" href="impl/i05_vscode_build_debug_intellisense.html">
+        <div class="ch-num">I-05</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            VSCode Build / Debug / IntelliSense Setup
+            <span class="badge badge-done">完成</span>
+          </div>
+          <div class="ch-desc">用目前 .vscode/tasks.json、launch.json、c_cpp_properties.json 拆清楚 build command、debugger launch、editor IntelliSense 的責任邊界</div>
+          <div class="ch-tags">
+            <span class="ch-tag">VSCode</span>
+            <span class="ch-tag">tasks</span>
+            <span class="ch-tag">IntelliSense</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch impl done" href="impl/i06_make_workflow.html">
+        <div class="ch-num">I-06</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            Make Workflow
+            <span class="badge badge-done">完成</span>
+          </div>
+          <div class="ch-desc">用目前 makefile 拆解 target/prerequisite/recipe、timestamp、automatic variables、VPATH、wildcard、debug/release flags、header dependency 與 platform source boundary</div>
+          <div class="ch-tags">
+            <span class="ch-tag">make</span>
+            <span class="ch-tag">dependency</span>
+            <span class="ch-tag">build</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch impl done" href="impl/i07_cmake_target_based_build.html">
+        <div class="ch-num">I-07</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            CMake Target-based Build
+            <span class="badge badge-done">完成</span>
+          </div>
+          <div class="ch-desc">從 configure/generate/build、out-of-source build、target graph、PUBLIC/PRIVATE/INTERFACE 到 SDL、ImGui、OpenGL/D3D 類 library 的接入邊界</div>
+          <div class="ch-tags">
+            <span class="ch-tag">CMake</span>
+            <span class="ch-tag">target</span>
+            <span class="ch-tag">third-party</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch impl done" href="impl/i08_framebuffer_ownership_refactor.html">
+        <div class="ch-num">I-08</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            Framebuffer Ownership Refactor
+            <span class="badge badge-done">完成</span>
+          </div>
+          <div class="ch-desc">讀目前 ScreenManager/DIBSection/RenderDevice 的耦合，設計 owned Framebuffer、FramebufferView、Present(framebuffer) 與 Win32/SDL/macOS backend 的替換點</div>
+          <div class="ch-tags">
+            <span class="ch-tag">framebuffer</span>
+            <span class="ch-tag">ownership</span>
+            <span class="ch-tag">backend</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch impl done" href="impl/i09_display_backend_interface.html">
+        <div class="ch-num">I-09</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            DisplayBackend Interface
+            <span class="badge badge-done">完成</span>
+          </div>
+          <div class="ch-desc">把 window/event/present 抽成 backend interface，明確排除 SetPixel、rasterizer、shader 和 UI drawing，讓 backend 只 present renderer-owned framebuffer</div>
+          <div class="ch-tags">
+            <span class="ch-tag">interface</span>
+            <span class="ch-tag">backend</span>
+            <span class="ch-tag">present</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch impl done" href="impl/i10_win32_display_backend.html">
+        <div class="ch-num">I-10</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            Win32DisplayBackend
+            <span class="badge badge-done">完成</span>
+          </div>
+          <div class="ch-desc">把 DIBSection 當成 Win32 present staging buffer，說清楚 owned Framebuffer、memcpy rows、memory DC、window DC、BitBlt 與 compositor 之間的資料流</div>
+          <div class="ch-tags">
+            <span class="ch-tag">Win32</span>
+            <span class="ch-tag">DIBSection</span>
+            <span class="ch-tag">BitBlt</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch impl done" href="impl/i11_sdl_display_backend.html">
+        <div class="ch-num">I-11</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            SDLDisplayBackend
+            <span class="badge badge-done">完成</span>
+          </div>
+          <div class="ch-desc">從 SDL2/3、SDL_Renderer、Texture update/lock、OS compositor 回答 SDL 疑問，再把 SDL 定位成 window/event/present backend</div>
+          <div class="ch-tags">
+            <span class="ch-tag">SDL</span>
+            <span class="ch-tag">texture</span>
+            <span class="ch-tag">present</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch impl done" href="impl/i12_macos_development_path.html">
+        <div class="ch-num">I-12</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            Cross-platform Development Path
+            <span class="badge badge-done">完成</span>
+          </div>
+          <div class="ch-desc">用 Windows / macOS / Ubuntu 的 toolchain matrix，整理 SDL backend、CMake preset、GDB/LLDB、VSCode 與 native backend 的取捨</div>
+          <div class="ch-tags">
+            <span class="ch-tag">cross-platform</span>
+            <span class="ch-tag">Ubuntu</span>
+            <span class="ch-tag">CMake</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
     </div>
   </div>
 
   <!-- ═══════════════ Part 1 ═══════════════ -->
   <div class="part">
     <div class="part-header">
-      <span class="part-num">Part 1</span>
-      <span class="part-title">記憶喚醒：編譯與記憶體</span>
-      <span class="part-desc">compilation · memory · pointer</span>
+      <span class="part-num">First-stage Material 1</span>
+      <span class="part-title">程式如何存在</span>
+      <span class="part-desc">legacy material · to be merged into Theory Track</span>
     </div>
     <div class="chapters">
-      <a class="ch soon" href="theory/ch01_compilation_model.html">
+      <a class="ch done" href="theory/ch01_compilation_model.html">
         <div class="ch-num">01</div>
         <div class="ch-body">
           <div class="ch-title">
             編譯模型
-            <span class="badge badge-soon">規劃中</span>
+            <span class="badge badge-done">完成</span>
           </div>
-          <div class="ch-desc">從 .cpp 到 .exe 的旅程——預處理、編譯、連結三步驟，理解 #include 到底做了什麼</div>
+          <div class="ch-desc">從 translation unit 到 executable——為什麼 C++ 需要 header、object file、linker 這套模型</div>
           <div class="ch-tags">
             <span class="ch-tag">compilation</span>
             <span class="ch-tag">linker</span>
@@ -240,14 +922,14 @@ body {
         <div class="ch-arrow">→</div>
       </a>
 
-      <a class="ch soon" href="theory/ch02_memory_layout.html">
+      <a class="ch done" href="theory/ch02_memory_layout.html">
         <div class="ch-num">02</div>
         <div class="ch-body">
           <div class="ch-title">
             記憶體四區
-            <span class="badge badge-soon">規劃中</span>
+            <span class="badge badge-done">完成</span>
           </div>
-          <div class="ch-desc">Stack、Heap、Static、Code——你的變數住在哪裡，決定了它的命運</div>
+          <div class="ch-desc">Stack、Heap、Static、Code——object storage duration 如何決定 lifetime、ownership 與錯誤型態</div>
           <div class="ch-tags">
             <span class="ch-tag">memory</span>
             <span class="ch-tag">stack</span>
@@ -257,14 +939,14 @@ body {
         <div class="ch-arrow">→</div>
       </a>
 
-      <a class="ch soon" href="theory/ch03_pointer_reference.html">
+      <a class="ch done" href="theory/ch03_pointer_reference.html">
         <div class="ch-num">03</div>
         <div class="ch-body">
           <div class="ch-title">
             指標與參考
-            <span class="badge badge-soon">規劃中</span>
+            <span class="badge badge-done">完成</span>
           </div>
-          <div class="ch-desc">地址、解引用、與別名——C++ 最令人又愛又恨的核心機制</div>
+          <div class="ch-desc">地址、解引用、別名——pointer/reference 是 C++ 描述「誰能碰到哪塊記憶體」的基本語言</div>
           <div class="ch-tags">
             <span class="ch-tag">pointer</span>
             <span class="ch-tag">reference</span>
@@ -279,19 +961,19 @@ body {
   <!-- ═══════════════ Part 2 ═══════════════ -->
   <div class="part">
     <div class="part-header">
-      <span class="part-num">Part 2</span>
-      <span class="part-title">物件導向核心</span>
-      <span class="part-desc">class · inheritance · polymorphism</span>
+      <span class="part-num">First-stage Material 2</span>
+      <span class="part-title">型別、生命週期、語意</span>
+      <span class="part-desc">legacy material · to be split into type/lifetime/resource modules</span>
     </div>
     <div class="chapters">
-      <a class="ch soon" href="theory/ch04_struct_class.html">
+      <a class="ch done" href="theory/ch04_struct_class.html">
         <div class="ch-num">04</div>
         <div class="ch-body">
           <div class="ch-title">
             struct 與 class
-            <span class="badge badge-soon">規劃中</span>
+            <span class="badge badge-done">完成</span>
           </div>
-          <div class="ch-desc">封裝你的資料——從 C 的 struct 到 C++ 的 class，只差一個 private</div>
+          <div class="ch-desc">自訂型別不是語法糖——struct、class、invariant 如何把資料變成有規範的語意</div>
           <div class="ch-tags">
             <span class="ch-tag">struct</span>
             <span class="ch-tag">class</span>
@@ -301,14 +983,14 @@ body {
         <div class="ch-arrow">→</div>
       </a>
 
-      <a class="ch soon" href="theory/ch05_ctor_dtor.html">
+      <a class="ch done" href="theory/ch05_ctor_dtor.html">
         <div class="ch-num">05</div>
         <div class="ch-body">
           <div class="ch-title">
             建構與解構
-            <span class="badge badge-soon">規劃中</span>
+            <span class="badge badge-done">完成</span>
           </div>
-          <div class="ch-desc">物件的一生——從初始化列表到析構順序，RAII 的起點</div>
+          <div class="ch-desc">物件的一生——constructor/destructor 如何把資源管理變成語言保證，RAII 從這裡開始</div>
           <div class="ch-tags">
             <span class="ch-tag">constructor</span>
             <span class="ch-tag">destructor</span>
@@ -318,35 +1000,35 @@ body {
         <div class="ch-arrow">→</div>
       </a>
 
-      <a class="ch soon" href="theory/ch06_inheritance_virtual.html">
+      <a class="ch done" href="theory/ch06_copy_semantics.html">
         <div class="ch-num">06</div>
         <div class="ch-body">
           <div class="ch-title">
-            繼承與虛擬函數
-            <span class="badge badge-soon">規劃中</span>
+            Copy 語意
+            <span class="badge badge-done">完成</span>
           </div>
-          <div class="ch-desc">多型的代價與回報——virtual 關鍵字背後的 vtable 機制</div>
+          <div class="ch-desc">copy 不是搬 bytes——一個被複製的 object 必須仍然是 usable object，否則 Buffer 會 double free</div>
           <div class="ch-tags">
-            <span class="ch-tag">inheritance</span>
-            <span class="ch-tag">virtual</span>
-            <span class="ch-tag">vtable</span>
+            <span class="ch-tag">copy</span>
+            <span class="ch-tag">deep-copy</span>
+            <span class="ch-tag">ownership</span>
           </div>
         </div>
         <div class="ch-arrow">→</div>
       </a>
 
-      <a class="ch soon" href="theory/ch07_interface_abstract.html">
+      <a class="ch done" href="theory/ch07_rule_of_zero_three_five.html">
         <div class="ch-num">07</div>
         <div class="ch-body">
           <div class="ch-title">
-            抽象類別與介面
-            <span class="badge badge-soon">規劃中</span>
+            Rule of 0/3/5
+            <span class="badge badge-done">完成</span>
           </div>
-          <div class="ch-desc">IShader 的設計哲學——純虛擬函數如何定義一份「契約」</div>
+          <div class="ch-desc">一旦 type 擁有 resource，copy/move/destroy 就必須一起維護同一個 ownership invariant</div>
           <div class="ch-tags">
-            <span class="ch-tag">interface</span>
-            <span class="ch-tag">pure-virtual</span>
-            <span class="ch-tag">abstract</span>
+            <span class="ch-tag">special-member</span>
+            <span class="ch-tag">RAII</span>
+            <span class="ch-tag">invariant</span>
           </div>
         </div>
         <div class="ch-arrow">→</div>
@@ -357,57 +1039,57 @@ body {
   <!-- ═══════════════ Part 3 ═══════════════ -->
   <div class="part">
     <div class="part-header">
-      <span class="part-num">Part 3</span>
-      <span class="part-title">運算子與泛型</span>
-      <span class="part-desc">operator · template · specialization</span>
+      <span class="part-num">First-stage Material 3</span>
+      <span class="part-title">Object Delivery</span>
+      <span class="part-desc">legacy material · to be deepened into value category and transfer</span>
     </div>
     <div class="chapters">
-      <a class="ch soon" href="theory/ch08_operator_overloading.html">
+      <a class="ch done" href="theory/ch08_move_ownership.html">
         <div class="ch-num">08</div>
         <div class="ch-body">
           <div class="ch-title">
-            運算子重載
-            <span class="badge badge-soon">規劃中</span>
+            Move 是 ownership transfer
+            <span class="badge badge-done">完成</span>
           </div>
-          <div class="ch-desc">讓 Vec3f 可以做加減乘除——成員函數 vs 友元函數的選擇</div>
+          <div class="ch-desc">move 不是 faster copy——當 source 可以被放棄時，destination 接手 resource ownership</div>
           <div class="ch-tags">
-            <span class="ch-tag">operator-overloading</span>
-            <span class="ch-tag">friend</span>
-            <span class="ch-tag">Vec3f</span>
+            <span class="ch-tag">move</span>
+            <span class="ch-tag">ownership</span>
+            <span class="ch-tag">moved-from</span>
           </div>
         </div>
         <div class="ch-arrow">→</div>
       </a>
 
-      <a class="ch soon" href="theory/ch09_function_template.html">
+      <a class="ch done" href="theory/ch09_std_move_value_category.html">
         <div class="ch-num">09</div>
         <div class="ch-body">
           <div class="ch-title">
-            函數模板
-            <span class="badge badge-soon">規劃中</span>
+            std::move 與 value category
+            <span class="badge badge-done">完成</span>
           </div>
-          <div class="ch-desc">一份程式碼，多種型別——從 std::min 到自己的 embed&lt;&gt;</div>
+          <div class="ch-desc">std::move 不會 move——它只是把 expression 標成 xvalue，讓 move constructor 有機會被選到</div>
           <div class="ch-tags">
-            <span class="ch-tag">template</span>
-            <span class="ch-tag">function-template</span>
-            <span class="ch-tag">type-deduction</span>
+            <span class="ch-tag">std::move</span>
+            <span class="ch-tag">xvalue</span>
+            <span class="ch-tag">prvalue</span>
           </div>
         </div>
         <div class="ch-arrow">→</div>
       </a>
 
-      <a class="ch soon" href="theory/ch10_class_template.html">
+      <a class="ch done" href="theory/ch10_return_value_rvo.html">
         <div class="ch-num">10</div>
         <div class="ch-body">
           <div class="ch-title">
-            類別模板與特化
-            <span class="badge badge-soon">規劃中</span>
+            Return by value 與 RVO
+            <span class="badge badge-done">完成</span>
           </div>
-          <div class="ch-desc">vec&lt;DIM,T&gt; 怎麼做到的——泛型類別、偏特化、與 typedef 別名</div>
+          <div class="ch-desc">caller 那邊到底怎麼出現一個 T？RVO/NRVO 是 no-transfer case，不是孤立的 compiler trick</div>
           <div class="ch-tags">
-            <span class="ch-tag">class-template</span>
-            <span class="ch-tag">specialization</span>
-            <span class="ch-tag">typedef</span>
+            <span class="ch-tag">RVO</span>
+            <span class="ch-tag">NRVO</span>
+            <span class="ch-tag">copy-elision</span>
           </div>
         </div>
         <div class="ch-arrow">→</div>
@@ -418,41 +1100,40 @@ body {
   <!-- ═══════════════ Part 4 ═══════════════ -->
   <div class="part">
     <div class="part-header">
-      <span class="part-num">Part 4</span>
-      <span class="part-title">STL 實戰</span>
-      <span class="part-desc">vector · map · algorithm</span>
+      <span class="part-num">First-stage Material 4</span>
+      <span class="part-title">Storage、Lifetime 與 Container</span>
+      <span class="part-desc">legacy material · to be split into object model and STL modules</span>
     </div>
     <div class="chapters">
-      <a class="ch soon" href="theory/ch11_containers.html">
+      <a class="ch done" href="theory/ch11_in_place_construction.html">
         <div class="ch-num">11</div>
         <div class="ch-body">
           <div class="ch-title">
-            容器三劍客
-            <span class="badge badge-soon">規劃中</span>
+            In-place construction
+            <span class="badge badge-done">完成</span>
           </div>
-          <div class="ch-desc">vector、map、bitset——選對容器，程式碼少一半</div>
+          <div class="ch-desc">不要先在 A 建再搬到 B——emplace、placement new、construct_at 都在問 final storage 在哪裡</div>
           <div class="ch-tags">
-            <span class="ch-tag">STL</span>
-            <span class="ch-tag">vector</span>
-            <span class="ch-tag">map</span>
-            <span class="ch-tag">bitset</span>
+            <span class="ch-tag">emplace</span>
+            <span class="ch-tag">placement-new</span>
+            <span class="ch-tag">storage</span>
           </div>
         </div>
         <div class="ch-arrow">→</div>
       </a>
 
-      <a class="ch soon" href="theory/ch12_algorithm_iterator.html">
+      <a class="ch done" href="theory/ch12_vector_reallocation_noexcept.html">
         <div class="ch-num">12</div>
         <div class="ch-body">
           <div class="ch-title">
-            演算法與迭代器
-            <span class="badge badge-soon">規劃中</span>
+            vector reallocation 與 noexcept move
+            <span class="badge badge-done">完成</span>
           </div>
-          <div class="ch-desc">fill、min、max、sort——不要自己寫迴圈，讓 STL 幫你</div>
+          <div class="ch-desc">container 搬動元素時要 copy 還是 move？noexcept 影響的是 library 能不能安全選 move</div>
           <div class="ch-tags">
-            <span class="ch-tag">STL</span>
             <span class="ch-tag">algorithm</span>
-            <span class="ch-tag">iterator</span>
+            <span class="ch-tag">vector</span>
+            <span class="ch-tag">noexcept</span>
           </div>
         </div>
         <div class="ch-arrow">→</div>
@@ -463,74 +1144,57 @@ body {
   <!-- ═══════════════ Part 5 ═══════════════ -->
   <div class="part">
     <div class="part-header">
-      <span class="part-num">Part 5</span>
-      <span class="part-title">Modern C++ 補課</span>
-      <span class="part-desc">auto · lambda · smart pointer · move</span>
+      <span class="part-num">First-stage Material 5</span>
+      <span class="part-title">Type Contract 與 Value 設計</span>
+      <span class="part-desc">legacy material · to be merged into contracts and generic programming</span>
     </div>
     <div class="chapters">
-      <a class="ch soon" href="theory/ch13_auto_uniform_init.html">
+      <a class="ch done" href="theory/ch13_type_invariants.html">
         <div class="ch-num">13</div>
         <div class="ch-body">
           <div class="ch-title">
-            auto 與統一初始化
-            <span class="badge badge-soon">規劃中</span>
+            Type = states + operations + invariants
+            <span class="badge badge-done">完成</span>
           </div>
-          <div class="ch-desc">少打字，更安全——C++11 讓宣告變數不再痛苦</div>
+          <div class="ch-desc">type 不是 data layout——它包含 valid states、合法 operations、invariants 與 cost model</div>
           <div class="ch-tags">
-            <span class="ch-tag">auto</span>
-            <span class="ch-tag">uniform-init</span>
-            <span class="ch-tag">C++11</span>
+            <span class="ch-tag">type-semantics</span>
+            <span class="ch-tag">invariant</span>
+            <span class="ch-tag">operation</span>
           </div>
         </div>
         <div class="ch-arrow">→</div>
       </a>
 
-      <a class="ch soon" href="theory/ch14_lambda.html">
+      <a class="ch done" href="theory/ch14_regular_semiregular.html">
         <div class="ch-num">14</div>
         <div class="ch-body">
           <div class="ch-title">
-            Lambda 表達式
-            <span class="badge badge-soon">規劃中</span>
+            Regular / Semiregular types
+            <span class="badge badge-done">完成</span>
           </div>
-          <div class="ch-desc">就地定義的小函數——capture list 與閉包的祕密</div>
+          <div class="ch-desc">generic algorithm 不是吃任意型別，而是要求型別滿足一組 operation laws</div>
           <div class="ch-tags">
-            <span class="ch-tag">lambda</span>
-            <span class="ch-tag">closure</span>
-            <span class="ch-tag">C++11</span>
+            <span class="ch-tag">regular</span>
+            <span class="ch-tag">concept</span>
+            <span class="ch-tag">generic</span>
           </div>
         </div>
         <div class="ch-arrow">→</div>
       </a>
 
-      <a class="ch soon" href="theory/ch15_smart_pointer.html">
+      <a class="ch done" href="theory/ch15_operator_template_math_types.html">
         <div class="ch-num">15</div>
         <div class="ch-body">
           <div class="ch-title">
-            智慧指標
-            <span class="badge badge-soon">規劃中</span>
+            Operator / Template 與數學型別
+            <span class="badge badge-done">完成</span>
           </div>
-          <div class="ch-desc">告別手動 delete——unique_ptr 與 shared_ptr 的所有權語意</div>
+          <div class="ch-desc">讓 Vec/Mat 像數學物件一樣使用——operator 與 template 必須守住 type operation 的語意</div>
           <div class="ch-tags">
-            <span class="ch-tag">unique_ptr</span>
-            <span class="ch-tag">shared_ptr</span>
-            <span class="ch-tag">RAII</span>
-          </div>
-        </div>
-        <div class="ch-arrow">→</div>
-      </a>
-
-      <a class="ch soon" href="theory/ch16_move_semantics.html">
-        <div class="ch-num">16</div>
-        <div class="ch-body">
-          <div class="ch-title">
-            移動語意與右值參考
-            <span class="badge badge-soon">規劃中</span>
-          </div>
-          <div class="ch-desc">效能的最後一哩路——std::move 到底移動了什麼？</div>
-          <div class="ch-tags">
-            <span class="ch-tag">move</span>
-            <span class="ch-tag">rvalue-ref</span>
-            <span class="ch-tag">C++11</span>
+            <span class="ch-tag">operator</span>
+            <span class="ch-tag">template</span>
+            <span class="ch-tag">Vec</span>
           </div>
         </div>
         <div class="ch-arrow">→</div>
@@ -541,36 +1205,53 @@ body {
   <!-- ═══════════════ Part 6 ═══════════════ -->
   <div class="part">
     <div class="part-header">
-      <span class="part-num">Part 6</span>
-      <span class="part-title">工程實踐</span>
-      <span class="part-desc">preprocessor · design pattern · architecture</span>
+      <span class="part-num">First-stage Material 6</span>
+      <span class="part-title">Ownership Handle 與 Runtime 架構</span>
+      <span class="part-desc">legacy material · to be merged into runtime architecture and implementation track</span>
     </div>
     <div class="chapters">
-      <a class="ch soon" href="theory/ch17_preprocessor.html">
-        <div class="ch-num">17</div>
+      <a class="ch done" href="theory/ch16_smart_pointer.html">
+        <div class="ch-num">16</div>
         <div class="ch-body">
           <div class="ch-title">
-            預處理器全解
-            <span class="badge badge-soon">規劃中</span>
+            智慧指標
+            <span class="badge badge-done">完成</span>
           </div>
-          <div class="ch-desc">#include、#define、#pragma——編譯器看到你的程式碼之前，發生了什麼</div>
+          <div class="ch-desc">unique_ptr/shared_ptr 不是只是自動 delete——它們把 ownership policy 寫進型別系統</div>
           <div class="ch-tags">
-            <span class="ch-tag">preprocessor</span>
-            <span class="ch-tag">macro</span>
-            <span class="ch-tag">header-guard</span>
+            <span class="ch-tag">unique_ptr</span>
+            <span class="ch-tag">shared_ptr</span>
+            <span class="ch-tag">RAII</span>
           </div>
         </div>
         <div class="ch-arrow">→</div>
       </a>
 
-      <a class="ch soon" href="theory/ch18_design_patterns.html">
+      <a class="ch done" href="theory/ch17_polymorphism_vtable.html">
+        <div class="ch-num">17</div>
+        <div class="ch-body">
+          <div class="ch-title">
+            繼承、virtual 與 vtable
+            <span class="badge badge-done">完成</span>
+          </div>
+          <div class="ch-desc">dynamic dispatch 的代價與回報——DisplayBackend、Shader、UI renderer 如何在執行期替換行為</div>
+          <div class="ch-tags">
+            <span class="ch-tag">virtual</span>
+            <span class="ch-tag">vtable</span>
+            <span class="ch-tag">interface</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="ch done" href="theory/ch18_design_patterns.html">
         <div class="ch-num">18</div>
         <div class="ch-body">
           <div class="ch-title">
             設計模式速查
-            <span class="badge badge-soon">規劃中</span>
+            <span class="badge badge-done">完成</span>
           </div>
-          <div class="ch-desc">Template Method、Strategy、RAII——渲染器裡藏著哪些經典模式</div>
+          <div class="ch-desc">Strategy、RAII、type erasure——替 render backend、shader pipeline、UI layer 命名 ownership 與 dispatch 約束</div>
           <div class="ch-tags">
             <span class="ch-tag">design-pattern</span>
             <span class="ch-tag">architecture</span>
@@ -580,14 +1261,14 @@ body {
         <div class="ch-arrow">→</div>
       </a>
 
-      <a class="ch impl soon" href="impl/ch01_renderer_walkthrough.html">
+      <a class="ch impl done" href="impl/ch01_renderer_walkthrough.html">
         <div class="ch-num">I-01</div>
         <div class="ch-body">
           <div class="ch-title">
             渲染器架構導覽
-            <span class="badge badge-soon">規劃中</span>
+            <span class="badge badge-done">完成</span>
           </div>
-          <div class="ch-desc">從 main.cpp 讀懂整個專案——帶著 C++ 的新眼光重新看你的程式碼</div>
+          <div class="ch-desc">從 main.cpp 讀到 renderer/core/backend/UI 邊界——帶著 C++ object semantics 重新看專案擴充路線</div>
           <div class="ch-tags">
             <span class="ch-tag">code-reading</span>
             <span class="ch-tag">architecture</span>
