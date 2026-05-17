@@ -517,6 +517,10 @@ Is failure exceptional and should cross layers?
   yes -> noexcept may be part of its contract
   no  -> do not mark noexcept just for style</pre>
 
+<div class="box box-purple">
+<strong>延伸閱讀</strong> &mdash; 如果你還不熟 g++ diagnostic、compiler error、linker error、runtime failure 的分層，先看 Appendix <a href="../bonus/a32_error_literacy_gpp_diagnostics.html" style="color:var(--teal);text-decoration:none;">A-32 Error Literacy</a>。如果你想把 error code、exception、<code>expected</code>-style result、<code>optional</code> 分別對應到 programmer bug、recoverable failure、unwind failure、normal absence，可以看 <a href="../bonus/a25_error_code_exception_expected_design.html" style="color:var(--teal);text-decoration:none;">A-25 Error code / exception / expected 的設計分歧</a>。
+</div>
+
 <h2><span class="n">11</span> Summary</h2>
 
 <div class="box box-green">

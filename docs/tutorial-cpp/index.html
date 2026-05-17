@@ -332,6 +332,12 @@ body {
         <span class="status-pill done">A-01 auto_ptr / Move Semantics Deep Dive</span>
         <span class="status-pill done">A-02 Pointer Semantics Deep Dive</span>
         <span class="status-pill done">A-06 RAII Deep Dive</span>
+        <span class="status-pill done">A-10 Rule of Zero/Five Deep Dive</span>
+        <span class="status-pill done">A-16 dynamic_cast / RTTI Deep Dive</span>
+        <span class="status-pill done">A-17 std::function Deep Dive</span>
+        <span class="status-pill done">A-22 Interface Keyword Deep Dive</span>
+        <span class="status-pill done">A-25 Error Handling Deep Dive</span>
+        <span class="status-pill done">A-32 Error Literacy Deep Dive</span>
       </div>
     </div>
     <div class="status-panel">
@@ -912,6 +918,96 @@ body {
         </div>
         <span class="ch-arrow">→</span>
       </a>
+      <a class="ch bonus done" href="bonus/a10_rule_of_zero_five_historical_pressure.html">
+        <span class="ch-num">A-10</span>
+        <div class="ch-body">
+          <div class="ch-title">Rule of Zero / Five 的歷史壓力 <span class="badge badge-done">deep dive</span></div>
+          <div class="ch-desc">從 raw resource owner、copy bug、double free、move-only type 推到為什麼 Rule of Zero 是現代預設。</div>
+          <div class="ch-tags">
+            <span class="ch-tag">rule-of-zero</span>
+            <span class="ch-tag">rule-of-five</span>
+            <span class="ch-tag">ownership</span>
+          </div>
+        </div>
+        <span class="ch-arrow">→</span>
+      </a>
+      <a class="ch bonus done" href="bonus/a16_dynamic_cast_rtti_runtime_type_identity.html">
+        <span class="ch-num">A-16</span>
+        <div class="ch-body">
+          <div class="ch-title">dynamic_cast / RTTI 為什麼存在，又為什麼常被避免 <span class="badge badge-done">deep dive</span></div>
+          <div class="ch-desc">從 runtime type identity、plugin boundary、downcast pressure 推到 variant / visitor / type erasure 的替代路線。</div>
+          <div class="ch-tags">
+            <span class="ch-tag">dynamic_cast</span>
+            <span class="ch-tag">RTTI</span>
+            <span class="ch-tag">polymorphism</span>
+          </div>
+        </div>
+        <span class="ch-arrow">→</span>
+      </a>
+      <a class="ch bonus done" href="bonus/a17_std_function_cost_semantics.html">
+        <span class="ch-num">A-17</span>
+        <div class="ch-body">
+          <div class="ch-title">std::function 的成本與語意 <span class="badge badge-done">deep dive</span></div>
+          <div class="ch-desc">從 lambda capture、type erasure、possible allocation、indirect call、callback lifetime 解析。</div>
+          <div class="ch-tags">
+            <span class="ch-tag">std::function</span>
+            <span class="ch-tag">type-erasure</span>
+            <span class="ch-tag">callback</span>
+          </div>
+        </div>
+        <span class="ch-arrow">→</span>
+      </a>
+      <a class="ch bonus done" href="bonus/a22_no_interface_keyword_cpp.html">
+        <span class="ch-num">A-22</span>
+        <div class="ch-body">
+          <div class="ch-title">為什麼 C++ 沒有真正的 interface keyword <span class="badge badge-done">deep dive</span></div>
+          <div class="ch-desc">從 abstract class、pure virtual、concepts、type erasure、C ABI boundary 比較不同 interface 意義。</div>
+          <div class="ch-tags">
+            <span class="ch-tag">interface</span>
+            <span class="ch-tag">concepts</span>
+            <span class="ch-tag">ABI</span>
+          </div>
+        </div>
+        <span class="ch-arrow">→</span>
+      </a>
+      <a class="ch bonus done" href="bonus/a25_error_code_exception_expected_design.html">
+        <span class="ch-num">A-25</span>
+        <div class="ch-body">
+          <div class="ch-title">Error code / exception / expected 的設計分歧 <span class="badge badge-done">deep dive</span></div>
+          <div class="ch-desc">從 backend init、asset loading、programmer bug、recoverable failure 分出錯誤語意。</div>
+          <div class="ch-tags">
+            <span class="ch-tag">error-handling</span>
+            <span class="ch-tag">exception</span>
+            <span class="ch-tag">expected</span>
+          </div>
+        </div>
+        <span class="ch-arrow">→</span>
+      </a>
+      <a class="ch bonus done" href="bonus/a32_error_literacy_gpp_diagnostics.html">
+        <span class="ch-num">A-32</span>
+        <div class="ch-body">
+          <div class="ch-title">Error Literacy：從 g++ 訊息到錯誤分層 <span class="badge badge-done">deep dive</span></div>
+          <div class="ch-desc">先分辨 compiler / linker / runtime / assert / sanitizer error，再學會拆 g++ 的 error、note、candidate、required from。</div>
+          <div class="ch-tags">
+            <span class="ch-tag">g++</span>
+            <span class="ch-tag">diagnostics</span>
+            <span class="ch-tag">linker</span>
+          </div>
+        </div>
+        <span class="ch-arrow">→</span>
+      </a>
+      <div class="ch bonus soon">
+        <span class="ch-num">A-31</span>
+        <div class="ch-body">
+          <div class="ch-title">Reflection / Metadata：為什麼 editor、serializer、debug UI 需要把 type 當資料 <span class="badge badge-soon">candidate</span></div>
+          <div class="ch-desc">從 C# reflection 對照 C++ RTTI，推到 explicit metadata registry、field table、macro / codegen / template reflection-like layer。</div>
+          <div class="ch-tags">
+            <span class="ch-tag">reflection</span>
+            <span class="ch-tag">metadata</span>
+            <span class="ch-tag">editor</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

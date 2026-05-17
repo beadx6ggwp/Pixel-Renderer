@@ -834,6 +834,24 @@ A-02  Pointer 語意地圖：address、borrow、owner、handle
 
 A-06  RAII 為什麼是 C++ 的核心，不只是 destructor 技巧
       從 C cleanup path、goto fail、exception unwinding、partial initialization 推出 type-level lifetime invariant。
+
+A-10  Rule of Zero / Five 的歷史壓力
+      從 raw resource owner、copy bug、double free、move-only type 推到為什麼 Rule of Zero 是現代預設。
+
+A-16  dynamic_cast / RTTI 為什麼存在，又為什麼常被避免
+      從 runtime type identity、polymorphic base、downcast pressure、capability query 推到 virtual / variant / type erasure / template 的替代路線。
+
+A-17  std::function 的成本與語意
+      從 lambda capture、type erasure、small buffer optimization、allocation、callback lifetime 解析。
+
+A-22  為什麼 C++ 沒有真正的 interface keyword
+      從 abstract class、pure virtual、concepts、type erasure、ABI boundary 比較不同 interface 意義。
+
+A-25  Error code / exception / expected 的設計分歧
+      從 backend init、asset loading、programmer bug、recoverable failure 分出錯誤語意。
+
+A-32  Error Literacy：從 g++ 訊息到錯誤分層
+      先分辨 compiler / linker / runtime / assert / sanitizer error，再學會拆 g++ 的 error、note、candidate、required from。
 ```
 
 建議候選：
@@ -853,4 +871,58 @@ A-07  Type Erasure / Virtual / Variant 的設計壓力史
 
 A-08  Testing Golden Image 的問題生成史
       從 pixel-perfect fragility、numeric tolerance、determinism、platform variance 推出 renderer verification policy。
+
+A-09  noexcept 為什麼會影響 move / container / performance
+      從 vector reallocation 為什麼有時 copy、有時 move，追到 exception guarantee 與 type trait。
+
+A-11  const 不是 immutable：C++ const 的語意邊界
+      從 const member function、mutable、logical constness、thread-safety 誤解拆起。
+
+A-12  UB 為什麼不是 runtime error
+      從 signed overflow、strict aliasing、dangling reference 看 compiler optimization contract。
+
+A-13  Header-only library 為什麼可行又危險
+      從 template instantiation、ODR、inline、compile time、binary size 追到工程取捨。
+
+A-14  inline 的語意演化：不是只叫 compiler 展開函式
+      從 multiple definition 問題、ODR、linkage 到 modern inline variable。
+
+A-15  virtual destructor 為什麼重要
+      從 base pointer delete derived object 的失敗案例推到 polymorphic ownership contract。
+
+A-18  span / string_view 為什麼不是 owner
+      從 dangling view、temporary lifetime、buffer resize、command buffer payload 設計切入。
+
+A-19  allocator / pmr 為什麼存在
+      從 STL container 為什麼要抽象 allocation，推到 arena、scratch allocator、frame allocator。
+
+A-20  vector reallocation 的完整問題史
+      從 pointer invalidation、iterator invalidation、move noexcept、capacity policy 追到 command buffer 設計。
+
+A-21  enum class / strong typedef 為什麼重要
+      從 int 混用 TextureId / ShaderId / Width / Height 的 bug 推到 domain type。
+
+A-23  Compile-time polymorphism vs runtime polymorphism
+      從 shader/backend policy、template bloat、vtable cost、binary boundary 做問題分類。
+
+A-24  C API boundary 的 C++ 包裝策略
+      從 SDL / Win32 raw handle、error code、opaque pointer、custom deleter 推到 wrapper policy。
+
+A-26  Working directory 為什麼會害 asset loading 壞掉
+      從 VSCode launch、terminal cwd、relative path、filesystem path policy 推到 asset root 設計。
+
+A-27  DLL / shared library / static library 的差異
+      從 link time、load time、symbol visibility、runtime dependency、Windows/macOS/Linux 差異整理。
+
+A-28  ABI stability 為什麼難
+      從 class layout、vtable、name mangling、standard library ABI、plugin boundary 說明。
+
+A-29  Immediate-mode UI 為什麼適合 renderer tool
+      從 retained UI state、command generation、frame lifetime、input event ownership 比較。
+
+A-30  Golden image test 為什麼不能只做 pixel-perfect
+      從 floating error、platform difference、tolerance、mask、debug diff image 推到 renderer verification。
+
+A-31  Reflection / Metadata：為什麼 editor、serializer、debug UI 需要把 type 當資料
+      從 C# reflection 對照 C++ RTTI，推到 explicit metadata registry、field table、macro / codegen / template reflection-like layer。
 ```

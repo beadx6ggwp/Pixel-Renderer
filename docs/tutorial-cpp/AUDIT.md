@@ -48,6 +48,24 @@ A-02
 A-06
   Appendix deep dive 新增，補 RAII problem genealogy：C cleanup path、goto cleanup、exception unwinding、partial initialization、destructor noexcept、scope guard、Pixel-Renderer handle wrapper
 
+A-10
+  Appendix deep dive 新增，補 Rule of Zero / Five problem genealogy：raw owner、double free、Rule of Three、move-only owner、Rule of Zero policy
+
+A-16
+  Appendix deep dive 新增，補 dynamic_cast / RTTI problem genealogy：static type vs dynamic type、runtime type metadata、safe downcast/cross-cast、downcast pressure、virtual/variant/type erasure/template alternatives
+
+A-17
+  Appendix deep dive 新增，補 std::function problem genealogy：callable type erasure、possible allocation、indirect call、copyability、callback capture lifetime
+
+A-22
+  Appendix deep dive 新增，補 interface keyword problem genealogy：abstract class、concepts、type erasure、C ABI boundary、Pixel-Renderer interface policy
+
+A-25
+  Appendix deep dive 新增，補 error handling problem genealogy：programmer bug、recoverable failure、exception unwinding、expected-style result、optional absence
+
+A-32
+  Appendix deep dive 新增，補 error literacy：compiler/linker/runtime/assert/sanitizer/UB 分層、g++ diagnostic 結構、candidate/note/required from 讀法、undefined reference 與 runtime failure 邊界
+
 I-02 ~ I-13
   多數已接近正式章節
   I-12 已改為 cross-platform 命名
@@ -653,7 +671,13 @@ Part 0  program / binary / diagnostics
 14. `T-26 Regular Types / Equality / Hashing / Ordering` 已新增：Regular/Semiregular、equality law、hash consistency、strict weak ordering、float/NaN/epsilon pitfalls、cache key、command diff、golden test equality policy。
 15. `A-02 Pointer 語意地圖` 已新增：raw pointer、reference、span/view、unique_ptr、shared_ptr、weak_ptr、resource id / handle 的 semantic taxonomy。
 16. `A-06 RAII 為什麼是 C++ 的核心` 已新增：C cleanup path、goto cleanup、exception unwinding、partial initialization、destructor 不應 throw、scope guard、Pixel-Renderer RAII wrapper policy。
-17. 下一輪缺口盤點整理在 Phase G / Phase H；另外仍可做局部校稿與前段章節補 SVG / 深度。
+17. `A-16 dynamic_cast / RTTI 為什麼存在` 已新增：runtime type identity、RTTI metadata、pointer/reference cast failure semantics、multiple inheritance cross-cast、dynamic_cast 常被避免的設計原因、Pixel-Renderer 使用邊界。
+18. `A-10 Rule of Zero / Five 的歷史壓力` 已新增：raw owner、double free、Rule of Three、move-only type、Rule of Zero policy。
+19. `A-17 std::function 的成本與語意` 已新增：type erasure、possible allocation、indirect call、copyability、capture lifetime、Pixel-Renderer callback policy。
+20. `A-22 為什麼 C++ 沒有真正的 interface keyword` 已新增：abstract class、concepts、type erasure、C ABI boundary、DisplayBackend/shader/command interface policy。
+21. `A-25 Error code / exception / expected 的設計分歧` 已新增：programmer bug、recoverable runtime failure、exception + RAII、optional absence、backend/asset error policy。
+22. `A-32 Error Literacy` 已新增：compiler/linker/runtime/assert/sanitizer/UB 分層、g++ error/note/candidate/required from 讀法、undefined reference 與 runtime failure 的邊界。
+23. 下一輪缺口盤點整理在 Phase G / Phase H；另外仍可做局部校稿與前段章節補 SVG / 深度。
 
 ### Phase G：第四輪缺口盤點
 
@@ -1091,6 +1115,12 @@ P1  加深 T-05 / T-06 / T-10
 A-01  auto_ptr 與 Move Semantics 的誕生
 A-02  Pointer 語意地圖：address、borrow、owner、handle
 A-06  RAII 為什麼是 C++ 的核心，不只是 destructor 技巧
+A-10  Rule of Zero / Five 的歷史壓力
+A-16  dynamic_cast / RTTI 為什麼存在，又為什麼常被避免
+A-17  std::function 的成本與語意
+A-22  為什麼 C++ 沒有真正的 interface keyword
+A-25  Error code / exception / expected 的設計分歧
+A-32  Error Literacy：從 g++ 訊息到錯誤分層
 ```
 
 建議候選：
@@ -1101,6 +1131,24 @@ A-04  SDL Present Path 考古：從 BitBlt 到 OS compositor
 A-05  CMake 為什麼存在：從手打 g++ 到 target graph
 A-07  Type Erasure / Virtual / Variant 的設計壓力史
 A-08  Testing Golden Image 的問題生成史
+A-09  noexcept 為什麼會影響 move / container / performance
+A-11  const 不是 immutable：C++ const 的語意邊界
+A-12  UB 為什麼不是 runtime error
+A-13  Header-only library 為什麼可行又危險
+A-14  inline 的語意演化：不是只叫 compiler 展開函式
+A-15  virtual destructor 為什麼重要
+A-18  span / string_view 為什麼不是 owner
+A-19  allocator / pmr 為什麼存在
+A-20  vector reallocation 的完整問題史
+A-21  enum class / strong typedef 為什麼重要
+A-23  Compile-time polymorphism vs runtime polymorphism
+A-24  C API boundary 的 C++ 包裝策略
+A-26  Working directory 為什麼會害 asset loading 壞掉
+A-27  DLL / shared library / static library 的差異
+A-28  ABI stability 為什麼難
+A-29  Immediate-mode UI 為什麼適合 renderer tool
+A-30  Golden image test 為什麼不能只做 pixel-perfect
+A-31  Reflection / Metadata：為什麼 editor、serializer、debug UI 需要把 type 當資料
 ```
 
 排序建議：
