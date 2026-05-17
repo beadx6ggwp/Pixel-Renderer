@@ -636,7 +636,7 @@ Part 0  program / binary / diagnostics
 9. `T-22 Const / cv-qualification / Value Category` 已新增：move-from-const、const T&&、member function const、mutable、ref-qualified member function。
 10. `T-23 Overload Resolution / Conversion / Operator Design` 已新增：overload ranking、explicit conversion、operator policy、hidden friend/ADL、equality/hash contract。
 11. `T-24 Type Deduction / auto / decltype / Forwarding` 已新增：auto copy/borrow、decltype expression category、decltype(auto) dangling risk、forwarding reference、range-for policy。
-12. `A-01 auto_ptr 與 Move Semantics 的誕生` 已新增並加深為 Appendix deep dive：ownership transfer problem、destructive copy、non-const copy constructor、auto_ptr_ref proxy、container/algorithm generic assumption、std::move pipeline、unique_ptr 的 deleted copy + move、Pixel-Renderer owner type checklist。
+12. `A-01 auto_ptr 與 Move Semantics 的誕生` 已新增並加深為 Appendix deep dive：ownership transfer problem、destructive copy、non-const copy constructor、auto_ptr_ref proxy、container/algorithm generic assumption、std::move pipeline、move assignment 的 RHS value category / overload resolution、unique_ptr 的 deleted copy + move、Pixel-Renderer owner type checklist。
 13. 下一輪缺口盤點整理在 Phase G / Phase H；另外仍可做局部校稿與前段章節補 SVG / 深度。
 
 ### Phase G：第四輪缺口盤點

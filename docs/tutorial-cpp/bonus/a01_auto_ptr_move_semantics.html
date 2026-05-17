@@ -520,7 +520,118 @@ unique_ptr move:
 所以「source 可能變空」不是問題本身。真正問題是這個變化發生在哪條語意通道、call site 是否明確、generic code 是否能從 type requirements 推理。
 </p>
 
-<h2><span class="n">7</span> unique_ptr：auto_ptr 需求的正確現代表達</h2>
+<h2><span class="n">7</span> 為什麼 move assignment 仍然用 =，卻不是 auto_ptr 的問題？</h2>
+
+<p>
+你提出的疑問很關鍵：如果我們寫
+</p>
+
+<div class="code">
+<span class="tp">Buffer</span>&amp; <span class="kw">operator</span>=(<span class="tp">Buffer</span>&amp;&amp; other) <span class="kw">noexcept</span>;
+</div>
+
+<p>
+那 call site 仍然長得像：
+</p>
+
+<div class="code">
+b = std::<span class="fn">move</span>(a);
+</div>
+
+<p>
+它不也是用 <code>=</code> 嗎？是不是只是把 destructive transfer 藏在 assignment syntax 裡？
+</p>
+
+<p>
+答案是：<code>=</code> 只是 <strong>assignment expression syntax</strong>，不等於 copy semantics。真正決定 copy 或 move 的，是右邊 expression 的 value category，以及 overload resolution 選到哪個 <code>operator=</code>。
+</p>
+
+<div class="code">
+<span class="tp">Buffer</span> a;<br>
+<span class="tp">Buffer</span> b;<br>
+<br>
+b = a;              <span class="cmt">// RHS a is lvalue -> cannot bind to Buffer&amp;&amp;</span><br>
+b = std::<span class="fn">move</span>(a); <span class="cmt">// RHS is xvalue -> can bind to Buffer&amp;&amp;</span>
+</div>
+
+<pre class="ascii">b = a
+  syntax: assignment
+  RHS expression: lvalue
+  selected operation: operator=(const Buffer&) if available
+  transfer intent: not expressed
+
+b = std::move(a)
+  syntax: assignment
+  RHS expression: xvalue
+  selected operation: operator=(Buffer&&)
+  transfer intent: explicit at call site</pre>
+
+<p>
+C++11 沒有把 <code>=</code> 拆成 copy-assignment token 和 move-assignment token。它選擇更一般的設計：同一個 assignment expression，透過 RHS 的 value category 進入不同 overload。
+</p>
+
+<div class="fig">
+<svg viewBox="0 0 900 430" role="img" aria-label="Assignment syntax versus copy and move semantics">
+  <defs>
+    <marker id="arrow-a01-assign" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#89b4fa"/>
+    </marker>
+  </defs>
+  <rect x="60" y="70" width="175" height="76" rx="8" fill="#181825" stroke="#313244" stroke-width="2"/>
+  <text x="147" y="101" fill="#f9e2af" font-size="14" text-anchor="middle">same token</text>
+  <text x="147" y="124" fill="#cdd6f4" font-size="12" text-anchor="middle">operator=</text>
+
+  <rect x="330" y="34" width="190" height="76" rx="8" fill="#1a2a3d" stroke="#89b4fa" stroke-width="2"/>
+  <text x="425" y="65" fill="#89b4fa" font-size="14" text-anchor="middle">RHS: a</text>
+  <text x="425" y="88" fill="#cdd6f4" font-size="12" text-anchor="middle">lvalue expression</text>
+
+  <rect x="330" y="154" width="190" height="76" rx="8" fill="#2f2018" stroke="#fab387" stroke-width="2"/>
+  <text x="425" y="185" fill="#fab387" font-size="14" text-anchor="middle">RHS: std::move(a)</text>
+  <text x="425" y="208" fill="#cdd6f4" font-size="12" text-anchor="middle">xvalue expression</text>
+
+  <rect x="620" y="34" width="220" height="76" rx="8" fill="#1a2d1a" stroke="#a6e3a1" stroke-width="2"/>
+  <text x="730" y="65" fill="#a6e3a1" font-size="14" text-anchor="middle">operator=(const Buffer&amp;)</text>
+  <text x="730" y="88" fill="#cdd6f4" font-size="12" text-anchor="middle">copy assignment channel</text>
+
+  <rect x="620" y="154" width="220" height="76" rx="8" fill="#2a1a3d" stroke="#cba6f7" stroke-width="2"/>
+  <text x="730" y="185" fill="#cba6f7" font-size="14" text-anchor="middle">operator=(Buffer&amp;&amp;)</text>
+  <text x="730" y="208" fill="#cdd6f4" font-size="12" text-anchor="middle">move assignment channel</text>
+
+  <rect x="330" y="294" width="510" height="64" rx="8" fill="#2b1b24" stroke="#f38ba8" stroke-width="2"/>
+  <text x="585" y="322" fill="#f38ba8" font-size="14" text-anchor="middle">auto_ptr problem</text>
+  <text x="585" y="344" fill="#cdd6f4" font-size="12" text-anchor="middle">RHS lvalue b = a still transfers ownership through copy-looking channel</text>
+
+  <path d="M235 108 H330" fill="none" stroke="#89b4fa" stroke-width="2" marker-end="url(#arrow-a01-assign)"/>
+  <path d="M235 116 C285 140, 295 183, 330 192" fill="none" stroke="#fab387" stroke-width="2" marker-end="url(#arrow-a01-assign)"/>
+  <path d="M520 72 H620" fill="none" stroke="#a6e3a1" stroke-width="2" marker-end="url(#arrow-a01-assign)"/>
+  <path d="M520 192 H620" fill="none" stroke="#cba6f7" stroke-width="2" marker-end="url(#arrow-a01-assign)"/>
+  <path d="M425 230 C430 270, 500 284, 585 294" fill="none" stroke="#f38ba8" stroke-width="2" stroke-dasharray="5,4" marker-end="url(#arrow-a01-assign)"/>
+  <text x="450" y="394" fill="#6c7086" font-size="12" text-anchor="middle">同一個 = token 可以進入 copy 或 move channel；差別在 RHS value category 是否明確表達 transfer intent。</text>
+</svg>
+<div class="fig-caption">Figure 3：assignment syntax 不等於 copy semantics。<code>b = a</code> 和 <code>b = std::move(a)</code> 的 RHS value category 不同，因此 overload resolution 選到不同 <code>operator=</code>。</div>
+</div>
+
+<p>
+這正好把前面幾章串起來：
+</p>
+
+<pre class="ascii">T-04 value category:
+  std::move(a) produces xvalue.
+
+T-23 overload resolution:
+  xvalue chooses operator=(Buffer&&) over copy assignment.
+
+T-24 forwarding:
+  generic wrapper must use std::forward to preserve RHS intent.
+
+T-05 object transfer:
+  operator=(Buffer&&) defines how resource is actually transferred.</pre>
+
+<div class="box box-green">
+<strong>判斷重點</strong> &mdash; move assignment 使用 <code>=</code> 沒問題，因為 transfer intent 由 RHS 的 xvalue 明確表達；<code>auto_ptr</code> 的問題是 <code>b = a</code> 中 RHS 仍是 lvalue，call site 沒有表達 transfer intent，卻發生 destructive transfer。
+</div>
+
+<h2><span class="n">8</span> unique_ptr：auto_ptr 需求的正確現代表達</h2>
 
 <p>
 <code>std::unique_ptr</code> 不是「比較新的 auto_ptr」。它是同一個需求在 C++11 語意模型下的正確表達：
@@ -545,7 +656,7 @@ std::<span class="tp">unique_ptr</span>&lt;<span class="tp">Texture</span>&gt; c
   </tbody>
 </table>
 
-<h2><span class="n">8</span> 和 Regular type 的關係</h2>
+<h2><span class="n">9</span> 和 Regular type 的關係</h2>
 
 <p>
 這個故事也解釋了為什麼後面值得補 T-26 Regular Types / Equality / Hashing / Ordering。C++ generic code 很依賴 type law。所謂 Copyable 不只是「有 copy constructor」；它還暗示 copy 不消耗 source，並且 copy 後兩者在語意上等價。
@@ -567,7 +678,7 @@ auto_ptr:
 所以 move semantics 的價值不只是 performance。它讓 type 能誠實宣告自己不是 Copyable，但可以 Movable。這把 ownership transfer 從「偽裝成 copy」改成「獨立語意」。
 </p>
 
-<h2><span class="n">9</span> Pixel-Renderer：哪些東西像 auto_ptr 的問題？</h2>
+<h2><span class="n">10</span> Pixel-Renderer：哪些東西像 auto_ptr 的問題？</h2>
 
 <p>
 Pixel-Renderer 之後會有很多 unique ownership：
@@ -639,7 +750,7 @@ UI font atlas:
 Bad:
   Framebuffer b = a;              // if this secretly steals pixels, auto_ptr problem returns</pre>
 
-<h2><span class="n">10</span> 分層結論：本質差異在哪？</h2>
+<h2><span class="n">11</span> 分層結論：本質差異在哪？</h2>
 
 <table>
   <thead>
@@ -659,7 +770,7 @@ Bad:
 <strong>本篇學到的三件事：</strong>
 <ol>
   <li><code>auto_ptr</code> 的問題不是做不到 ownership transfer，而是用 copy syntax 做 destructive transfer，破壞 Copyable / Regular type 的假設。</li>
-  <li>C++11 move semantics 的核心價值不是只有效能，而是新增一條語言層 transfer channel：copy 和 move 可以被 overload、禁止、選擇與推導。</li>
+  <li>C++11 move semantics 的核心價值不是只有效能，而是新增一條語言層 transfer channel：同一個 <code>=</code> assignment syntax 可以依 RHS value category 進入 copy 或 move overload。</li>
   <li><code>unique_ptr</code> 是 unique ownership 的現代表達：copy deleted、move explicit，這正是 Pixel-Renderer 的 backend handle、framebuffer owner、texture resource 應該採用的語意方向。</li>
 </ol>
 </div>

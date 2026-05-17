@@ -230,6 +230,8 @@ I-20  Dependency Management / Third-party Integration
 - generic container / algorithm 會因為「copy 消耗 source」而失去局部推理
 - C++11 rvalue reference 把 transfer 變成語言層語意通道
 - `std::move` 只是把 expression 轉成 xvalue；真正 transfer 發生在 move constructor / move assignment
+- move assignment 雖然仍用 `=`
+  這個 token，但 `b = a` 和 `b = std::move(a)` 會因 RHS value category 進入不同 overload channel
 - `unique_ptr` 以 deleted copy + explicit move 取代 `auto_ptr`
 - Pixel-Renderer owner type 應避免任何「copy 偷 ownership」的 API
 

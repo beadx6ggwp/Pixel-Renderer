@@ -514,7 +514,11 @@ std::<span class="tp">auto_ptr</span>&lt;<span class="tp">Texture</span>&gt; b =
 unique_ptr + move:
   copy syntax         -> compile error
   std::move(source)   -> explicit transfer intent
-  source remains valid but moved-from</pre>
+  source remains valid but moved-from
+
+assignment note:
+  b = a               -> RHS is lvalue, copy assignment channel
+  b = std::move(a)    -> RHS is xvalue, move assignment channel</pre>
 
 <div class="box box-purple">
 <strong>Deep dive</strong> &mdash; <code>auto_ptr</code> 的價值不在於現代程式要使用它，而是它能解釋 C++11 為什麼需要 rvalue reference、move constructor、deleted copy constructor 與 <code>unique_ptr</code>。完整歷史拆解放在 <a href="../bonus/a01_auto_ptr_move_semantics.html" style="color:var(--teal);text-decoration:none;">A-01 auto_ptr 與 Move Semantics 的誕生</a>。
