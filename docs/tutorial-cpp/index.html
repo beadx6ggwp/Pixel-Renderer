@@ -265,7 +265,7 @@ body {
 
   <div class="overview">
     <div class="ov-card">
-      <div class="ov-num" style="color:var(--blue)">21</div>
+      <div class="ov-num" style="color:var(--blue)">23</div>
       <div class="ov-label">新版 Theory</div>
     </div>
     <div class="ov-card">
@@ -273,7 +273,7 @@ body {
       <div class="ov-label">新版 Impl</div>
     </div>
     <div class="ov-card">
-      <div class="ov-num" style="color:var(--purple)">41</div>
+      <div class="ov-num" style="color:var(--purple)">43</div>
       <div class="ov-label">統一版章節</div>
     </div>
     <div class="ov-card">
@@ -293,6 +293,8 @@ body {
         <span class="status-pill done">T-22 Const / cv / Value Category</span>
         <span class="status-pill done">T-23 Overload / Conversion / Operator</span>
         <span class="status-pill done">T-24 Type Deduction / auto / decltype</span>
+        <span class="status-pill done">T-25 Static / Global State</span>
+        <span class="status-pill done">T-26 Regular / Equality / Hashing</span>
         <span class="status-pill done">T-05 Copy / Move / Object Transfer</span>
         <span class="status-pill done">T-06 RAII / Resource Ownership</span>
         <span class="status-pill done">T-07 Callable / Overload / Lambda</span>
@@ -328,6 +330,8 @@ body {
         <span class="status-pill done">I-19 Preprocessor / Compile-time Config</span>
         <span class="status-pill done">I-20 Dependency / Third-party Integration</span>
         <span class="status-pill done">A-01 auto_ptr / Move Semantics Deep Dive</span>
+        <span class="status-pill done">A-02 Pointer Semantics Deep Dive</span>
+        <span class="status-pill done">A-06 RAII Deep Dive</span>
       </div>
     </div>
     <div class="status-panel">
@@ -418,7 +422,7 @@ body {
     <div class="prereq-grid">
       <div class="prereq-item">
         <div class="prereq-name">Foundation</div>
-        <div class="prereq-desc">T-01 到 T-05 加上 T-22/T-23/T-24 建立 binary、type、object lifetime、value category、const/cv、overload/operator、deduction、copy/move 的地基</div>
+        <div class="prereq-desc">T-01 到 T-05 加上 T-22/T-23/T-24/T-25/T-26 建立 binary、type、object lifetime、value category、const/cv、overload/operator、deduction、static/global state、regular/equality/hash、copy/move 的地基</div>
       </div>
       <div class="prereq-item">
         <div class="prereq-name">Engineering</div>
@@ -501,6 +505,14 @@ body {
           <div class="road-item">
             <div class="road-name"><span class="road-tag">T-24</span> <a href="theory/t24_type_deduction_auto_decltype_forwarding.html" style="color:inherit;text-decoration:none;">Type Deduction / auto / decltype / Forwarding</a><span class="road-status road-status-done">完成</span></div>
             <div class="road-desc">auto、auto&amp;、const auto&amp;、auto&amp;&amp;、decltype、decltype(auto)、template deduction、forwarding reference，避免 command/view/generic helper 失去 reference 語意。</div>
+          </div>
+          <div class="road-item">
+            <div class="road-name"><span class="road-tag">T-25</span> <a href="theory/t25_static_storage_global_state_initialization.html" style="color:inherit;text-decoration:none;">Static Storage / Global State / Initialization Order</a><span class="road-status road-status-done">完成</span></div>
+            <div class="road-desc">static storage duration、global state、initialization order、function-local static、thread_local、composition root，避免 renderer state 變成 hidden lifetime。</div>
+          </div>
+          <div class="road-item">
+            <div class="road-name"><span class="road-tag">T-26</span> <a href="theory/t26_regular_types_equality_hashing_ordering.html" style="color:inherit;text-decoration:none;">Regular Types / Equality / Hashing / Ordering</a><span class="road-status road-status-done">完成</span></div>
+            <div class="road-desc">Regular/Semiregular、equality laws、hash consistency、strict weak ordering、float pitfalls、cache key、command diff 與 golden test equality policy。</div>
           </div>
           <div class="road-item">
             <div class="road-name"><span class="road-tag">T-05</span> <a href="theory/t05_copy_move_object_transfer.html" style="color:inherit;text-decoration:none;">Copy / Move / Object Transfer</a><span class="road-status road-status-done">完成</span></div>
@@ -717,7 +729,7 @@ body {
       </div>
       <div class="dep-item">
         <div class="dep-name">Part 2 output</div>
-        <div class="dep-out">你能看懂 reference binding、const/cv qualification、overload/conversion/operator、type deduction、move-from-const、copy/move、lambda capture、operator return category 對 renderer data lifetime 的影響。</div>
+        <div class="dep-out">你能看懂 reference binding、const/cv qualification、overload/conversion/operator、type deduction、static/global lifetime、regular/equality/hash、move-from-const、copy/move、lambda capture、operator return category 對 renderer data lifetime 的影響。</div>
       </div>
       <div class="dep-item">
         <div class="dep-name">Part 3 output</div>
@@ -773,8 +785,10 @@ body {
           <a href="theory/t22_const_cv_value_category.html" style="color:var(--blue);text-decoration:none;">T-22</a> /
           <a href="theory/t23_overload_conversion_operator_design.html" style="color:var(--blue);text-decoration:none;">T-23</a> /
           <a href="theory/t24_type_deduction_auto_decltype_forwarding.html" style="color:var(--blue);text-decoration:none;">T-24</a> /
+          <a href="theory/t25_static_storage_global_state_initialization.html" style="color:var(--blue);text-decoration:none;">T-25</a> /
+          <a href="theory/t26_regular_types_equality_hashing_ordering.html" style="color:var(--blue);text-decoration:none;">T-26</a> /
           <a href="theory/t05_copy_move_object_transfer.html" style="color:var(--blue);text-decoration:none;">T-05</a> /
-          <a href="theory/t07_callable_overload_lambda.html" style="color:var(--blue);text-decoration:none;">T-07</a>。理解 expression category、reference binding、const capability、overload/conversion/operator、type deduction、copy/move/elision、lambda capture，避免 shader/UI callback 或 operator return 留下 dangling path。
+          <a href="theory/t07_callable_overload_lambda.html" style="color:var(--blue);text-decoration:none;">T-07</a>。理解 expression category、reference binding、const capability、overload/conversion/operator、type deduction、static/global lifetime、regular/equality/hash、copy/move/elision、lambda capture，避免 shader/UI callback 或 operator return 留下 dangling path。
         </div>
       </div>
       <div class="road-item">
@@ -832,6 +846,68 @@ body {
             <span class="ch-tag">move semantics</span>
             <span class="ch-tag">unique_ptr</span>
             <span class="ch-tag">regular type</span>
+          </div>
+        </div>
+        <span class="ch-arrow">→</span>
+      </a>
+      <a class="ch bonus done" href="bonus/a02_pointer_semantics_map.html">
+        <span class="ch-num">A-02</span>
+        <div class="ch-body">
+          <div class="ch-title">Pointer 語意地圖：address、borrow、owner、handle <span class="badge badge-done">deep dive</span></div>
+          <div class="ch-desc">用 problem genealogy 拆 raw pointer、reference、span/view、unique_ptr、shared_ptr、weak_ptr、resource id 為什麼不是同一種「指標」。</div>
+          <div class="ch-tags">
+            <span class="ch-tag">pointer semantics</span>
+            <span class="ch-tag">ownership</span>
+            <span class="ch-tag">borrow</span>
+          </div>
+        </div>
+        <span class="ch-arrow">→</span>
+      </a>
+      <div class="ch bonus soon">
+        <span class="ch-num">A-03</span>
+        <div class="ch-body">
+          <div class="ch-title">Header / Linker 錯誤考古 <span class="badge badge-soon">candidate</span></div>
+          <div class="ch-desc">從 undefined reference、duplicate symbol、unresolved external 回推 declaration、definition、translation unit、linker、ABI 的問題生成史。</div>
+          <div class="ch-tags">
+            <span class="ch-tag">linker</span>
+            <span class="ch-tag">ODR</span>
+            <span class="ch-tag">ABI</span>
+          </div>
+        </div>
+      </div>
+      <div class="ch bonus soon">
+        <span class="ch-num">A-04</span>
+        <div class="ch-body">
+          <div class="ch-title">SDL Present Path 考古：從 BitBlt 到 OS compositor <span class="badge badge-soon">candidate</span></div>
+          <div class="ch-desc">把 Win32 DIBSection、SDL texture、renderer backbuffer、GPU/driver、OS compositor、display scanout 串成跨平台 present 史。</div>
+          <div class="ch-tags">
+            <span class="ch-tag">SDL</span>
+            <span class="ch-tag">Win32</span>
+            <span class="ch-tag">compositor</span>
+          </div>
+        </div>
+      </div>
+      <div class="ch bonus soon">
+        <span class="ch-num">A-05</span>
+        <div class="ch-body">
+          <div class="ch-title">CMake 為什麼存在：從手打 g++ 到 target graph <span class="badge badge-soon">candidate</span></div>
+          <div class="ch-desc">從 compiler command、object files、include path、link flags、platform dependency 的壓力看 build system 為什麼長成 target-based model。</div>
+          <div class="ch-tags">
+            <span class="ch-tag">g++</span>
+            <span class="ch-tag">make</span>
+            <span class="ch-tag">cmake</span>
+          </div>
+        </div>
+      </div>
+      <a class="ch bonus done" href="bonus/a06_raii_core_destructor_cleanup.html">
+        <span class="ch-num">A-06</span>
+        <div class="ch-body">
+          <div class="ch-title">RAII 為什麼是 C++ 的核心，不只是 destructor 技巧 <span class="badge badge-done">deep dive</span></div>
+          <div class="ch-desc">從 C cleanup path、goto fail、exception unwinding、partial initialization 推出 type-level lifetime invariant。</div>
+          <div class="ch-tags">
+            <span class="ch-tag">RAII</span>
+            <span class="ch-tag">destructor</span>
+            <span class="ch-tag">exception</span>
           </div>
         </div>
         <span class="ch-arrow">→</span>

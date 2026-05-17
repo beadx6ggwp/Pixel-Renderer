@@ -99,6 +99,8 @@ T-04  Value Category / Reference System
 T-22  Const / cv-qualification / Value Category
 T-23  Overload Resolution / Conversion / Operator Design
 T-24  Type Deduction / auto / decltype / Forwarding
+T-25  Static Storage / Global State / Initialization Order
+T-26  Regular Types / Equality / Hashing / Ordering
 T-05  Copy / Move / Object Transfer
 T-06  RAII / Resource Ownership / Exception Safety
 T-17  Smart Pointer / Ownership Adapters
@@ -264,6 +266,25 @@ I-20  Dependency Management / Third-party Integration
 - `decltype(auto)` 作為 forwarding accessor 的工具與 dangling risk
 - template deduction 與 `std::forward` 如何保留 caller 的 lvalue/rvalue intent
 - Pixel-Renderer deduction policy：domain API 明確寫 ownership/borrow，generic wrapper 才使用 forwarding reference
+
+新增 `T-25` 後，static/global state 的語意交界也已補上：
+
+- static storage duration 不等於 resource readiness
+- cross-translation-unit dynamic initialization order 不應承載架構 dependency
+- function-local static 解決部分 init order，但仍是 hidden global state
+- inline variable / internal linkage 只處理 symbol visibility，不處理 ownership
+- `thread_local` 是 per-thread state，不是 synchronization，也不是 deterministic replay 的免費答案
+- composition root / RendererContext 應顯式擁有 framebuffer、backend、resource registry
+- Pixel-Renderer policy：math constants 可 static，framebuffer/backend/resource cache 不應 process-wide global
+
+新增 `T-26` 後，regular/equality/hash/order 的語意交界也已補上：
+
+- Regular / Semiregular / Movable / Copyable 是 type law，不只是能不能編譯的語法分類
+- equality 需要 reflexive / symmetric / transitive，否則 diff、cache、container 都會失去共同假設
+- hash 必須和 equality 一致，否則 `std::unordered_map` / resource registry 會變成偶發錯誤
+- ordering 需要 strict weak ordering，否則 sorting / `std::map` / command key 會出現 undefined behavior
+- float、NaN、epsilon equality、`+0.0` / `-0.0` 不適合不經設計就進 cache key
+- Pixel-Renderer policy：cache key、command diff、golden image comparison、resource handle equality 應各自定義語意
 
 ### 4.5 Callable / Lambda / Overload
 
@@ -649,6 +670,8 @@ T-04  Value Category / Reference System
 T-22  Const / cv-qualification / Value Category
 T-23  Overload Resolution / Conversion / Operator Design
 T-24  Type Deduction / auto / decltype / Forwarding
+T-25  Static Storage / Global State / Initialization Order
+T-26  Regular Types / Equality / Hashing / Ordering
 T-05  Copy / Move / Object Transfer
 T-07  Callable / Overload / Lambda
 ```
@@ -734,7 +757,7 @@ Part 結束時應能回答：
 
 ## 11. 接下來的工作邊界
 
-現在已經有 `T-01`、`T-02`、`T-03`、`T-04`、`T-05`、`T-06`、`T-07`、`T-08`、`T-09`、`T-10`、`T-11`、`T-12`、`T-13`、`T-14`、`T-15`、`T-16`、`T-17`、`T-18`、`T-22`、`T-23`、`T-24`、`I-01`、`I-02`、`I-03`、`I-04`、`I-05`、`I-06`、`I-07`、`I-08`、`I-09`、`I-10`、`I-11`、`I-12`、`I-13`、`I-14`、`I-15`、`I-16`、`I-17`、`I-18`、`I-19`、`I-20`，以及 Appendix `A-01 auto_ptr / move semantics deep dive`。新版教程骨架、早期補圖、index 統一、舊章節移除、numeric semantics、diagnostics、API design、smart pointer ownership adapter、casts/type punning、const/cv/value category、overload/conversion/operator、type deduction、preprocessor、dependency management、auto_ptr historical deep dive 缺口都已完成；README 暫不動，除非使用者要求。
+現在已經有 `T-01`、`T-02`、`T-03`、`T-04`、`T-05`、`T-06`、`T-07`、`T-08`、`T-09`、`T-10`、`T-11`、`T-12`、`T-13`、`T-14`、`T-15`、`T-16`、`T-17`、`T-18`、`T-22`、`T-23`、`T-24`、`T-25`、`T-26`、`I-01`、`I-02`、`I-03`、`I-04`、`I-05`、`I-06`、`I-07`、`I-08`、`I-09`、`I-10`、`I-11`、`I-12`、`I-13`、`I-14`、`I-15`、`I-16`、`I-17`、`I-18`、`I-19`、`I-20`，以及 Appendix `A-01 auto_ptr / move semantics deep dive`、`A-02 pointer semantics map`。新版教程骨架、早期補圖、index 統一、舊章節移除、numeric semantics、diagnostics、API design、smart pointer ownership adapter、casts/type punning、const/cv/value category、overload/conversion/operator、type deduction、static/global state、regular/equality/hash、preprocessor、dependency management、auto_ptr historical deep dive、pointer semantics deep dive 缺口都已完成；README 暫不動，除非使用者要求。
 
 第二輪審查詳見 `docs/tutorial-cpp/AUDIT.md`。Phase A/B/C/D/D.1 已完成：結構缺口已補、骨架章已加深、早期章節已補 SVG / memory-style 圖解、index 已改成統一版入口、舊 HTML 章節已移除。
 
@@ -751,7 +774,7 @@ Part 結束時應能回答：
    重新審視後，下一批缺口不是 move/RAII 這類 C++ 核心語意，而是 renderer 專案工程化會需要的 frame loop、asset/resource、profiling、test infrastructure、standard utilities、arena/PMR、data-oriented design。value category 與 const/cv-qualification 交界已補成 T-22。
 
 4. 第五輪語意交界補強
-   沿著 T-22 的角度，overload/conversion/operator 已補成 T-23，type deduction 已補成 T-24；下一批應檢查 static lifetime/global state、regular/equality/hash、exception guarantee 這類「語法看起來簡單，但實際語意跨很多層」的主題。
+   沿著 T-22 的角度，overload/conversion/operator 已補成 T-23，type deduction 已補成 T-24，static/global state 已補成 T-25，regular/equality/hash/order 已補成 T-26；下一批應檢查 exception guarantee、backend init cleanup、nodiscard 這類「語法看起來簡單，但實際語意跨很多層」的主題。
 
 5. src architecture refactor
    依 I-08 到 I-13 的設計，把 owned Framebuffer、DisplayBackend、Win32/SDL backend selection 逐步落地。
@@ -760,7 +783,7 @@ Part 結束時應能回答：
 這樣安排的理由：
 
 - `T-03` 要先於 framebuffer ownership，否則 owned buffer / borrowed pointer / platform resource 會講不清楚。
-- `T-04`、`T-22`、`T-23`、`T-24` 要先於 shader/UI callback，否則 reference、const capability、move-from-const、overload/conversion、type deduction、lambda capture、operator return category 的 dangling 問題會一直散落。
+- `T-04`、`T-22`、`T-23`、`T-24`、`T-25`、`T-26` 要先於 shader/UI callback，否則 reference、const capability、move-from-const、overload/conversion、type deduction、static/global lifetime、regular/equality/hash/order、lambda capture、operator return category 的 dangling 或 cache-key 問題會一直散落。
 - `I-05`、`I-06`、`I-07`、`I-19`、`I-20` 要先於 SDL/macOS backend；現在工具鏈、Make、CMake target boundary、compile-time configuration、third-party dependency boundary 已經有教學地基，可以開始進入 ownership refactor。
 - `I-01` 到 `I-20` 已經把 current architecture、toolchain、debugger、diagnostics、build workflow、preprocessor、dependency management、framebuffer ownership、DisplayBackend、Win32/SDL/cross-platform、frontend/backend boundary、UI integration、shader pipeline boundary、verification、header hygiene 串成第一版工程地圖；`T-01` 到 `T-18` 也已經把 C++ 語意、containers、contracts、polymorphism、performance、concurrency、Modern C++ boundary、numeric semantics、API design conventions、smart pointer ownership adapter、casts/type punning 補齊。第二輪審查指出 FPGA 暫不進近期主線；testing / verification 已補成 implementation 章節；index 已補 Part dependency map。
 
@@ -787,17 +810,47 @@ P3  T-21 Data-oriented Design for Renderer Data
     作為 UI/shader/parallel renderer 的進階語意與資料佈局地基。
 ```
 
-若沿著 C++ 語意交界繼續補 theory，建議隊列是：
+若沿著 C++ 語意交界繼續補 theory，`T-26` 已完成；下一步不一定要新增章，較值得做的是局部加深：
 
 ```text
-P0  T-25 Static Storage / Global State / Initialization Order
-    服務 tests、resource cache、backend lifetime、deterministic replay。
-
-P2  T-26 Regular Types / Equality / Hashing / Ordering
-    服務 pipeline state cache、resource registry、command diff、golden tests。
-
-P2  加深 T-05 / T-06 / T-10
+P1  加深 T-05 / T-06 / T-10
     補 assignment、exception guarantee、nodiscard、multi-step backend init cleanup。
 ```
 
-若下一步要進程式碼，仍應先處理 Phase E 的 architecture refactor；若要繼續補教學，工程向優先補 `I-24`，語意向下一個優先補 `T-25`。
+若下一步要進程式碼，仍應先處理 Phase E 的 architecture refactor；若要繼續補教學，工程向優先補 `I-24`，語意向優先做 `T-05` / `T-06` / `T-10` 的局部加深。
+
+## 12. Appendix / Deep Dive 候選池
+
+Appendix 的判準不是「這個主題比較不重要」，而是它適合用 problem genealogy / semantic archaeology 的方式深挖：從歷史問題、naive solution、failure mode、語意 invariant、相鄰系統比較，一路推到現代設計。這類內容若放在主線，會拖慢正式章節；但若完全不寫，又會少掉森林視角。
+
+已完成：
+
+```text
+A-01  auto_ptr 與 Move Semantics 的誕生
+      從 destructive copy 看 C++11 rvalue reference / unique_ptr 為什麼存在。
+
+A-02  Pointer 語意地圖：address、borrow、owner、handle
+      raw pointer / reference / span / unique_ptr / shared_ptr / weak_ptr / resource id 的語意分層。
+
+A-06  RAII 為什麼是 C++ 的核心，不只是 destructor 技巧
+      從 C cleanup path、goto fail、exception unwinding、partial initialization 推出 type-level lifetime invariant。
+```
+
+建議候選：
+
+```text
+A-03  Header / Linker 錯誤考古
+      從 undefined reference、duplicate symbol、unresolved external 回推 declaration/definition/TU/linker/ABI。
+
+A-04  SDL Present Path 考古：從 BitBlt 到 OS compositor
+      Win32 DIBSection、SDL texture、renderer backbuffer、GPU/driver、OS compositor、display scanout 的跨平台資料流。
+
+A-05  CMake 為什麼存在：從手打 g++ 到 target graph
+      compiler command、object files、include path、link flags、package discovery、runtime artifact 如何逼出 target-based build。
+
+A-07  Type Erasure / Virtual / Variant 的設計壓力史
+      從 plugin boundary、hot path dispatch、closed/open set tradeoff，看 runtime polymorphism alternatives。
+
+A-08  Testing Golden Image 的問題生成史
+      從 pixel-perfect fragility、numeric tolerance、determinism、platform variance 推出 renderer verification policy。
+```

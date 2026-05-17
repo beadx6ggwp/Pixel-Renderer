@@ -33,8 +33,20 @@ T-23
 T-24
   Phase H 語意交界補強新增，補 auto、decltype、decltype(auto)、template deduction、forwarding reference 與 range-for copy/borrow policy
 
+T-25
+  Phase H 語意交界補強新增，補 static storage duration、global state、initialization order、function-local static、thread_local、composition root
+
+T-26
+  Phase H 語意交界補強新增，補 Regular/Semiregular、equality law、hash consistency、strict weak ordering、float pitfalls、cache key / command diff / golden test equality policy
+
 A-01
   Appendix deep dive 新增，回應 auto_ptr 是否也能做到 move 的疑問，拆解 destructive copy、C++98 library hack、rvalue reference 與 unique_ptr 的語意演化
+
+A-02
+  Appendix deep dive 新增，補 pointer semantic taxonomy：address、borrow、range view、unique owner、shared owner、weak observer、resource handle
+
+A-06
+  Appendix deep dive 新增，補 RAII problem genealogy：C cleanup path、goto cleanup、exception unwinding、partial initialization、destructor noexcept、scope guard、Pixel-Renderer handle wrapper
 
 I-02 ~ I-13
   多數已接近正式章節
@@ -535,7 +547,7 @@ Part 1 Object Exists in Storage
   T-02, T-03, T-18, T-06, T-17
 
 Part 2 Values Move Through the Program
-  T-04, T-22, T-23, T-24, T-05, T-07
+  T-04, T-22, T-23, T-24, T-25, T-26, T-05, T-07
 
 Part 3 Types Become Generic Contracts
   T-08, T-09, T-10
@@ -636,12 +648,16 @@ Part 0  program / binary / diagnostics
 9. `T-22 Const / cv-qualification / Value Category` 已新增：move-from-const、const T&&、member function const、mutable、ref-qualified member function。
 10. `T-23 Overload Resolution / Conversion / Operator Design` 已新增：overload ranking、explicit conversion、operator policy、hidden friend/ADL、equality/hash contract。
 11. `T-24 Type Deduction / auto / decltype / Forwarding` 已新增：auto copy/borrow、decltype expression category、decltype(auto) dangling risk、forwarding reference、range-for policy。
-12. `A-01 auto_ptr 與 Move Semantics 的誕生` 已新增並加深為 Appendix deep dive：ownership transfer problem、destructive copy、non-const copy constructor、auto_ptr_ref proxy、container/algorithm generic assumption、std::move pipeline、move assignment 的 RHS value category / overload resolution、unique_ptr 的 deleted copy + move、Pixel-Renderer owner type checklist。
-13. 下一輪缺口盤點整理在 Phase G / Phase H；另外仍可做局部校稿與前段章節補 SVG / 深度。
+12. `T-25 Static Storage / Global State / Initialization Order` 已新增：static storage duration、static initialization order、function-local static、inline variable/linkage、thread_local、composition root、global resource cache policy。
+13. `A-01 auto_ptr 與 Move Semantics 的誕生` 已新增並加深為 Appendix deep dive：ownership transfer problem、destructive copy、non-const copy constructor、auto_ptr_ref proxy、container/algorithm generic assumption、std::move pipeline、move assignment 的 RHS value category / overload resolution、unique_ptr 的 deleted copy + move、Pixel-Renderer owner type checklist。
+14. `T-26 Regular Types / Equality / Hashing / Ordering` 已新增：Regular/Semiregular、equality law、hash consistency、strict weak ordering、float/NaN/epsilon pitfalls、cache key、command diff、golden test equality policy。
+15. `A-02 Pointer 語意地圖` 已新增：raw pointer、reference、span/view、unique_ptr、shared_ptr、weak_ptr、resource id / handle 的 semantic taxonomy。
+16. `A-06 RAII 為什麼是 C++ 的核心` 已新增：C cleanup path、goto cleanup、exception unwinding、partial initialization、destructor 不應 throw、scope guard、Pixel-Renderer RAII wrapper policy。
+17. 下一輪缺口盤點整理在 Phase G / Phase H；另外仍可做局部校稿與前段章節補 SVG / 深度。
 
 ### Phase G：第四輪缺口盤點
 
-重新掃過目前 `T-01` ~ `T-18`、`T-22` ~ `T-24` 與 `I-01` ~ `I-20` 後，結論是：C++ 語意主線已經完整到可以支撐 framebuffer/backend refactor；但如果目標是把 Pixel-Renderer 擴充到 UI、shader、asset/resource、跨平台工作流與可量測效能，還有幾個主題目前只是散落在各章裡，尚未成為正式教學路徑。
+重新掃過目前 `T-01` ~ `T-18`、`T-22` ~ `T-26` 與 `I-01` ~ `I-20` 後，結論是：C++ 語意主線已經完整到可以支撐 framebuffer/backend refactor；但如果目標是把 Pixel-Renderer 擴充到 UI、shader、asset/resource、跨平台工作流與可量測效能，還有幾個主題目前只是散落在各章裡，尚未成為正式教學路徑。
 
 這一輪不建議立刻把所有候選都寫成 HTML。應先分成「必須補正式章」、「應加深既有章」、「暫時不進主線」三類。
 
@@ -924,9 +940,15 @@ Pixel-Renderer relevance：
 
 ##### T-25 Static Storage / Global State / Initialization Order
 
-目前 `T-03` 有 storage duration，`T-01` 有 translation unit，`T-06` 有 RAII，但還沒有完整處理 static/global state 的工程後果。
+已新增正式章節：
 
-應回答：
+```text
+docs/tutorial-cpp/theory/t25_static_storage_global_state_initialization.html
+```
+
+`T-03` 有 storage duration，`T-01` 有 translation unit，`T-06` 有 RAII；T-25 已把這些接到 static/global state 的工程後果，避免 renderer owner state 被 hidden global lifetime 污染。
+
+已補上的問題：
 
 - static storage duration 和 object lifetime 如何開始/結束？
 - global object initialization order across translation units 為什麼危險？
@@ -941,17 +963,17 @@ Pixel-Renderer relevance：
 - global resource cache 會污染 golden tests 和 deterministic replay。
 - static font atlas / default texture 若要存在，應該有明確 owner 或 composition root。
 
-建議章節：
-
-```text
-T-25  Static Storage / Global State / Initialization Order
-```
-
 ##### T-26 Regular Types / Equality / Hashing / Ordering
 
 舊章曾提到 Regular / Semiregular，現在散落在 `T-08` / `T-09`，但沒有完整成章。
 
-應回答：
+狀態：已完成。
+
+```text
+docs/tutorial-cpp/theory/t26_regular_types_equality_hashing_ordering.html
+```
+
+已補上的問題：
 
 - Regular / Semiregular / Movable / Copyable 不是語法分類，而是 type law。
 - equality 要滿足 reflexive / symmetric / transitive；浮點、NaN、epsilon 會破壞哪些假設？
@@ -965,7 +987,7 @@ Pixel-Renderer relevance：
 - golden test / command buffer diff 需要定義 equality。
 - `float` 參與 key 或 comparison 時要非常小心。
 
-建議章節：
+正式章節：
 
 ```text
 T-26  Regular Types / Equality / Hashing / Ordering
@@ -1036,16 +1058,10 @@ T-26  Regular Types / Equality / Hashing / Ordering
 
 #### H4：建議優先順序
 
-如果接下來繼續補 theory，T-23 與 T-24 已完成；下一輪優先順序建議：
+如果接下來繼續補 theory，T-23、T-24、T-25、T-26 已完成；下一輪優先順序建議：
 
 ```text
-P0  T-25 Static Storage / Global State / Initialization Order
-    因為它會影響 tests、resource cache、backend lifetime、deterministic replay。
-
-P2  T-26 Regular Types / Equality / Hashing / Ordering
-    因為它服務 pipeline state cache、command diff、resource registry。
-
-P2  加深 T-05 / T-06 / T-10
+P1  加深 T-05 / T-06 / T-10
     補 assignment、exception guarantee、nodiscard、backend init cleanup。
 ```
 
@@ -1057,3 +1073,38 @@ P2  加深 T-05 / T-06 / T-10
 - 不重推圖學數學。
 - 不急著修改 README。
 - 不先進入 `src` 大重構，除非使用者明確切換到實作。
+
+## 8. Appendix / Deep Dive 分流
+
+使用者明確指出新的思考偏好：透過 problem genealogy / semantic archaeology 回到概念當初要解決的問題，避免倒果為因；再用多視角 bootstrapping 檢查同一概念在語法、機制、語意 contract、invariant、工程設計中的不同面向。
+
+因此 Appendix 的定位應該是：
+
+- 不取代主線章節。
+- 不只是 FAQ。
+- 承接「為什麼這個概念會長成這樣」的深挖。
+- 用 naive solution -> failure -> abstraction upgrade 的方式補森林視角。
+
+已完成：
+
+```text
+A-01  auto_ptr 與 Move Semantics 的誕生
+A-02  Pointer 語意地圖：address、borrow、owner、handle
+A-06  RAII 為什麼是 C++ 的核心，不只是 destructor 技巧
+```
+
+建議候選：
+
+```text
+A-03  Header / Linker 錯誤考古
+A-04  SDL Present Path 考古：從 BitBlt 到 OS compositor
+A-05  CMake 為什麼存在：從手打 g++ 到 target graph
+A-07  Type Erasure / Virtual / Variant 的設計壓力史
+A-08  Testing Golden Image 的問題生成史
+```
+
+排序建議：
+
+1. `A-04` 優先，因為使用者前面密集追問 SDL / Win32 / compositor / framebuffer path。
+2. `A-05` 適合在進一步寫 I-24 / CI 前補，避免 CMake 只像工具語法。
+3. `A-03` 適合回補 T-01 / I-17，把 header/linker 錯誤從現象拉回 translation unit / symbol / ABI。

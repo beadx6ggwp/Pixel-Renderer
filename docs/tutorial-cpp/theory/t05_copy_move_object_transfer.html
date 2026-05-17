@@ -60,7 +60,7 @@ td { padding: 8px 14px; border-bottom: 1px solid var(--border); vertical-align: 
   <span class="nav-sep">/</span>
   <span class="nav-cur">T-05 — Copy / Move / Object Transfer</span>
   <div class="nav-right">
-    <a href="t24_type_deduction_auto_decltype_forwarding.html">&larr; T-24</a>
+    <a href="t26_regular_types_equality_hashing_ordering.html">&larr; T-26</a>
     <a href="t06_raii_resource_ownership_exception_safety.html">T-06 &rarr;</a>
   </div>
 </nav>
@@ -77,7 +77,7 @@ td { padding: 8px 14px; border-bottom: 1px solid var(--border); vertical-align: 
 </div>
 
 <p>
-T-04 已經把 value category 說清楚：<code>std::move(x)</code> 只是把 expression 轉成 xvalue，不會自己搬東西。T-22 接著補上 const/cv-qualification：如果 source 是 <code>const</code>，xvalue 也不一定能被 move-from。T-23 又補了一層：call expression 會先經過 overload resolution、conversion、operator selection。T-24 再補上 deduction：<code>auto</code> / <code>decltype(auto)</code> 可能 copy、borrow 或保留 reference。那真正搬東西的是什麼？答案不是某個魔法語法，而是 type 自己定義的 object transfer operations：copy constructor、copy assignment、move constructor、move assignment，以及 return-by-value 的 result object formation。
+T-04 已經把 value category 說清楚：<code>std::move(x)</code> 只是把 expression 轉成 xvalue，不會自己搬東西。T-22 接著補上 const/cv-qualification：如果 source 是 <code>const</code>，xvalue 也不一定能被 move-from。T-23 又補了一層：call expression 會先經過 overload resolution、conversion、operator selection。T-24 再補上 deduction：<code>auto</code> / <code>decltype(auto)</code> 可能 copy、borrow 或保留 reference。T-25 則提醒你不要把 owner state 偷藏進 static/global lifetime。T-26 再補上 regular type、equality、hash、ordering：不是每個 type 都適合像普通 value 一樣丟進 container 或 cache key。那真正搬東西的是什麼？答案不是某個魔法語法，而是 type 自己定義的 object transfer operations：copy constructor、copy assignment、move constructor、move assignment，以及 return-by-value 的 result object formation。
 </p>
 
 <p>

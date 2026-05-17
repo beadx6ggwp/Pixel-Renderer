@@ -62,7 +62,7 @@ td { padding: 8px 14px; border-bottom: 1px solid var(--border); vertical-align: 
   <span class="nav-cur">T-24 — Type Deduction / auto / decltype / Forwarding</span>
   <div class="nav-right">
     <a href="t23_overload_conversion_operator_design.html">&larr; T-23</a>
-    <a href="t05_copy_move_object_transfer.html">T-05 &rarr;</a>
+    <a href="t25_static_storage_global_state_initialization.html">T-25 &rarr;</a>
   </div>
 </nav>
 
@@ -406,16 +406,16 @@ Avoid generic auto&& in domain APIs:
 </div>
 
 <p>
-下一章回到 object transfer。現在你已經知道 expression 如何被分類、如何被 const 限制、如何被 overload/conversion 選中，以及 deduction 如何保留或丟掉 reference；T-05 會接著看 object 被選中後如何真正 copy、move、assign、return。
+下一章先補 static/global state。現在你已經知道 expression 如何被分類、如何被 const 限制、如何被 overload/conversion 選中，以及 deduction 如何保留或丟掉 reference；T-25 會接著看哪些 state 不該藏進 static/global lifetime，否則 copy/move/ownership 的推理會被 hidden dependency 污染。
 </p>
 
 <div class="next-ch">
   <div>
     <div class="next-label">NEXT THEORY</div>
-    <div class="next-title">T-05 &mdash; Copy / Move / Object Transfer</div>
-    <div class="next-desc">下一章把 deduction 之後的 value/reference 選擇接到真正的 object transfer：copy construction、move construction、assignment、return by value。</div>
+    <div class="next-title">T-25 &mdash; Static Storage / Global State / Initialization Order</div>
+    <div class="next-desc">下一章把 hidden global lifetime、initialization order、composition root 和 renderer state ownership 分清楚。</div>
   </div>
-  <a class="next-arrow" href="t05_copy_move_object_transfer.html">&rarr;</a>
+  <a class="next-arrow" href="t25_static_storage_global_state_initialization.html">&rarr;</a>
 </div>
 
 </body>
