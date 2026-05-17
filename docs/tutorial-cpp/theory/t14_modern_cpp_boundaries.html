@@ -60,7 +60,7 @@ td { padding: 8px 14px; border-bottom: 1px solid var(--border); vertical-align: 
   <span class="nav-cur">T-14 — Modern C++ Boundaries</span>
   <div class="nav-right">
     <a href="t13_concurrency_memory_model_job_system.html">&larr; T-13</a>
-    <a href="../impl/i14_immediate_mode_ui_integration_boundary.html">I-14 &rarr;</a>
+    <a href="t15_numeric_semantics_pixel_formats.html">T-15 &rarr;</a>
   </div>
 </nav>
 
@@ -272,16 +272,16 @@ Long-term:
 </div>
 
 <p>
-Theory Track 到這裡形成閉環。接下來回到 Implementation Track，把 UI/ImGui 和 shader pipeline 的接入邊界補成工程圖。
+Modern C++ 的採用邊界講完後，還有一個 renderer-oriented 的 C++ 語意缺口：numeric semantics。接下來先補 integer、float、packed pixel、bit operation 和 deterministic testing 的規則，再回到 UI/ImGui 和 shader pipeline。
 </p>
 
 <div class="next-ch">
   <div>
-    <div class="next-label">NEXT IMPL</div>
-    <div class="next-title">I-14 — Immediate-mode UI Integration Boundary</div>
-    <div class="next-desc">下一章整理 UI state、layout、draw commands、font atlas、clip rect、alpha blend 如何進入 software renderer。</div>
+    <div class="next-label">NEXT THEORY</div>
+    <div class="next-title">T-15 — Numeric Semantics / Pixel Formats</div>
+    <div class="next-desc">下一章整理 integer overflow、float precision、packed pixel、bit shift、endianness 與 renderer golden test 的 numeric policy。</div>
   </div>
-  <a class="next-arrow" href="../impl/i14_immediate_mode_ui_integration_boundary.html">&rarr;</a>
+  <a class="next-arrow" href="t15_numeric_semantics_pixel_formats.html">&rarr;</a>
 </div>
 
 </body>

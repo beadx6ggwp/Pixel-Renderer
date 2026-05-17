@@ -59,7 +59,7 @@ td { padding: 8px 14px; border-bottom: 1px solid var(--border); vertical-align: 
   <span class="nav-cur">I-07 — CMake Target-based Build</span>
   <div class="nav-right">
     <a href="i06_make_workflow.html">&larr; I-06</a>
-    <a href="i08_framebuffer_ownership_refactor.html">I-08 &rarr;</a>
+    <a href="i19_preprocessor_compile_time_configuration.html">I-19 &rarr;</a>
   </div>
 </nav>
 
@@ -598,16 +598,16 @@ SDL backend build:
 </div>
 
 <p>
-下一章才開始真正回到 Pixel-Renderer architecture：把 framebuffer ownership 從 Win32 display resource 裡抽出來，讓 renderer core 擁有 CPU framebuffer，再讓 DisplayBackend 只負責 present。
+下一章先補一個 CMake target 之外的 compile-time 層次：preprocessor。跨平台不是到處塞 <code>#ifdef</code>，而是把 compile-time configuration 放在正確的 target 與 platform boundary。
 </p>
 
 <div class="next-ch">
   <div>
     <div class="next-label">NEXT IMPLEMENTATION</div>
-    <div class="next-title">I-08 &mdash; Framebuffer Ownership Refactor</div>
-    <div class="next-desc">下一章把 build/toolchain 地基用回專案架構：owned Framebuffer、borrowed view、RenderDevice、DisplayBackend 的責任邊界。</div>
+    <div class="next-title">I-19 &mdash; Preprocessor / Compile-time Configuration</div>
+    <div class="next-desc">下一章整理 include、macro、platform macro、feature macro 與 target_compile_definitions，避免 renderer core 被編譯條件污染。</div>
   </div>
-  <a class="next-arrow" href="i08_framebuffer_ownership_refactor.html">&rarr;</a>
+  <a class="next-arrow" href="i19_preprocessor_compile_time_configuration.html">&rarr;</a>
 </div>
 
 </body>

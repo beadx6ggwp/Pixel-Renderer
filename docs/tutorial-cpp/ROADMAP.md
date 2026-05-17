@@ -94,9 +94,14 @@ new      原本缺席的新主題
 T-01  Compilation / Linkage / ABI
 T-02  Type System / Initialization
 T-03  Object Model / Storage / Lifetime / UB
+T-18  Casts / Type Punning / Bit Cast
 T-04  Value Category / Reference System
+T-22  Const / cv-qualification / Value Category
+T-23  Overload Resolution / Conversion / Operator Design
+T-24  Type Deduction / auto / decltype / Forwarding
 T-05  Copy / Move / Object Transfer
 T-06  RAII / Resource Ownership / Exception Safety
+T-17  Smart Pointer / Ownership Adapters
 T-07  Callable / Overload / Lambda
 T-08  Templates / Concepts / Type Traits
 T-09  STL / Containers / Iterators / Allocator Basics
@@ -105,6 +110,8 @@ T-11  Runtime Polymorphism / Type Erasure / Variant
 T-12  Low-level Performance / Memory Layout
 T-13  Concurrency / Memory Model / Job System Intro
 T-14  Modern C++ Boundaries
+T-15  Numeric Semantics / Pixel Formats / Bit Operations
+T-16  API Design Conventions
 ```
 
 ### Implementation Track
@@ -127,37 +134,40 @@ I-14  Immediate-mode UI Integration Boundary
 I-15  Shader Pipeline Interface Boundary
 I-16  Verification / Golden Image / Regression Testing
 I-17  Header Boundary / Dependency Hygiene
+I-18  Diagnostics / Sanitizers / Static Analysis
+I-19  Preprocessor / Compile-time Configuration
+I-20  Dependency Management / Third-party Integration
 ```
 
 ## 3. 舊章節吸收表
 
 | 早期章節 | 新位置 | 處理 | 理由 |
 |---|---|---|---|
-| Ch01 編譯模型 | T-01 + I-02/I-03 | split + deepen | Ch01 應擴成 declaration/definition、ODR、linkage、ABI；toolchain/CMake 則放 implementation。 |
-| Ch02 記憶體四區 | T-03 + T-12 | deepen | 目前有 stack/heap/static/code，但還要補 storage duration、object lifetime、alignment、object representation、UB、cache locality。 |
+| Ch01 編譯模型 | T-01 + I-02/I-03 | split + deepen | 已擴成 declaration/definition、ODR、linkage、ABI；toolchain/CMake 放 implementation。 |
+| Ch02 記憶體四區 | T-03 + T-12 | deepen | 已從 stack/heap/static/code 擴到 storage duration、object lifetime、alignment、object representation、UB、cache locality。 |
 | Ch03 指標與參考 | T-03 + T-04 | split + deepen | pointer/reference 一部分是 memory alias，一部分是 reference/value category system。 |
-| Ch04 struct 與 class | T-02 + T-10 | merge + deepen | struct/class 應接 type system、access control、invariant、aggregate、conversion。 |
+| Ch04 struct 與 class | T-02 + T-10 | merge + deepen | 已接到 type system、access control、invariant、aggregate、conversion。 |
 | Ch05 建構與解構 | T-03 + T-06 | merge + deepen | constructor/destructor 是 object lifetime，也是 RAII/resource ownership 的入口。 |
-| Ch06 Copy 語意 | T-05 + T-06 | merge | copy 應跟 move、resource ownership、exception safety 一起講。 |
-| Ch07 Rule of 0/3/5 | T-06 | deepen | 需要補 Rule of Zero 與 exception safety、copy-and-swap、move-only handle、custom deleter。 |
-| Ch08 Move 是 ownership transfer | T-05 | merge + deepen | 應放進完整 object transfer：copy/move/elision/moved-from state。 |
-| Ch09 std::move 與 value category | T-04 + T-05 | split + deepen | `std::move` 屬於 value category cast；move constructor 屬於 transfer。 |
-| Ch10 Return by value 與 RVO | T-04 + T-05 | merge + deepen | 需要接 C++17 prvalue、temporary materialization、guaranteed copy elision。 |
+| Ch06 Copy 語意 | T-05 + T-06 | merge | 已把 copy 跟 move、resource ownership、exception safety 一起講。 |
+| Ch07 Rule of 0/3/5 | T-06 | deepen | 已補 Rule of Zero 與 exception safety、copy-and-swap、move-only handle、custom deleter。 |
+| Ch08 Move 是 ownership transfer | T-05 | merge + deepen | 已放進完整 object transfer：copy/move/elision/moved-from state。 |
+| Ch09 std::move 與 value category | T-04 + T-22 + T-05 | split + deepen | `std::move` 屬於 value category cast；const/cv 會限制 move-from capability；move constructor 屬於 transfer。 |
+| Ch10 Return by value 與 RVO | T-04 + T-05 | merge + deepen | 已接 C++17 prvalue、temporary materialization、guaranteed copy elision。 |
 | Ch11 In-place construction | T-03 + T-09 | split | placement new/construct_at 是 storage/lifetime；emplace 是 container API。 |
 | Ch12 vector reallocation 與 noexcept move | T-09 + T-06 | split + deepen | vector reallocation 屬於 container；`noexcept move` 屬於 exception safety/resource type design。 |
-| Ch13 Type = states + operations + invariants | T-10 | keep + deepen | 方向正確，應補 contract、precondition/postcondition、error handling。 |
-| Ch14 Regular / Semiregular types | T-08 + T-09 | merge + deepen | regular 概念應接 concepts、templates、STL algorithm requirements。 |
-| Ch15 Operator / Template 與數學型別 | T-02 + T-04 + T-08 | split + deepen | operator 涉及 type operation、value category、overload resolution；template 應獨立加深。 |
-| Ch16 智慧指標 | T-06 | keep + deepen | 應補 custom deleter、aliasing pitfalls、observer pointer/span/reference、shared ownership 的判準。 |
-| Ch17 繼承、virtual 與 vtable | T-11 | keep + deepen | 應補 type erasure、variant、visitor、static polymorphism alternatives。 |
-| Ch18 設計模式速查 | T-11 + I-10/I-11/I-12 | split | pattern 應分成 theory vocabulary 與 renderer command/UI/shader 實作。 |
+| Ch13 Type = states + operations + invariants | T-10 | keep + deepen | 方向正確，已補 contract、precondition/postcondition、error handling。 |
+| Ch14 Regular / Semiregular types | T-08 + T-09 | merge + deepen | regular 概念已接 concepts、templates、STL algorithm requirements。 |
+| Ch15 Operator / Template 與數學型別 | T-02 + T-04 + T-22 + T-23 + T-24 + T-08 | split + deepen | operator 涉及 type operation、value category、const capability、overload/conversion；template 與 deduction 應獨立加深。 |
+| Ch16 智慧指標 | T-06 | keep + deepen | 已補 custom deleter、aliasing pitfalls、observer pointer/span/reference、shared ownership 的判準。 |
+| Ch17 繼承、virtual 與 vtable | T-11 | keep + deepen | 已補 type erasure、variant、visitor、static polymorphism alternatives。 |
+| Ch18 設計模式速查 | T-11 + I-10/I-11/I-12 | split | pattern 已分成 theory vocabulary 與 renderer command/UI/shader 實作。 |
 | I-01 渲染器架構導覽 | I-01 | keep | 作為 implementation track 入口，後續章節從這裡拆 refactor plan。 |
 
-## 4. 缺席但應新增的 C++ 主題
+## 4. 已補齊的 C++ 主題覆蓋範圍
 
 ### 4.1 Compilation / Linkage / ABI
 
-目前 Ch01 還不夠完整。應補：
+新版 `T-01`、`I-02`、`I-03` 已補：
 
 - declaration vs definition
 - ODR
@@ -172,7 +182,7 @@ I-17  Header Boundary / Dependency Hygiene
 
 ### 4.2 Initialization 與 Conversion
 
-目前缺：
+新版 `T-02` 已涵蓋：
 
 - default/value/direct/copy/list initialization
 - aggregate initialization
@@ -185,7 +195,7 @@ I-17  Header Boundary / Dependency Hygiene
 
 ### 4.3 Object Model / UB
 
-目前缺：
+新版 `T-03` 已涵蓋：
 
 - storage vs object lifetime
 - placement new / `std::construct_at`
@@ -199,7 +209,7 @@ I-17  Header Boundary / Dependency Hygiene
 
 ### 4.4 Value Category 完整版
 
-目前只接到 `std::move`，應完整補：
+新版 `T-04`、`T-05` 已從 `std::move` 擴到：
 
 - expression has type and value category
 - lvalue / xvalue / prvalue
@@ -212,9 +222,50 @@ I-17  Header Boundary / Dependency Hygiene
 - operator return category
 - dangling reference in command/lambda/UI data
 
+新增 Appendix `A-01` 後，`auto_ptr` 的疑問被放成 deep dive，而不是主線正式章節：
+
+- `auto_ptr` 能 transfer ownership，但走的是 copy-looking syntax
+- non-const copy constructor 反映它必須修改 source，和正常 copy expectation 衝突
+- destructive copy 破壞 Copyable / Regular type 假設
+- generic container / algorithm 會因為「copy 消耗 source」而失去局部推理
+- C++11 rvalue reference 把 transfer 變成語言層語意通道
+- `std::move` 只是把 expression 轉成 xvalue；真正 transfer 發生在 move constructor / move assignment
+- `unique_ptr` 以 deleted copy + explicit move 取代 `auto_ptr`
+- Pixel-Renderer owner type 應避免任何「copy 偷 ownership」的 API
+
+新增 `T-22` 後，value category 和 const/cv-qualification 的交界也已補上：
+
+- top-level const vs low-level const
+- `std::move(const T&)` 產生 `const T&&`，通常不能呼叫 move constructor
+- member function `const` 改變 `this` 的型別
+- `mutable` 是 logical const 的例外，不是 API contract 後門
+- ref-qualified member function：`foo() &`、`foo() const&`、`foo() &&`
+- `const_cast` 只改 access path，不改 object truth
+- Pixel-Renderer API：read-only present、mutable render borrow、consume/move 分開表達
+
+新增 `T-23` 後，operator / conversion / overload 的語意交界也已補上：
+
+- overload resolution 的 candidate / viable / ranking 工作模型
+- implicit conversion 與 user-defined conversion 如何穿過 domain boundary
+- `explicit` constructor 與 `explicit operator bool`
+- hidden friend 與 ADL 在 math type operator 的用途
+- non-mutating operator by value、compound assignment returns `T&`
+- equality / ordering / hash 的 cache key contract
+- Pixel-Renderer strong type policy：TextureId、ShaderId、RGBA8、PipelineState 不隱式混用 raw integer
+
+新增 `T-24` 後，type deduction 的語意交界也已補上：
+
+- `auto` by value 會丟掉 reference 與 top-level const，建立新 object
+- `auto&`、`const auto&`、`auto&&` 在 copy / borrow / forwarding 上的差異
+- range-for 裡 `auto` / `const auto&` / `auto&` 對 command buffer 的影響
+- `decltype(expr)` 如何把 value category 轉成 `T` / `T&` / `T&&`
+- `decltype(auto)` 作為 forwarding accessor 的工具與 dangling risk
+- template deduction 與 `std::forward` 如何保留 caller 的 lvalue/rvalue intent
+- Pixel-Renderer deduction policy：domain API 明確寫 ownership/borrow，generic wrapper 才使用 forwarding reference
+
 ### 4.5 Callable / Lambda / Overload
 
-目前幾乎缺席：
+新版 `T-07` 已涵蓋：
 
 - function pointer
 - member function pointer
@@ -228,7 +279,7 @@ I-17  Header Boundary / Dependency Hygiene
 
 ### 4.6 Templates / Concepts / Type Traits
 
-目前只有 operator/template 數學型別入門。應補：
+新版 `T-08` 已從 operator/template 數學型別入門擴到：
 
 - function template
 - class template
@@ -243,7 +294,7 @@ I-17  Header Boundary / Dependency Hygiene
 
 ### 4.7 STL / Containers / Iterators
 
-目前只講 vector reallocation。應補：
+新版 `T-09` 已從 vector reallocation 擴到：
 
 - `std::array`
 - `std::vector`
@@ -256,9 +307,42 @@ I-17  Header Boundary / Dependency Hygiene
 - allocator basics
 - command buffer / vertex buffer 的 container 選擇
 
-### 4.8 Error Handling / Contracts
+### 4.8 Smart Pointer / Ownership Adapters
 
-目前分散在 invariant。應補：
+第三輪缺口盤點新增 `T-17`，把原本藏在 T-06 裡的 smart pointer 獨立成 ownership adapter 主題：
+
+- `unique_ptr` as unique ownership
+- `unique_ptr<Base>` and virtual destructor
+- `make_unique`
+- custom deleter and deleter size/cost
+- incomplete type / PImpl
+- `shared_ptr` control block and reference count
+- `weak_ptr` and cycles
+- `shared_ptr` aliasing constructor
+- raw pointer / reference / span as borrow, not ownership
+- resource id / generational handle for renderer command buffers
+
+理由：smart pointer 不是「更安全的 pointer」，而是會改變 lifetime policy 的 type。Renderer 若濫用 `shared_ptr`，會讓 command buffer、resource cache、debug dump、hot path ownership 變得不透明。
+
+### 4.9 Casts / Type Punning / Bit Cast
+
+第三輪缺口盤點新增 `T-18`，補上 object representation 與 renderer buffer interpretation 中間缺少的 cast layer：
+
+- C-style cast 為什麼不適合 C++ code review
+- `static_cast` as explicit value conversion
+- `const_cast` at legacy C API boundary
+- `dynamic_cast` for debug/tool polymorphic checks
+- `reinterpret_cast` does not create object lifetime / alignment / aliasing permission
+- `std::memcpy` and `std::bit_cast` for representation copy
+- `std::byte` view for raw binary data
+- file/image/network data 不應直接 cast 成 C++ struct
+- Pixel-Renderer cast policy：Pack/Unpack define semantic pixel format，platform cast 隔離在 adapter layer
+
+理由：renderer 很容易把 framebuffer bytes、packed pixel、SDL locked pointer、Win32 DIB memory、file binary data 混成「反正都是 bytes」。沒有這章，T-03 的 strict aliasing 和 T-15 的 pixel format 會缺少中間的工程規則。
+
+### 4.10 Error Handling / Contracts
+
+新版 `T-10` 已把分散在 invariant 的問題整理成：
 
 - `assert`
 - `optional`
@@ -269,9 +353,9 @@ I-17  Header Boundary / Dependency Hygiene
 - precondition/postcondition
 - fail-fast vs recoverable error
 
-### 4.9 Low-level Performance
+### 4.11 Low-level Performance
 
-目前缺：
+新版 `T-12` 已涵蓋：
 
 - cache line
 - cache locality
@@ -283,9 +367,9 @@ I-17  Header Boundary / Dependency Hygiene
 - memory bandwidth
 - pointer aliasing and optimizer
 
-### 4.10 Concurrency / Memory Model
+### 4.12 Concurrency / Memory Model
 
-不必太早深挖，但 roadmap 要保留位置：
+新版 `T-13` 已建立 intro 層級：
 
 - thread
 - mutex
@@ -294,6 +378,69 @@ I-17  Header Boundary / Dependency Hygiene
 - memory order intro
 - producer-consumer
 - tile/job system intro
+
+### 4.13 Numeric Semantics / Pixel Formats
+
+第三輪審查新增 `T-15`，補上 renderer C++ 會很快撞到但原本沒有獨立地基的 numeric layer：
+
+- fixed-width integer
+- signed/unsigned overflow rule
+- integer promotion and narrowing
+- bit shift and mask policy
+- packed RGBA/BGRA pixel format
+- semantic channel order vs memory byte order vs API interpretation
+- floating-point precision, rounding, epsilon
+- exact vs tolerance policy for golden image tests
+
+### 4.14 API Design Conventions
+
+第三輪審查新增 `T-16`，把前面分散的 ownership、lifetime、value category、contract、header boundary 收束成 API 設計規則：
+
+- owner / view / borrow
+- `const` as capability boundary
+- `T&`、`T*`、`std::span<T>`、by value 的語意差異
+- out parameter vs return by value
+- recoverable failure vs precondition violation
+- namespace / header boundary as API surface
+- Pixel-Renderer 第一版 API policy：`Framebuffer` owns storage、`RenderDevice` mutably borrows、`DisplayBackend` read-only presents
+
+### 4.15 Diagnostics / Sanitizers / Static Analysis
+
+第三輪審查新增 `I-18`，補上工具鏈與 verification 中間缺少的一層：
+
+- compiler warnings as source-level suspicion
+- ASan for memory access contract
+- UBSan for C++ semantic failure
+- static analysis / clang-tidy for bug patterns
+- Debug / Sanitized / Release profile separation
+- renderer-specific diagnostics policy
+- golden image mismatch 如何接回 sanitizer / debugger
+
+### 4.16 Preprocessor / Compile-time Configuration
+
+第三輪審查新增 `I-19`，補上 CMake target 與實際 C++ parsing 之間的 compile-time selection layer：
+
+- preprocessor 在 C++ type checking 前處理 include / macro / conditional compilation
+- include guard / `#pragma once`
+- object-like macro / function-like macro / configuration macro 的風險
+- platform macro vs feature macro
+- `target_compile_definitions` 如何把 macro 綁在 target boundary
+- compile-time selection vs runtime polymorphism
+- Pixel-Renderer policy：platform `#ifdef` 留在 backend / factory / build boundary，不進 renderer core
+
+### 4.17 Dependency Management / Third-party Integration
+
+第三輪審查新增 `I-20`，補上第三方 library 接入專案時的完整工程模型：
+
+- header/include path 只服務 compiler declaration lookup
+- compile definition 服務 preprocessor / feature selection
+- link library 服務 linker symbol resolution
+- runtime artifact 服務 OS loader
+- package discovery/version 服務 build system 找到前面那些東西
+- SDL / OpenGL / D3D / Metal / ImGui 的接入型態差異
+- CMake imported target / `target_link_libraries(PRIVATE/PUBLIC)` 的 boundary 意義
+- Windows DLL、macOS dylib/framework/rpath、Linux `.so` runtime loading
+- Pixel-Renderer policy：第三方 library 隔離在 display/backend/UI adapter target，不污染 renderer core
 
 ## 5. 新版 index 已如何整理
 
@@ -324,7 +471,7 @@ Status
 
 重點：使用者進入教學時只會看到統一版主線。早期章節檔案已移除，遷移關係只保留在 roadmap/audit 作為維護紀錄。
 
-## 6. 建議實作順序
+## 6. 已完成的生成順序紀錄
 
 ### Phase 1: 課程結構重整
 
@@ -333,7 +480,7 @@ Status
 3. 在 roadmap/audit 保留遷移紀錄，index 不再顯示舊章節作為閱讀入口。
 4. 決定新版檔名規則。
 
-### Phase 2: 先重寫最影響理解的 theory
+### Phase 2: 已重寫最影響理解的 theory
 
 1. T-01 Compilation / Linkage / ABI
 2. T-03 Object Model / Lifetime / UB
@@ -341,7 +488,7 @@ Status
 4. T-05 Copy / Move / Object Transfer
 5. T-08 Templates / Concepts / Type Traits
 
-### Phase 3: 接 implementation track
+### Phase 3: 已接上 implementation track
 
 1. I-02 Toolchain Map
 2. I-03 Build Workflow: g++ driver / VSCode / GDB process control / Make / CMake
@@ -352,7 +499,7 @@ Status
 7. I-08 Framebuffer Ownership Refactor
 8. I-09 DisplayBackend Interface
 
-### Phase 4: 回補 renderer-oriented engineering topics
+### Phase 4: 已回補 renderer-oriented engineering topics
 
 1. T-12 Low-level Performance / Memory Layout
 2. I-13 Renderer Frontend / Backend Engineering Boundary
@@ -454,6 +601,9 @@ I-04  Debugger Fundamentals
 I-05  VSCode Build / Debug / IntelliSense Setup
 I-06  Make Workflow
 I-07  CMake Target-based Build
+I-19  Preprocessor / Compile-time Configuration
+I-20  Dependency Management / Third-party Integration
+I-18  Diagnostics / Sanitizers / Static Analysis
 ```
 
 Part 結束時應能回答：
@@ -462,7 +612,9 @@ Part 結束時應能回答：
 - header、object file、symbol、library、ABI 的邊界在哪？
 - VSCode task、launch、IntelliSense 各自包住哪個工具？
 - GDB/LLDB 停住的是 source line、machine address，還是 process state？
+- `#ifdef`、platform macro、feature macro 應該停在哪個 compile-time boundary？
 - 第三方 library 進專案時，是 include path、library path、linker input，還是 runtime dependency？
+- warnings、ASan、UBSan、static analysis 各自能觀測哪一層錯誤？
 
 ### Part 1: Object Exists in Storage
 
@@ -471,16 +623,20 @@ Part 結束時應能回答：
 ```text
 T-02  Type System / Initialization
 T-03  Object Model / Storage / Lifetime / UB
+T-18  Casts / Type Punning / Bit Cast
 T-06  RAII / Resource Ownership / Exception Safety
+T-17  Smart Pointer / Ownership Adapters
 ```
 
 Part 結束時應能回答：
 
 - storage 存在是否代表 object 已經存在？
 - initialization、construction、lifetime begin/end 有什麼差別？
+- cast 是否真的改變 object lifetime、alignment、aliasing permission？
 - destructor 為什麼是 C++ 解決 C resource discipline 的核心？
 - owned resource、borrowed view、observer pointer 應該如何分辨？
 - framebuffer、DIBSection、SDL_Texture、file handle 這類 resource 應由誰釋放？
+- `unique_ptr`、`shared_ptr`、`weak_ptr`、raw observer、resource handle 各自改變哪一種 lifetime policy？
 
 ### Part 2: Values Move Through the Program
 
@@ -488,6 +644,9 @@ Part 結束時應能回答：
 
 ```text
 T-04  Value Category / Reference System
+T-22  Const / cv-qualification / Value Category
+T-23  Overload Resolution / Conversion / Operator Design
+T-24  Type Deduction / auto / decltype / Forwarding
 T-05  Copy / Move / Object Transfer
 T-07  Callable / Overload / Lambda
 ```
@@ -495,6 +654,8 @@ T-07  Callable / Overload / Lambda
 Part 結束時應能回答：
 
 - expression 的 type 和 value category 為什麼是兩件事？
+- `const` 如何限制 mutation capability？為什麼 `std::move(const T&)` 通常不會真正 move？
+- overload resolution 和 conversion policy 如何影響 operator、strong id、resource handle？
 - `T&`、`const T&`、`T&&`、forwarding reference 分別在保證什麼？
 - operator overload 會不會回傳 dangling reference？
 - lambda capture by reference 在 UI command 或 render callback 裡為什麼危險？
@@ -531,6 +692,7 @@ I-10  Win32DisplayBackend
 I-11  SDLDisplayBackend
 I-12  Cross-platform Development Path
 I-13  Renderer Frontend / Backend Engineering Boundary
+T-16  API Design Conventions
 ```
 
 Part 結束時應能回答：
@@ -540,6 +702,7 @@ Part 結束時應能回答：
 - 什麼時候用 virtual interface？什麼時候用 template policy？什麼時候用 function object？
 - Win32 `BitBlt`、SDL `UpdateTexture`、macOS present path 如何共用同一個 renderer core？
 - 怎樣才算真的前後端分離，而不是只是把 class 名字改掉？
+- 如何把 owner/view/borrow、const-correctness、failure mode 寫進 API signature？
 
 ### Part 5: Performance and Future Systems
 
@@ -549,45 +712,90 @@ Part 結束時應能回答：
 T-12  Low-level Performance / Memory Layout
 T-13  Concurrency / Memory Model / Job System Intro
 T-14  Modern C++ Boundaries
+T-15  Numeric Semantics / Pixel Formats / Bit Operations
 I-14  Immediate-mode UI Integration Boundary
 I-15  Shader Pipeline Interface Boundary
 I-16  Verification / Golden Image / Regression Testing
 I-17  Header Boundary / Dependency Hygiene
+I-18  Diagnostics / Sanitizers / Static Analysis
 ```
 
 Part 結束時應能回答：
 
 - AoS / SoA 如何影響 vertex、fragment、UI command data？
 - cache locality 和 memory bandwidth 如何限制 software rasterizer？
+- packed pixel、integer overflow、float rounding 如何影響 color/depth/test determinism？
 - tile-based parallel rasterization 會碰到哪些 data race？
 - immediate-mode UI draw data 如何進 renderer，但不反向依賴 renderer internal？
 - shader pipeline interface 如何先用 C++ type system 表達，並讓每個 stage 都能測試與 debug？
+- warnings、sanitizers、static analysis 如何和 golden image tests 一起定位 renderer bug？
 
-## 11. 接下來生成順序
+## 11. 接下來的工作邊界
 
-因為現在已經有 `T-01`、`T-02`、`T-03`、`T-04`、`T-05`、`T-06`、`T-07`、`T-08`、`T-09`、`T-10`、`T-11`、`T-12`、`T-13`、`T-14`、`I-01`、`I-02`、`I-03`、`I-04`、`I-05`、`I-06`、`I-07`、`I-08`、`I-09`、`I-10`、`I-11`、`I-12`、`I-13`、`I-14`、`I-15`、`I-16`、`I-17`，新版教程骨架已先補齊。下一輪不再新增大章節，應該回到校稿、加深重點章節、整理 index，以及把對應 architecture 落到 `src` refactor；README 暫不動，除非使用者要求。
+現在已經有 `T-01`、`T-02`、`T-03`、`T-04`、`T-05`、`T-06`、`T-07`、`T-08`、`T-09`、`T-10`、`T-11`、`T-12`、`T-13`、`T-14`、`T-15`、`T-16`、`T-17`、`T-18`、`T-22`、`T-23`、`T-24`、`I-01`、`I-02`、`I-03`、`I-04`、`I-05`、`I-06`、`I-07`、`I-08`、`I-09`、`I-10`、`I-11`、`I-12`、`I-13`、`I-14`、`I-15`、`I-16`、`I-17`、`I-18`、`I-19`、`I-20`，以及 Appendix `A-01 auto_ptr / move semantics deep dive`。新版教程骨架、早期補圖、index 統一、舊章節移除、numeric semantics、diagnostics、API design、smart pointer ownership adapter、casts/type punning、const/cv/value category、overload/conversion/operator、type deduction、preprocessor、dependency management、auto_ptr historical deep dive 缺口都已完成；README 暫不動，除非使用者要求。
 
-第二輪審查詳見 `docs/tutorial-cpp/AUDIT.md`。後續以 audit 的 Phase A/B/C/D/E 為準：先補結構缺口，再加深骨架章，再補早期章節的 SVG / memory-style 圖解。
+第二輪審查詳見 `docs/tutorial-cpp/AUDIT.md`。Phase A/B/C/D/D.1 已完成：結構缺口已補、骨架章已加深、早期章節已補 SVG / memory-style 圖解、index 已改成統一版入口、舊 HTML 章節已移除。
 
-建議接下來順序：
+接下來分成兩條可能路線：
 
 ```text
-1. 加深骨架章
-   T-11、T-12、T-13、T-14、I-14、I-15 已加深第一輪；Phase B 目前完成第一輪。
+1. 文件校稿 / 局部加深
+   檢查各章是否還有 stale wording、章末 next link、SVG caption、verification 方法不足。
 
-2. 前段補圖與局部重寫
-   T-01、T-03、T-04、T-05、T-06 已補第一輪 SVG / memory-style 圖解。
+2. 第三輪缺口補強
+   Diagnostics / Sanitizers / Static Analysis、API Design Conventions、Part dependency map、preprocessor、dependency management 已補。
 
-3. index 整理
-   已改 index 成 Part-based curriculum，並移除 index 裡的舊長清單與舊 HTML 章節檔；README 暫不動，除非使用者要求。
+3. 第四輪缺口補強
+   重新審視後，下一批缺口不是 move/RAII 這類 C++ 核心語意，而是 renderer 專案工程化會需要的 frame loop、asset/resource、profiling、test infrastructure、standard utilities、arena/PMR、data-oriented design。value category 與 const/cv-qualification 交界已補成 T-22。
 
-4. src architecture refactor
+4. 第五輪語意交界補強
+   沿著 T-22 的角度，overload/conversion/operator 已補成 T-23，type deduction 已補成 T-24；下一批應檢查 static lifetime/global state、regular/equality/hash、exception guarantee 這類「語法看起來簡單，但實際語意跨很多層」的主題。
+
+5. src architecture refactor
    依 I-08 到 I-13 的設計，把 owned Framebuffer、DisplayBackend、Win32/SDL backend selection 逐步落地。
 ```
 
 這樣安排的理由：
 
 - `T-03` 要先於 framebuffer ownership，否則 owned buffer / borrowed pointer / platform resource 會講不清楚。
-- `T-04` 要先於 shader/UI callback，否則 reference、lambda capture、operator return category 的 dangling 問題會一直散落。
-- `I-05`、`I-06`、`I-07` 要先於 SDL/macOS backend；現在工具鏈、Make、CMake target boundary 已經有教學地基，可以開始進入 ownership refactor。
-- `I-01` 到 `I-17` 已經把 current architecture、toolchain、debugger、build workflow、framebuffer ownership、DisplayBackend、Win32/SDL/cross-platform、frontend/backend boundary、UI integration、shader pipeline boundary、verification、header hygiene 串成第一版工程地圖；`T-01` 到 `T-14` 也已經把 C++ 語意、containers、contracts、polymorphism、performance、concurrency、Modern C++ boundary 補齊。第二輪審查指出 FPGA 暫不進近期主線；testing / verification 已補成 implementation 章節。Phase B 已完成第一輪，接下來應進入 Phase C，對早期章節選擇性補 SVG / memory-style 圖解。
+- `T-04`、`T-22`、`T-23`、`T-24` 要先於 shader/UI callback，否則 reference、const capability、move-from-const、overload/conversion、type deduction、lambda capture、operator return category 的 dangling 問題會一直散落。
+- `I-05`、`I-06`、`I-07`、`I-19`、`I-20` 要先於 SDL/macOS backend；現在工具鏈、Make、CMake target boundary、compile-time configuration、third-party dependency boundary 已經有教學地基，可以開始進入 ownership refactor。
+- `I-01` 到 `I-20` 已經把 current architecture、toolchain、debugger、diagnostics、build workflow、preprocessor、dependency management、framebuffer ownership、DisplayBackend、Win32/SDL/cross-platform、frontend/backend boundary、UI integration、shader pipeline boundary、verification、header hygiene 串成第一版工程地圖；`T-01` 到 `T-18` 也已經把 C++ 語意、containers、contracts、polymorphism、performance、concurrency、Modern C++ boundary、numeric semantics、API design conventions、smart pointer ownership adapter、casts/type punning 補齊。第二輪審查指出 FPGA 暫不進近期主線；testing / verification 已補成 implementation 章節；index 已補 Part dependency map。
+
+第四輪審查後，建議新增或加深的下一批主題：
+
+```text
+P0  I-24 Test Infrastructure / CTest / CI
+    進 src refactor 前需要 test target / golden data / CI matrix 的工程地基。
+
+P1  I-21 Frame Loop / Event Loop / Input Abstraction
+    DisplayBackend 不只 present，也牽涉 OS event、input state、delta time、vsync。
+
+P1  I-22 Asset / Resource Pipeline
+    UI font atlas、texture sampling、shader resources 都需要 file/resource lifetime 地圖。
+
+P2  I-23 Profiling / Benchmarking / Performance Regression
+    renderer 優化要從 measurement/profiler/benchmark policy 開始。
+
+P2  T-19 Standard Library Utilities for Systems Projects
+    補 filesystem、chrono、format/source_location 等專案工具。
+
+P3  T-20 Memory Resources / Arena / Scratch Allocation
+P3  T-21 Data-oriented Design for Renderer Data
+    作為 UI/shader/parallel renderer 的進階語意與資料佈局地基。
+```
+
+若沿著 C++ 語意交界繼續補 theory，建議隊列是：
+
+```text
+P0  T-25 Static Storage / Global State / Initialization Order
+    服務 tests、resource cache、backend lifetime、deterministic replay。
+
+P2  T-26 Regular Types / Equality / Hashing / Ordering
+    服務 pipeline state cache、resource registry、command diff、golden tests。
+
+P2  加深 T-05 / T-06 / T-10
+    補 assignment、exception guarantee、nodiscard、multi-step backend init cleanup。
+```
+
+若下一步要進程式碼，仍應先處理 Phase E 的 architecture refactor；若要繼續補教學，工程向優先補 `I-24`，語意向下一個優先補 `T-25`。

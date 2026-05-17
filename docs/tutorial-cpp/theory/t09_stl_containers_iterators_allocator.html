@@ -393,7 +393,7 @@ std::<span class="tp">vector</span>&lt;<span class="tp">TextureHandle</span>&gt;
 </div>
 
 <p>
-對 Pixel-Renderer 第一階段的 <code>DrawCommand</code>、<code>Vertex</code>、<code>Color</code>，最好保持 value-like、cheap-to-move，避免 command buffer 裡塞入複雜 resource handle。Resource handle 可以在別處 owns，command 只存 id 或 stable reference。
+對 Pixel-Renderer 目前這一版的 <code>DrawCommand</code>、<code>Vertex</code>、<code>Color</code>，最好保持 value-like、cheap-to-move，避免 command buffer 裡塞入複雜 resource handle。Resource handle 可以在別處 owns，command 只存 id 或 stable reference。
 </p>
 
 <h2><span class="n">7</span> std::span：borrowed view，不是小 vector</h2>

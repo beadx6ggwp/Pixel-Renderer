@@ -62,7 +62,7 @@ td { padding: 8px 14px; border-bottom: 1px solid var(--border); vertical-align: 
   <span class="nav-cur">T-06 — RAII / Resource Ownership</span>
   <div class="nav-right">
     <a href="t05_copy_move_object_transfer.html">&larr; T-05</a>
-    <a href="t07_callable_overload_lambda.html">T-07 &rarr;</a>
+    <a href="t17_smart_pointer_ownership_adapters.html">T-17 &rarr;</a>
   </div>
 </nav>
 
@@ -472,16 +472,16 @@ Rasterizer
 </div>
 
 <p>
-下一章回到 callable：在 ownership 和 RAII 都清楚後，就可以安全討論 shader callback、UI handler、command buffer 與 lambda capture lifetime。
+下一章先把 smart pointer 獨立拆深：<code>unique_ptr</code>、<code>shared_ptr</code>、<code>weak_ptr</code>、custom deleter、raw observer、resource handle 各自解的是不同 ownership 問題。這一層清楚後，再回到 callable 會更穩。
 </p>
 
 <div class="next-ch">
   <div>
     <div class="next-label">NEXT THEORY</div>
-    <div class="next-title">T-07 &mdash; Callable / Overload / Lambda</div>
-    <div class="next-desc">下一章把 function pointer、functor、lambda closure、std::function、overload set 接回 UI callback、shader function 和 command buffer lifetime。</div>
+    <div class="next-title">T-17 &mdash; Smart Pointer / Ownership Adapters</div>
+    <div class="next-desc">下一章把 unique_ptr、shared_ptr、weak_ptr、custom deleter、observer、resource handle 拆成不同 ownership adapter。</div>
   </div>
-  <a class="next-arrow" href="t07_callable_overload_lambda.html">&rarr;</a>
+  <a class="next-arrow" href="t17_smart_pointer_ownership_adapters.html">&rarr;</a>
 </div>
 
 </body>

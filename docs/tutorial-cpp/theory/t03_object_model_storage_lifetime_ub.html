@@ -182,7 +182,7 @@ raw storage again</pre>
 <h2><span class="n">2</span> storage duration：storage 大概活多久</h2>
 
 <p>
-舊 Ch02 的 stack / heap / static 仍然重要，但它只是 <em>storage duration</em> 的入口。Storage duration 說的是 storage 的可用期間，不直接等於 object semantic ownership。
+stack / heap / static 仍然重要，但它只是 <em>storage duration</em> 的入口。Storage duration 說的是 storage 的可用期間，不直接等於 object semantic ownership。
 </p>
 
 <table>
@@ -279,7 +279,7 @@ std::<span class="fn">destroy_at</span>(fb);
 </div>
 
 <div class="box box-purple">
-<strong>跟 Ch11 的關係</strong> &mdash; <code>emplace_back</code>、<code>optional::emplace</code>、placement new、<code>std::construct_at</code> 都在處理同一件事：final storage 已知時，讓 object 直接在那塊 storage 開始 lifetime。差別只是誰管理 storage、誰負責 destroy。
+<strong>跟 in-place construction 的關係</strong> &mdash; <code>emplace_back</code>、<code>optional::emplace</code>、placement new、<code>std::construct_at</code> 都在處理同一件事：final storage 已知時，讓 object 直接在那塊 storage 開始 lifetime。差別只是誰管理 storage、誰負責 destroy。
 </div>
 
 <h2><span class="n">4</span> alignment：不是任何 address 都能放任何 T</h2>

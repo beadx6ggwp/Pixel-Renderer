@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>T-15 — Numeric Semantics / Pixel Formats</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#1e1e2e; --bg1:#181825; --bg2:#11111b; --border:#313244;
+  --muted:#6c7086; --text:#cdd6f4; --blue:#89b4fa; --green:#a6e3a1;
+  --yellow:#f9e2af; --orange:#fab387; --red:#f38ba8; --purple:#cba6f7; --teal:#94e2d5;
+}
+body { background: var(--bg); color: var(--text); font-family: 'Georgia', serif; font-size: 15px; padding: 0 20px 80px; max-width: 900px; margin: 0 auto; line-height: 1.9; }
+nav { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); padding: 14px 0; border-bottom: 1px solid var(--border); margin-bottom: 36px; display: flex; align-items: center; gap: 10px; }
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--orange); }
+.nav-sep { color: var(--border); }
+.nav-cur { color: var(--text); }
+.nav-right { margin-left: auto; display: flex; gap: 16px; }
+.ch-header { margin-bottom: 40px; }
+.ch-label { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px; }
+.ch-title { color: var(--blue); font-size: 1.7em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub { color: var(--muted); font-size: 0.88em; margin-bottom: 14px; }
+.ch-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.ch-tag { font-family: 'Consolas', monospace; font-size: 0.72em; padding: 1px 7px; border-radius: 4px; background: var(--bg2); color: var(--muted); border: 1px solid var(--border); }
+h2 { color: var(--purple); font-size: 1em; font-family: 'Consolas', monospace; letter-spacing: 0.05em; padding: 10px 0; border-bottom: 1px solid var(--border); margin: 44px 0 20px; display: flex; align-items: center; gap: 12px; }
+h2 .n { background: var(--purple); color: var(--bg2); font-weight: bold; border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.85em; }
+h3 { color: var(--yellow); font-size: 0.95em; margin: 24px 0 10px; }
+p { margin-bottom: 12px; }
+strong { color: var(--yellow); }
+em { color: var(--orange); font-style: normal; }
+code { font-family: 'Consolas', monospace; color: var(--teal); }
+ul, ol { margin: 8px 0 14px 26px; line-height: 2.2; }
+.box { border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 0.9em; line-height: 1.85; background: var(--bg1); }
+.box-blue { border-left: 4px solid var(--blue); }
+.box-green { border-left: 4px solid var(--green); }
+.box-yellow { border-left: 4px solid var(--yellow); }
+.box-red { border-left: 4px solid var(--red); }
+.box-purple { border-left: 4px solid var(--purple); }
+.code { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em; line-height: 2.1; margin: 14px 0; overflow-x: auto; }
+.code .cmt { color: var(--muted); } .code .kw { color: var(--purple); } .code .val { color: var(--orange); } .code .tp { color: var(--blue); } .code .fn { color: var(--teal); }
+.ascii { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.82em; line-height: 1.55; margin: 14px 0; overflow-x: auto; color: var(--text); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9em; }
+thead { background: var(--bg1); }
+th { color: var(--muted); font-family: 'Consolas', monospace; font-size: 0.85em; padding: 8px 14px; text-align: left; border-bottom: 2px solid var(--border); }
+td { padding: 8px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.fig { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin: 18px 0; overflow-x: auto; }
+.fig svg { width: 100%; min-width: 720px; height: auto; display: block; font-family: 'Consolas', monospace; }
+.fig-caption { color: var(--muted); font-size: 0.84em; margin-top: 10px; line-height: 1.7; }
+.next-ch { margin-top: 56px; padding: 20px 24px; background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 20px; }
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+.next-title { color: var(--orange); font-size: 1em; }
+.next-desc { color: var(--muted); font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: var(--orange); font-size: 1.6em; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">C++ for Pixel-Renderer</a>
+  <span class="nav-sep">/</span>
+  <span class="nav-cur">T-15 — Numeric Semantics / Pixel Formats</span>
+  <div class="nav-right">
+    <a href="t14_modern_cpp_boundaries.html">&larr; T-14</a>
+    <a href="../impl/i14_immediate_mode_ui_integration_boundary.html">I-14 &rarr;</a>
+  </div>
+</nav>
+
+<div class="ch-header">
+  <div class="ch-label">THEORY TRACK &middot; T-15</div>
+  <div class="ch-title">Numeric Semantics / Pixel Formats</div>
+  <div class="ch-sub">renderer 不是只在算數字，而是在承諾每個 bit、range、rounding 和 pixel layout 的語意</div>
+  <div class="ch-tags">
+    <span class="ch-tag">integer</span>
+    <span class="ch-tag">floating-point</span>
+    <span class="ch-tag">bit-ops</span>
+    <span class="ch-tag">pixel-format</span>
+  </div>
+</div>
+
+<p>
+Pixel-Renderer 很快會開始處理 color、depth、screen coordinate、texture coordinate、alpha blend。直覺上這些都是「數字」，但 C++ 裡的數字不是抽象數學物件。它們有 width、signedness、overflow rule、rounding、conversion、endianness、bit layout。
+</p>
+
+<p>
+這章補的是目前 C++ 主線的一個洞：<strong>renderer numeric semantics</strong>。它不重推圖學數學，而是問：當你把 <code>Color{255, 128, 0}</code> pack 成 <code>uint32_t</code>，當你把 float depth 轉成 fixed-point，當你算 <code>x + width * y</code>，C++ 到底保證了什麼？哪些地方如果想錯，畫面可能不只是錯，還可能進入 undefined behavior？
+</p>
+
+<div class="box box-blue">
+<strong>本章範圍</strong> &mdash; 建立 software renderer 需要的 numeric model：fixed-width integer、signed/unsigned conversion、overflow、bit shift、packed pixel format、endianness、float precision、rounding、epsilon、deterministic comparison。目標是讓 framebuffer、color、depth、texture coordinate、golden image test 的資料語意可檢查。
+</div>
+
+<h2><span class="n">1</span> naive model：數字就是數學數字</h2>
+
+<p>
+最容易形成的模型是：
+</p>
+
+<pre class="ascii">int is integer
+float is real number
+uint32_t color is just 4 bytes
+overflow means value wraps around
+pixel format is just naming RGBA</pre>
+
+<p>
+這些都只對一半。C++ 的 numeric types 是 machine-level value representation 加上一套語意規則。Renderer 又特別常把「數值」和「bit layout」混在一起，所以你必須先分清：
+</p>
+
+<ul>
+  <li><strong>numeric value</strong>：例如 red channel 的值是 255。</li>
+  <li><strong>object representation</strong>：這個 value 在 memory 裡的 bytes。</li>
+  <li><strong>semantic format</strong>：例如 pixel 被定義成 RGBA8、BGRA8、ARGB8。</li>
+  <li><strong>API interpretation</strong>：Win32 / SDL / image writer 會如何解讀這些 bytes。</li>
+</ul>
+
+<div class="box box-red">
+<strong>第一個錯誤</strong> &mdash; 不要把「我看到 memory 裡有四個 byte」直接等同於「平台會把它當成 RGBA」。Packed pixel 的問題是 semantic contract，不只是 storage 問題。
+</div>
+
+<h2><span class="n">2</span> Fixed-width integer：先決定你要幾個 bit</h2>
+
+<p>
+Renderer code 應該少用裸 <code>int</code> 表示 pixel storage 或 binary format。<code>int</code> 的大小雖然在主流平台通常是 32-bit，但 C++ 語意上它不是「檔案格式 / framebuffer format」的精準承諾。
+</p>
+
+<table>
+  <thead><tr><th>Type</th><th>適合表達</th><th>注意</th></tr></thead>
+  <tbody>
+    <tr><td><code>int</code></td><td>loop index、一般 arithmetic。</td><td>不要用來承諾 pixel format width。</td></tr>
+    <tr><td><code>uint8_t</code></td><td>color channel、byte buffer。</td><td>運算時常會 integer promotion。</td></tr>
+    <tr><td><code>uint32_t</code></td><td>RGBA8/BGRA8 packed pixel。</td><td>要明確定義 channel bit position。</td></tr>
+    <tr><td><code>size_t</code></td><td>container size、memory size、byte count。</td><td>不要和 signed coordinate 隨便混算。</td></tr>
+    <tr><td><code>float</code></td><td>normalized coordinate、depth、interpolation。</td><td>不是精確實數，comparison 要有策略。</td></tr>
+  </tbody>
+</table>
+
+<p>
+例如 framebuffer index 常見寫法：
+</p>
+
+<div class="code">
+<span class="tp">size_t</span> index = <span class="kw">static_cast</span>&lt;<span class="tp">size_t</span>&gt;(y) * width + x;
+</div>
+
+<p>
+這行看似簡單，但它暗含前提：<code>x</code>、<code>y</code> 已經通過 bounds check，而且轉成 <code>size_t</code> 前不是負數。如果 <code>y</code> 是 <code>-1</code>，轉成 unsigned 後會變成巨大值，接著 index 可能越界。
+</p>
+
+<div class="box box-yellow">
+<strong>座標用 signed，size 用 unsigned</strong> &mdash; screen coordinate 可能暫時落在 viewport 外，所以常用 signed integer；buffer size 不可能是負數，所以用 <code>size_t</code>。兩者交界處必須有明確 bounds check。
+</div>
+
+<h2><span class="n">3</span> Overflow：signed 和 unsigned 不是同一種錯</h2>
+
+<p>
+C++ 對 overflow 的規則非常重要：
+</p>
+
+<table>
+  <thead><tr><th>情況</th><th>C++ 語意</th><th>Renderer 後果</th></tr></thead>
+  <tbody>
+    <tr><td>unsigned overflow</td><td>modulo 2^N wrap。</td><td>適合 bit mask、hash、packing，但不一定適合 color math。</td></tr>
+    <tr><td>signed overflow</td><td>undefined behavior。</td><td>compiler 可假設不發生，導致最佳化後結果不可預期。</td></tr>
+    <tr><td>narrowing conversion</td><td>可能截斷或 implementation-defined。</td><td>float/int/channel 轉換要 clamp。</td></tr>
+  </tbody>
+</table>
+
+<p>
+Color blending 不能靠 <code>uint8_t</code> 自己 wrap：
+</p>
+
+<div class="code">
+<span class="cmt">// wrong semantic: 250 + 20 wraps to 14 if stored in uint8_t</span><br>
+<span class="tp">uint8_t</span> r = a.r + b.r;<br>
+<br>
+<span class="cmt">// better: widen, compute, clamp, then narrow</span><br>
+<span class="tp">int</span> r32 = <span class="kw">static_cast</span>&lt;<span class="tp">int</span>&gt;(a.r) + <span class="kw">static_cast</span>&lt;<span class="tp">int</span>&gt;(b.r);<br>
+<span class="tp">uint8_t</span> r = <span class="fn">ClampToByte</span>(r32);
+</div>
+
+<p>
+這裡的重點不是「哪個比較快」，而是語意。Wrap、saturate、clamp、normalize 是不同操作，不能混在一起。
+</p>
+
+<h2><span class="n">4</span> Packed pixel：RGBA 是語意，不是自然定律</h2>
+
+<p>
+假設你定義：
+</p>
+
+<div class="code">
+<span class="tp">uint32_t</span> pixel = (r &lt;&lt; <span class="val">24</span>) | (g &lt;&lt; <span class="val">16</span>) | (b &lt;&lt; <span class="val">8</span>) | a;
+</div>
+
+<p>
+這只是你定義的 bit layout。Memory 裡的 byte order 還會受 endianness 影響；而 SDL / Win32 / image writer 又可能要求另一種 channel order。最好把它明確命名：
+</p>
+
+<div class="code">
+<span class="kw">struct</span> <span class="tp">RGBA8</span> {<br>
+&nbsp;&nbsp;<span class="tp">uint8_t</span> r, g, b, a;<br>
+};<br>
+<br>
+<span class="tp">uint32_t</span> <span class="fn">PackRGBA8</span>(<span class="tp">RGBA8</span> c) {<br>
+&nbsp;&nbsp;<span class="kw">return</span> (<span class="kw">static_cast</span>&lt;<span class="tp">uint32_t</span>&gt;(c.r) &lt;&lt; <span class="val">24</span>) |<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (<span class="kw">static_cast</span>&lt;<span class="tp">uint32_t</span>&gt;(c.g) &lt;&lt; <span class="val">16</span>) |<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (<span class="kw">static_cast</span>&lt;<span class="tp">uint32_t</span>&gt;(c.b) &lt;&lt; <span class="val">8</span>)  |<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  <span class="kw">static_cast</span>&lt;<span class="tp">uint32_t</span>&gt;(c.a);<br>
+}
+</div>
+
+<p>
+注意每個 channel 都先轉成 <code>uint32_t</code> 再 shift。這讓 shift 的 width、promotion、overflow 更可控。
+</p>
+
+<div class="fig">
+<svg viewBox="0 0 860 360" role="img" aria-label="RGBA packed pixel bit layout and byte order">
+  <rect x="50" y="58" width="760" height="82" rx="8" fill="#181825" stroke="#313244"/>
+  <rect x="70" y="78" width="170" height="42" rx="4" fill="#f38ba8" fill-opacity="0.18" stroke="#f38ba8"/>
+  <rect x="250" y="78" width="170" height="42" rx="4" fill="#a6e3a1" fill-opacity="0.18" stroke="#a6e3a1"/>
+  <rect x="430" y="78" width="170" height="42" rx="4" fill="#89b4fa" fill-opacity="0.18" stroke="#89b4fa"/>
+  <rect x="610" y="78" width="170" height="42" rx="4" fill="#cba6f7" fill-opacity="0.18" stroke="#cba6f7"/>
+  <text x="155" y="103" fill="#f38ba8" text-anchor="middle" font-size="14">R bits 31..24</text>
+  <text x="335" y="103" fill="#a6e3a1" text-anchor="middle" font-size="14">G bits 23..16</text>
+  <text x="515" y="103" fill="#89b4fa" text-anchor="middle" font-size="14">B bits 15..8</text>
+  <text x="695" y="103" fill="#cba6f7" text-anchor="middle" font-size="14">A bits 7..0</text>
+
+  <text x="430" y="178" fill="#f9e2af" text-anchor="middle" font-size="15">semantic bit layout: what PackRGBA8 promises</text>
+  <line x1="430" y1="190" x2="430" y2="228" stroke="#f9e2af" stroke-width="2" stroke-dasharray="4 4"/>
+  <rect x="110" y="236" width="270" height="70" rx="8" fill="#11111b" stroke="#313244"/>
+  <text x="245" y="264" fill="#cdd6f4" text-anchor="middle" font-size="14">memory byte order</text>
+  <text x="245" y="288" fill="#6c7086" text-anchor="middle" font-size="12">depends on endian + store/load</text>
+  <rect x="480" y="236" width="270" height="70" rx="8" fill="#11111b" stroke="#313244"/>
+  <text x="615" y="264" fill="#cdd6f4" text-anchor="middle" font-size="14">API interpretation</text>
+  <text x="615" y="288" fill="#6c7086" text-anchor="middle" font-size="12">SDL / Win32 / image file format</text>
+</svg>
+<div class="fig-caption">SVG：packed pixel 至少有三層：你定義的 bit layout、CPU 實際 byte order、外部 API 對 bytes 的解讀。不要把三者混成同一件事。</div>
+</div>
+
+<h2><span class="n">5</span> Bit shift：先轉型，再位移</h2>
+
+<p>
+Bit operation 很像底層，但 C++ 仍然有規則：
+</p>
+
+<ul>
+  <li>shift count 不能大於等於 promoted type 的 bit width。</li>
+  <li>對 signed negative value 做 shift 會有危險語意。</li>
+  <li><code>uint8_t</code> 參與運算時通常會先被 promoted 成 <code>int</code>。</li>
+  <li>mask、shift、or 的每一步最好都在明確的 unsigned width 裡做。</li>
+</ul>
+
+<div class="code">
+<span class="tp">uint32_t</span> r32 = <span class="kw">static_cast</span>&lt;<span class="tp">uint32_t</span>&gt;(r);<br>
+<span class="tp">uint32_t</span> pixel = (r32 &amp; <span class="val">0xffu</span>) &lt;&lt; <span class="val">24</span>;
+</div>
+
+<p>
+這種 code 看起來比一行 expression 煩，但它把你的意圖寫進型別：這是 unsigned 32-bit packing，不是一般 arithmetic。
+</p>
+
+<h2><span class="n">6</span> Floating point：不是 real number</h2>
+
+<p>
+Depth、texture coordinate、barycentric interpolation 常用 <code>float</code>。但 <code>float</code> 是 finite precision value，有 rounding、NaN、infinity、denormal、不同最佳化選項下的差異。
+</p>
+
+<table>
+  <thead><tr><th>問題</th><th>naive model</th><th>更好的規則</th></tr></thead>
+  <tbody>
+    <tr><td>比較</td><td><code>a == b</code> 應該可用。</td><td>幾何/顏色 tolerance 要由測試規格定義。</td></tr>
+    <tr><td>累加</td><td>加法順序無關。</td><td>float addition 不保證 associative。</td></tr>
+    <tr><td>轉整數</td><td>cast 只是拿整數部分。</td><td>先定義 rounding / floor / ceil / clamp policy。</td></tr>
+    <tr><td>跨平台</td><td>同一份 code 必定 bit-identical。</td><td>golden test 要分 exact 與 tolerance。</td></tr>
+  </tbody>
+</table>
+
+<p>
+例如 viewport transform 把 float x 變成 pixel x，不能只靠隨手 cast：
+</p>
+
+<div class="code">
+<span class="tp">int</span> px = <span class="kw">static_cast</span>&lt;<span class="tp">int</span>&gt;(x); <span class="cmt">// truncates toward zero</span>
+</div>
+
+<p>
+你要先問：這裡想要 floor、round-to-nearest、還是 top-left fill rule 的固定規則？這是 renderer convention，不是 C++ cast 可以替你決定的事。
+</p>
+
+<h2><span class="n">7</span> Determinism：測試要先定義容忍範圍</h2>
+
+<p>
+I-16 會講 golden image。這裡先建立 numeric 連接：renderer 測試不是只有「完全一樣」或「隨便差一點」。你要按資料類型分 policy：
+</p>
+
+<table>
+  <thead><tr><th>資料</th><th>比較方式</th><th>理由</th></tr></thead>
+  <tbody>
+    <tr><td>packed clear color</td><td>exact match。</td><td>純 integer write，應該完全一樣。</td></tr>
+    <tr><td>Bresenham line mask</td><td>exact match。</td><td>若演算法是 integer deterministic，差一點就是規則不同。</td></tr>
+    <tr><td>float interpolated color</td><td>per-channel tolerance。</td><td>rounding path 可能不同，除非你固定所有步驟。</td></tr>
+    <tr><td>depth buffer</td><td>exact 或 epsilon，取決於 representation。</td><td>integer fixed-point 和 float depth 的策略不同。</td></tr>
+  </tbody>
+</table>
+
+<div class="box box-purple">
+<strong>和 I-16 的連接</strong> &mdash; golden image test 的核心不是「截圖存起來」。它要求你先定義 numeric contract：哪些值必須 bit-exact，哪些值允許 tolerance，哪些差異代表演算法規則改變。
+</div>
+
+<h2><span class="n">8</span> Pixel-Renderer numeric policy</h2>
+
+<p>
+第一版可以採取保守策略：
+</p>
+
+<pre class="ascii">Coordinates:
+  use signed int for screen-space pixel coordinates
+  check bounds before converting to size_t index
+
+Framebuffer:
+  store pixels as uint32_t
+  define one canonical PixelFormat in code
+  backend converts only if platform/API requires it
+
+Color:
+  keep channels as uint8_t at storage boundary
+  widen to int or float during blending/interpolation
+  clamp before narrowing
+
+Depth:
+  choose float or fixed-point intentionally
+  define comparison and clear value
+
+Tests:
+  exact match for integer-only output
+  tolerance for float-derived output</pre>
+
+<p>
+這些規則的價值是把「我覺得這樣應該對」變成可以寫進 code review、test case、debug dump 的 contract。
+</p>
+
+<h2><span class="n">9</span> Verification：怎麼檢查 numeric bug</h2>
+
+<ul>
+  <li>用 small image test：例如 4x4 framebuffer，手算每個 pixel 的 packed value。</li>
+  <li>針對 pack/unpack 寫 round-trip test：<code>Unpack(Pack(c)) == c</code>。</li>
+  <li>針對 bounds check 測 <code>x = -1</code>、<code>x = width</code>、<code>y = -1</code>、<code>y = height</code>。</li>
+  <li>用 sanitizer 找 signed overflow、out-of-bounds、undefined behavior。</li>
+  <li>golden image mismatch 時同時輸出 numeric diff，不只輸出「圖片不同」。</li>
+</ul>
+
+<div class="code">
+<span class="kw">auto</span> c = <span class="tp">RGBA8</span>{<span class="val">255</span>, <span class="val">128</span>, <span class="val">0</span>, <span class="val">255</span>};<br>
+<span class="tp">uint32_t</span> p = <span class="fn">PackRGBA8</span>(c);<br>
+<span class="fn">assert</span>(<span class="fn">UnpackRGBA8</span>(p).r == <span class="val">255</span>);<br>
+<span class="fn">assert</span>(<span class="fn">UnpackRGBA8</span>(p).g == <span class="val">128</span>);
+</div>
+
+<div class="box box-green">
+<strong>本章學到的三件事：</strong>
+<ol>
+  <li>Renderer numeric types 不是抽象數學；每個 integer、float、packed pixel 都有 width、range、conversion、rounding 與 representation contract。</li>
+  <li>Pixel format 要分清 semantic channel order、bit layout、memory byte order、API interpretation；不要讓 SDL/Win32 backend 反過來污染 renderer core 的 color model。</li>
+  <li>Golden tests 必須建立 numeric policy：integer output 可 exact match，float-derived output 要明確 tolerance，所有 narrowing 都應先 clamp 或定義 rounding。</li>
+</ol>
+</div>
+
+<p>
+下一章回到 implementation：UI draw data 和 shader draw calls 都會用到這些 numeric policy。顏色、clip rect、alpha blend、depth、interpolation 如果沒有共同規則，未來 debug image mismatch 會很難判斷是 C++ bug、renderer rule bug，還是 backend conversion bug。
+</p>
+
+<div class="next-ch">
+  <div>
+    <div class="next-label">NEXT IMPL</div>
+    <div class="next-title">I-14 — Immediate-mode UI Integration Boundary</div>
+    <div class="next-desc">下一章整理 UI state、layout、draw commands、font atlas、clip rect、alpha blend 如何進入 software renderer。</div>
+  </div>
+  <a class="next-arrow" href="../impl/i14_immediate_mode_ui_integration_boundary.html">&rarr;</a>
+</div>
+
+</body>
+</html>

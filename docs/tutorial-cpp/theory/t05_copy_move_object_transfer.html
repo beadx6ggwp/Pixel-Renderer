@@ -60,7 +60,7 @@ td { padding: 8px 14px; border-bottom: 1px solid var(--border); vertical-align: 
   <span class="nav-sep">/</span>
   <span class="nav-cur">T-05 — Copy / Move / Object Transfer</span>
   <div class="nav-right">
-    <a href="t04_value_category_reference_system.html">&larr; T-04</a>
+    <a href="t24_type_deduction_auto_decltype_forwarding.html">&larr; T-24</a>
     <a href="t06_raii_resource_ownership_exception_safety.html">T-06 &rarr;</a>
   </div>
 </nav>
@@ -77,7 +77,7 @@ td { padding: 8px 14px; border-bottom: 1px solid var(--border); vertical-align: 
 </div>
 
 <p>
-T-04 已經把 value category 說清楚：<code>std::move(x)</code> 只是把 expression 轉成 xvalue，不會自己搬東西。那真正搬東西的是什麼？答案不是某個魔法語法，而是 type 自己定義的 object transfer operations：copy constructor、copy assignment、move constructor、move assignment，以及 return-by-value 的 result object formation。
+T-04 已經把 value category 說清楚：<code>std::move(x)</code> 只是把 expression 轉成 xvalue，不會自己搬東西。T-22 接著補上 const/cv-qualification：如果 source 是 <code>const</code>，xvalue 也不一定能被 move-from。T-23 又補了一層：call expression 會先經過 overload resolution、conversion、operator selection。T-24 再補上 deduction：<code>auto</code> / <code>decltype(auto)</code> 可能 copy、borrow 或保留 reference。那真正搬東西的是什麼？答案不是某個魔法語法，而是 type 自己定義的 object transfer operations：copy constructor、copy assignment、move constructor、move assignment，以及 return-by-value 的 result object formation。
 </p>
 
 <p>
@@ -491,7 +491,36 @@ new storage: [ e0 ][ e1 ][ e2 ][ e3 ][    ][    ][    ][    ]</pre>
 <strong>和 T-06 的連接</strong> &mdash; <code>noexcept move</code> 不是孤立技巧。它牽涉 resource release、exception safety、container guarantee。下一章會把這些整理進 RAII / Resource Ownership。
 </div>
 
-<h2><span class="n">8</span> Rule of Zero：讓 member 自己帶語意</h2>
+<h2><span class="n">8</span> historical detour：auto_ptr 不是也能 move 嗎？</h2>
+
+<p>
+你可能會想到一個歷史反例：C++11 之前的 <code>std::auto_ptr</code> 似乎也能把 ownership 從一個 object 交給另一個 object。
+</p>
+
+<div class="code">
+std::<span class="tp">auto_ptr</span>&lt;<span class="tp">Texture</span>&gt; a(<span class="kw">new</span> <span class="tp">Texture</span>{});<br>
+std::<span class="tp">auto_ptr</span>&lt;<span class="tp">Texture</span>&gt; b = a; <span class="cmt">// looks like copy, actually transfers ownership</span>
+</div>
+
+<p>
+這確實能做到 transfer，但問題是它把 transfer 藏在 copy syntax 裡。<code>b = a</code> 看起來像複製，實際上會讓 <code>a</code> 失去 ownership。這種 <strong>destructive copy</strong> 破壞了 generic code 對 Copyable type 的基本假設：copy 不應消耗 source。
+</p>
+
+<pre class="ascii">auto_ptr:
+  copy-looking syntax -> destructive transfer
+  source becomes empty
+  container / algorithm assumptions become fragile
+
+unique_ptr + move:
+  copy syntax         -> compile error
+  std::move(source)   -> explicit transfer intent
+  source remains valid but moved-from</pre>
+
+<div class="box box-purple">
+<strong>Deep dive</strong> &mdash; <code>auto_ptr</code> 的價值不在於現代程式要使用它，而是它能解釋 C++11 為什麼需要 rvalue reference、move constructor、deleted copy constructor 與 <code>unique_ptr</code>。完整歷史拆解放在 <a href="../bonus/a01_auto_ptr_move_semantics.html" style="color:var(--teal);text-decoration:none;">A-01 auto_ptr 與 Move Semantics 的誕生</a>。
+</div>
+
+<h2><span class="n">9</span> Rule of Zero：讓 member 自己帶語意</h2>
 
 <p>
 最穩的 C++ 設計常常不是手寫一整套 copy/move，而是讓 member 的 type 已經表達 ownership。
@@ -529,7 +558,7 @@ new storage: [ e0 ][ e1 ][ e2 ][ e3 ][    ][    ][    ][    ]</pre>
 注意這不是說 framebuffer 一定要禁止 copy。它是在說 copy 是否存在要由語意決定：教學或工具 code 可能希望 copy image；hot path renderer state 可能希望禁止 accidental copy。
 </p>
 
-<h2><span class="n">9</span> Pixel-Renderer type policy</h2>
+<h2><span class="n">10</span> Pixel-Renderer type policy</h2>
 
 <p>
 把這章收束到專案設計，可以得到一張初版 policy 表：
@@ -601,7 +630,7 @@ Frame data:
 <strong>不要把 transfer policy 藏在註解裡</strong> &mdash; 如果 type 不該 copy，就 <code>= delete</code>。如果 type 應該 cheap view copy，就把名字叫成 <code>View</code> 或使用 <code>std::span</code>。如果 type owns resource，就讓 member type 或 special members 明確表達。
 </div>
 
-<h2><span class="n">10</span> verification：怎麼真的看見 copy/move/elision？</h2>
+<h2><span class="n">11</span> verification：怎麼真的看見 copy/move/elision？</h2>
 
 <p>
 你可以用 logging type 驗證自己的 mental model，但要注意 optimizer 與 C++17 guaranteed copy elision 會讓結果和舊教材不同。

@@ -58,7 +58,7 @@ td { padding: 8px 14px; border-bottom: 1px solid var(--border); vertical-align: 
   <span class="nav-sep">/</span>
   <span class="nav-cur">I-08 — Framebuffer Ownership Refactor</span>
   <div class="nav-right">
-    <a href="i07_cmake_target_based_build.html">&larr; I-07</a>
+    <a href="i20_dependency_management_third_party_integration.html">&larr; I-20</a>
   </div>
 </nav>
 
@@ -74,7 +74,7 @@ td { padding: 8px 14px; border-bottom: 1px solid var(--border); vertical-align: 
 </div>
 
 <p>
-前面幾章把 C++ 語意、toolchain、Make、CMake target graph 都鋪好。現在開始碰 Pixel-Renderer 架構本體：目前 <code>RenderDevice::SetPixel()</code> 能畫圖，但它寫的 memory 其實是 <code>ScreenManager</code> 透過 Win32 <code>CreateDIBSection()</code> 建出來的 DIB backing memory。這讓 renderer core 和 Win32 present path 綁在一起。
+前面幾章把 C++ 語意、toolchain、Make、CMake target graph、preprocessor configuration、third-party dependency boundary 都鋪好。現在開始碰 Pixel-Renderer 架構本體：目前 <code>RenderDevice::SetPixel()</code> 能畫圖，但它寫的 memory 其實是 <code>ScreenManager</code> 透過 Win32 <code>CreateDIBSection()</code> 建出來的 DIB backing memory。這讓 renderer core 和 Win32 present path 綁在一起。
 </p>
 
 <p>

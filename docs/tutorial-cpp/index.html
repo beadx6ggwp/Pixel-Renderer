@@ -146,6 +146,22 @@ body {
 .prereq-item { font-size: 0.85em; }
 .prereq-name { color: var(--text); margin-bottom: 2px; }
 .prereq-desc { color: var(--muted); font-size: 0.88em; line-height: 1.5; }
+.dep-map {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 8px;
+  padding: 24px 28px; margin-bottom: 48px;
+}
+.dep-map h3 { color: var(--yellow); font-size: 0.9em; margin-bottom: 12px; font-family: 'Consolas', monospace; }
+.dep-intro { color: var(--muted); font-size: 0.92em; line-height: 1.8; margin-bottom: 18px; }
+.dep-figure {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 16px; overflow-x: auto; margin-bottom: 18px;
+}
+.dep-figure svg { width: 100%; min-width: 860px; height: auto; display: block; font-family: 'Consolas', monospace; }
+.dep-caption { color: var(--muted); font-size: 0.82em; margin-top: 10px; line-height: 1.6; }
+.dep-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.dep-item { background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px; }
+.dep-name { color: var(--text); font-size: 0.88em; margin-bottom: 4px; }
+.dep-out { color: var(--muted); font-size: 0.8em; line-height: 1.55; }
 
 /* ── Roadmap */
 .roadmap {
@@ -224,6 +240,7 @@ body {
 @media (max-width: 700px) {
   .overview { grid-template-columns: 1fr 1fr; }
   .prereq-grid { grid-template-columns: 1fr; }
+  .dep-grid { grid-template-columns: 1fr; }
   .track-grid { grid-template-columns: 1fr; }
   .status-strip { grid-template-columns: 1fr; }
   .hero { padding: 36px 20px; }
@@ -248,15 +265,15 @@ body {
 
   <div class="overview">
     <div class="ov-card">
-      <div class="ov-num" style="color:var(--blue)">14</div>
+      <div class="ov-num" style="color:var(--blue)">21</div>
       <div class="ov-label">新版 Theory</div>
     </div>
     <div class="ov-card">
-      <div class="ov-num" style="color:var(--orange)">17</div>
+      <div class="ov-num" style="color:var(--orange)">20</div>
       <div class="ov-label">新版 Impl</div>
     </div>
     <div class="ov-card">
-      <div class="ov-num" style="color:var(--purple)">31</div>
+      <div class="ov-num" style="color:var(--purple)">41</div>
       <div class="ov-label">統一版章節</div>
     </div>
     <div class="ov-card">
@@ -273,6 +290,9 @@ body {
         <span class="status-pill done">T-02 Type System / Initialization</span>
         <span class="status-pill done">T-03 Object Model / Storage / Lifetime / UB</span>
         <span class="status-pill done">T-04 Value Category / Reference System</span>
+        <span class="status-pill done">T-22 Const / cv / Value Category</span>
+        <span class="status-pill done">T-23 Overload / Conversion / Operator</span>
+        <span class="status-pill done">T-24 Type Deduction / auto / decltype</span>
         <span class="status-pill done">T-05 Copy / Move / Object Transfer</span>
         <span class="status-pill done">T-06 RAII / Resource Ownership</span>
         <span class="status-pill done">T-07 Callable / Overload / Lambda</span>
@@ -283,6 +303,10 @@ body {
         <span class="status-pill done">T-12 Low-level Performance</span>
         <span class="status-pill done">T-13 Concurrency / Memory Model</span>
         <span class="status-pill done">T-14 Modern C++ Boundaries</span>
+        <span class="status-pill done">T-15 Numeric Semantics / Pixel Formats</span>
+        <span class="status-pill done">T-16 API Design Conventions</span>
+        <span class="status-pill done">T-17 Smart Pointer / Ownership Adapters</span>
+        <span class="status-pill done">T-18 Casts / Type Punning / Bit Cast</span>
         <span class="status-pill done">I-01 Current Architecture</span>
         <span class="status-pill done">I-02 Toolchain Map</span>
         <span class="status-pill done">I-03 Build Workflow</span>
@@ -300,13 +324,17 @@ body {
         <span class="status-pill done">I-15 Shader Pipeline Boundary</span>
         <span class="status-pill done">I-16 Verification / Golden Image</span>
         <span class="status-pill done">I-17 Header Boundary</span>
+        <span class="status-pill done">I-18 Diagnostics / Sanitizers</span>
+        <span class="status-pill done">I-19 Preprocessor / Compile-time Config</span>
+        <span class="status-pill done">I-20 Dependency / Third-party Integration</span>
+        <span class="status-pill done">A-01 auto_ptr / Move Semantics Deep Dive</span>
       </div>
     </div>
     <div class="status-panel">
       <div class="status-title">▌ 接下來優先處理</div>
       <div class="status-list">
-        <span class="status-pill next">src 架構 refactor</span>
-        <span class="status-pill next">章節校稿 / 局部加深</span>
+        <span class="status-pill next">缺口盤點 / 局部加深</span>
+        <span class="status-pill next">前段章節補深 / SVG</span>
         <span class="status-pill next">README 暫不動</span>
       </div>
     </div>
@@ -321,16 +349,16 @@ body {
     </p>
     <div class="prereq-grid">
       <div class="prereq-item">
-        <div class="prereq-name">Part 1-2</div>
+        <div class="prereq-name">Part 0-1</div>
         <div class="prereq-desc">程式如何被建構、物件如何存在、型別如何建立語意邊界</div>
       </div>
       <div class="prereq-item">
-        <div class="prereq-name">Part 3-4</div>
+        <div class="prereq-name">Part 2-3</div>
         <div class="prereq-desc">把數學型別、資源擁有權、泛型演算法放進 renderer 設計裡</div>
       </div>
       <div class="prereq-item">
-        <div class="prereq-name">Part 5-6</div>
-        <div class="prereq-desc">回到 Modern C++ 的核心：RAII、smart pointer、move semantics、abstraction cost</div>
+        <div class="prereq-name">Part 4-5</div>
+        <div class="prereq-desc">把架構邊界、numeric policy、performance、UI/shader、verification 串成工程路線</div>
       </div>
     </div>
   </div>
@@ -390,7 +418,7 @@ body {
     <div class="prereq-grid">
       <div class="prereq-item">
         <div class="prereq-name">Foundation</div>
-        <div class="prereq-desc">T-01 到 T-05 建立 binary、type、object lifetime、value category、copy/move 的地基</div>
+        <div class="prereq-desc">T-01 到 T-05 加上 T-22/T-23/T-24 建立 binary、type、object lifetime、value category、const/cv、overload/operator、deduction、copy/move 的地基</div>
       </div>
       <div class="prereq-item">
         <div class="prereq-name">Engineering</div>
@@ -428,7 +456,7 @@ body {
 
   <div class="roadmap">
     <div class="roadmap-intro">
-      <h3>▌ 下一階段：拆成兩條學習線</h3>
+      <h3>▌ 統一版主線：兩條學習線</h3>
       <p>
         統一版拆成兩條線：<strong>C++ 深度複習</strong> 負責把語言本身講完整，<strong>Pixel-Renderer 工程實作</strong> 負責處理抽象分離、跨平台編譯、VSCode 配置與 backend refactor。
       </p>
@@ -439,7 +467,7 @@ body {
         <div class="track-kicker">Theory Track</div>
         <div class="track-title">C++ 深度複習：語意、型別、效能</div>
         <div class="track-desc">
-          這條線不應只停在 move。它要完整補齊 C++ 對程式存在方式、object model、value category、generic programming、STL、error handling、low-level performance 的規範。
+          這條線不應只停在 move。它要完整補齊 C++ 對程式存在方式、object model、ownership adapters、value category、generic programming、STL、error handling、low-level performance 的規範。
         </div>
         <div class="road-list">
           <div class="road-item">
@@ -455,8 +483,24 @@ body {
             <div class="road-desc">storage duration、object lifetime、placement new、alignment、strict aliasing、object representation、trivial/standard-layout、undefined behavior。</div>
           </div>
           <div class="road-item">
+            <div class="road-name"><span class="road-tag">T-18</span> <a href="theory/t18_casts_type_punning_bit_cast.html" style="color:inherit;text-decoration:none;">Casts / Type Punning / Bit Cast</a><span class="road-status road-status-done">完成</span></div>
+            <div class="road-desc">static_cast、const_cast、dynamic_cast、reinterpret_cast、std::bit_cast、strict aliasing、alignment、bytes 與 object representation。</div>
+          </div>
+          <div class="road-item">
             <div class="road-name"><span class="road-tag">T-04</span> <a href="theory/t04_value_category_reference_system.html" style="color:inherit;text-decoration:none;">Value Category 完整版</a><span class="road-status road-status-done">完成</span></div>
             <div class="road-desc">lvalue/xvalue/prvalue、temporary materialization、lifetime extension、reference collapsing、forwarding reference、std::forward、operator return category。</div>
+          </div>
+          <div class="road-item">
+            <div class="road-name"><span class="road-tag">T-22</span> <a href="theory/t22_const_cv_value_category.html" style="color:inherit;text-decoration:none;">Const / cv-qualification / Value Category</a><span class="road-status road-status-done">完成</span></div>
+            <div class="road-desc">const T、const T&amp;&amp;、move-from-const、member function const、mutable、ref-qualified member function，把 value category 接到 mutation capability。</div>
+          </div>
+          <div class="road-item">
+            <div class="road-name"><span class="road-tag">T-23</span> <a href="theory/t23_overload_conversion_operator_design.html" style="color:inherit;text-decoration:none;">Overload / Conversion / Operator Design</a><span class="road-status road-status-done">完成</span></div>
+            <div class="road-desc">overload resolution、explicit conversion、operator design、hidden friend、ADL、equality/hash contract，服務 math type、strong id、cache key。</div>
+          </div>
+          <div class="road-item">
+            <div class="road-name"><span class="road-tag">T-24</span> <a href="theory/t24_type_deduction_auto_decltype_forwarding.html" style="color:inherit;text-decoration:none;">Type Deduction / auto / decltype / Forwarding</a><span class="road-status road-status-done">完成</span></div>
+            <div class="road-desc">auto、auto&amp;、const auto&amp;、auto&amp;&amp;、decltype、decltype(auto)、template deduction、forwarding reference，避免 command/view/generic helper 失去 reference 語意。</div>
           </div>
           <div class="road-item">
             <div class="road-name"><span class="road-tag">T-05</span> <a href="theory/t05_copy_move_object_transfer.html" style="color:inherit;text-decoration:none;">Copy / Move / Object Transfer</a><span class="road-status road-status-done">完成</span></div>
@@ -465,6 +509,10 @@ body {
           <div class="road-item">
             <div class="road-name"><span class="road-tag">T-06</span> <a href="theory/t06_raii_resource_ownership_exception_safety.html" style="color:inherit;text-decoration:none;">RAII / Resource Ownership</a><span class="road-status road-status-done">完成</span></div>
             <div class="road-desc">destructor、Rule of Zero/Five、unique_ptr/shared_ptr/custom deleter、exception safety、move-only resource handle。</div>
+          </div>
+          <div class="road-item">
+            <div class="road-name"><span class="road-tag">T-17</span> <a href="theory/t17_smart_pointer_ownership_adapters.html" style="color:inherit;text-decoration:none;">Smart Pointer / Ownership Adapters</a><span class="road-status road-status-done">完成</span></div>
+            <div class="road-desc">unique_ptr、shared_ptr、weak_ptr、control block、custom deleter、observer/span、resource handle，避免用 shared_ptr 掩蓋 ownership 問題。</div>
           </div>
           <div class="road-item">
             <div class="road-name"><span class="road-tag">T-07</span> <a href="theory/t07_callable_overload_lambda.html" style="color:inherit;text-decoration:none;">Callable / Overload / Lambda</a><span class="road-status road-status-done">完成</span></div>
@@ -497,6 +545,14 @@ body {
           <div class="road-item">
             <div class="road-name"><span class="road-tag">T-14</span> <a href="theory/t14_modern_cpp_boundaries.html" style="color:inherit;text-decoration:none;">Modern C++ Boundaries</a><span class="road-status road-status-done">完成</span></div>
             <div class="road-desc">哪些 C++20/23 特性值得提前知道：span、concepts、expected、modules、ranges、coroutine；哪些先不用深入。</div>
+          </div>
+          <div class="road-item">
+            <div class="road-name"><span class="road-tag">T-15</span> <a href="theory/t15_numeric_semantics_pixel_formats.html" style="color:inherit;text-decoration:none;">Numeric Semantics / Pixel Formats</a><span class="road-status road-status-done">完成</span></div>
+            <div class="road-desc">fixed-width integer、signed/unsigned overflow、bit shift、packed RGBA/BGRA、endianness、float precision、deterministic comparison。</div>
+          </div>
+          <div class="road-item">
+            <div class="road-name"><span class="road-tag">T-16</span> <a href="theory/t16_api_design_conventions.html" style="color:inherit;text-decoration:none;">API Design Conventions</a><span class="road-status road-status-done">完成</span></div>
+            <div class="road-desc">owner/view/borrow、const-correctness、reference/pointer/span、return value、out parameter、error return、namespace/header boundary。</div>
           </div>
         </div>
       </div>
@@ -535,6 +591,14 @@ body {
           <div class="road-item">
             <div class="road-name"><span class="road-tag">I-07</span> <a href="impl/i07_cmake_target_based_build.html" style="color:inherit;text-decoration:none;">CMake Target-based Build</a><span class="road-status road-status-done">完成</span></div>
             <div class="road-desc">target、include path、compile definitions、platform-specific source、library linking，避免用全域設定堆出不可維護 build。</div>
+          </div>
+          <div class="road-item">
+            <div class="road-name"><span class="road-tag">I-19</span> <a href="impl/i19_preprocessor_compile_time_configuration.html" style="color:inherit;text-decoration:none;">Preprocessor / Compile-time Configuration</a><span class="road-status road-status-done">完成</span></div>
+            <div class="road-desc">整理 include、macro、platform macro、feature macro、conditional compilation、target_compile_definitions，避免 renderer core 被 <code>#ifdef</code> 污染。</div>
+          </div>
+          <div class="road-item">
+            <div class="road-name"><span class="road-tag">I-20</span> <a href="impl/i20_dependency_management_third_party_integration.html" style="color:inherit;text-decoration:none;">Dependency Management / Third-party Integration</a><span class="road-status road-status-done">完成</span></div>
+            <div class="road-desc">把 SDL、OpenGL、D3D、Metal、ImGui 拆成 include、compile definition、link library、runtime artifact、package discovery 與 target boundary。</div>
           </div>
           <div class="road-item">
             <div class="road-name"><span class="road-tag">I-08</span> <a href="impl/i08_framebuffer_ownership_refactor.html" style="color:inherit;text-decoration:none;">Framebuffer ownership refactor</a><span class="road-status road-status-done">完成</span></div>
@@ -576,7 +640,96 @@ body {
             <div class="road-name"><span class="road-tag">I-17</span> <a href="impl/i17_header_boundary_dependency_hygiene.html" style="color:inherit;text-decoration:none;">Header Boundary / Dependency Hygiene</a><span class="road-status road-status-done">完成</span></div>
             <div class="road-desc">控制 public/private header、platform type、include/compile/link dependency，防止 <code>windows.h</code>、<code>SDL.h</code> 污染 renderer core。</div>
           </div>
+          <div class="road-item">
+            <div class="road-name"><span class="road-tag">I-18</span> <a href="impl/i18_diagnostics_sanitizers_static_analysis.html" style="color:inherit;text-decoration:none;">Diagnostics / Sanitizers / Static Analysis</a><span class="road-status road-status-done">完成</span></div>
+            <div class="road-desc">把 warnings、ASan、UBSan、static analysis、debug/sanitized/release profile 接到 framebuffer、numeric semantics、lifetime 與 golden tests。</div>
+          </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dep-map">
+    <h3>▌ Part Dependency Map</h3>
+    <p class="dep-intro">
+      這份教學的閱讀順序不是「先 C++、再工程」的單向排列，而是每個 Part 都建立下一層需要的 invariant。
+      Part 0 先讓你知道程式如何變成 process；Part 1 到 Part 3 建立 object、value、generic contract；Part 4 才談 renderer abstraction；
+      Part 5 則把效能、numeric policy、UI/shader、verification、header hygiene 接成未來擴充路線。
+    </p>
+    <div class="dep-figure">
+      <svg viewBox="0 0 980 520" role="img" aria-label="Part dependency map for C++ for Pixel-Renderer">
+        <defs>
+          <marker id="idx-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L8,4 L0,8 Z" fill="#89b4fa"/>
+          </marker>
+        </defs>
+
+        <rect x="48" y="58" width="250" height="92" rx="8" fill="#1a2a3d" stroke="#89b4fa" stroke-width="2"/>
+        <text x="173" y="88" fill="#89b4fa" font-size="15" text-anchor="middle">Part 0 · Program as Binary</text>
+        <text x="173" y="115" fill="#cdd6f4" font-size="12" text-anchor="middle">compiler / linker / debugger</text>
+        <text x="173" y="136" fill="#6c7086" font-size="11" text-anchor="middle">diagnostics surface</text>
+
+        <rect x="365" y="58" width="250" height="92" rx="8" fill="#1a2d1a" stroke="#a6e3a1" stroke-width="2"/>
+        <text x="490" y="88" fill="#a6e3a1" font-size="15" text-anchor="middle">Part 1 · Object in Storage</text>
+        <text x="490" y="115" fill="#cdd6f4" font-size="12" text-anchor="middle">type / lifetime / RAII</text>
+        <text x="490" y="136" fill="#6c7086" font-size="11" text-anchor="middle">who owns resource?</text>
+
+        <rect x="682" y="58" width="250" height="92" rx="8" fill="#2a1a3d" stroke="#cba6f7" stroke-width="2"/>
+        <text x="807" y="88" fill="#cba6f7" font-size="15" text-anchor="middle">Part 2 · Values Move</text>
+        <text x="807" y="115" fill="#cdd6f4" font-size="12" text-anchor="middle">reference / copy / move</text>
+        <text x="807" y="136" fill="#6c7086" font-size="11" text-anchor="middle">who may keep a value?</text>
+
+        <rect x="48" y="255" width="250" height="92" rx="8" fill="#2f2018" stroke="#fab387" stroke-width="2"/>
+        <text x="173" y="285" fill="#fab387" font-size="15" text-anchor="middle">Part 3 · Generic Contracts</text>
+        <text x="173" y="312" fill="#cdd6f4" font-size="12" text-anchor="middle">template / container / invariant</text>
+        <text x="173" y="333" fill="#6c7086" font-size="11" text-anchor="middle">what must a type satisfy?</text>
+
+        <rect x="365" y="255" width="250" height="92" rx="8" fill="#1a2a3d" stroke="#89b4fa" stroke-width="2"/>
+        <text x="490" y="285" fill="#89b4fa" font-size="15" text-anchor="middle">Part 4 · Architecture Boundaries</text>
+        <text x="490" y="312" fill="#cdd6f4" font-size="12" text-anchor="middle">Framebuffer / backend / API</text>
+        <text x="490" y="333" fill="#6c7086" font-size="11" text-anchor="middle">what can be replaced?</text>
+
+        <rect x="682" y="255" width="250" height="92" rx="8" fill="#2f2018" stroke="#fab387" stroke-width="2"/>
+        <text x="807" y="285" fill="#fab387" font-size="15" text-anchor="middle">Part 5 · Future Systems</text>
+        <text x="807" y="312" fill="#cdd6f4" font-size="12" text-anchor="middle">performance / UI / shader / tests</text>
+        <text x="807" y="333" fill="#6c7086" font-size="11" text-anchor="middle">how does it scale?</text>
+
+        <path d="M298 104 L365 104" stroke="#89b4fa" stroke-width="3" marker-end="url(#idx-arrow)"/>
+        <path d="M615 104 L682 104" stroke="#89b4fa" stroke-width="3" marker-end="url(#idx-arrow)"/>
+        <path d="M807 150 C807 205, 173 200, 173 255" fill="none" stroke="#89b4fa" stroke-width="3" marker-end="url(#idx-arrow)"/>
+        <path d="M298 301 L365 301" stroke="#89b4fa" stroke-width="3" marker-end="url(#idx-arrow)"/>
+        <path d="M615 301 L682 301" stroke="#89b4fa" stroke-width="3" marker-end="url(#idx-arrow)"/>
+
+        <rect x="120" y="414" width="740" height="52" rx="8" fill="#181825" stroke="#313244"/>
+        <text x="490" y="437" fill="#f9e2af" font-size="14" text-anchor="middle">course invariant</text>
+        <text x="490" y="458" fill="#cdd6f4" font-size="12" text-anchor="middle">每一層都把前一層的語意變成下一層能依賴的工程規則</text>
+      </svg>
+      <div class="dep-caption">SVG：這不是章節數量圖，而是 dependency graph。若某層語意沒建立，後面的 abstraction 會變成只有 class 名稱。</div>
+    </div>
+    <div class="dep-grid">
+      <div class="dep-item">
+        <div class="dep-name">Part 0 output</div>
+        <div class="dep-out">你能分辨 source、object file、symbol、library、preprocessor、third-party dependency、debugger、sanitizer、build profile 各自處理哪一層。</div>
+      </div>
+      <div class="dep-item">
+        <div class="dep-name">Part 1 output</div>
+        <div class="dep-out">你能判斷 resource owner、borrowed view、object lifetime、object representation，並知道 smart pointer、cast、RAII wrapper、resource handle 各自跨越哪種邊界。</div>
+      </div>
+      <div class="dep-item">
+        <div class="dep-name">Part 2 output</div>
+        <div class="dep-out">你能看懂 reference binding、const/cv qualification、overload/conversion/operator、type deduction、move-from-const、copy/move、lambda capture、operator return category 對 renderer data lifetime 的影響。</div>
+      </div>
+      <div class="dep-item">
+        <div class="dep-name">Part 3 output</div>
+        <div class="dep-out">你能把 type requirement、container invalidation、contract、invariant 轉成 command buffer / vertex buffer 設計規則。</div>
+      </div>
+      <div class="dep-item">
+        <div class="dep-name">Part 4 output</div>
+        <div class="dep-out">你能明確說出 renderer core、software rendering backend、DisplayBackend、Win32/SDL/macOS/Ubuntu layer 的替換邊界。</div>
+      </div>
+      <div class="dep-item">
+        <div class="dep-name">Part 5 output</div>
+        <div class="dep-out">你能把 cache、numeric policy、UI draw data、shader interface、golden tests、header hygiene 串成可演進的工程路線。</div>
       </div>
     </div>
   </div>
@@ -597,7 +750,10 @@ body {
           <a href="impl/i04_debugger_fundamentals_gdb_lldb.html" style="color:var(--orange);text-decoration:none;">I-04</a> /
           <a href="impl/i05_vscode_build_debug_intellisense.html" style="color:var(--orange);text-decoration:none;">I-05</a> /
           <a href="impl/i06_make_workflow.html" style="color:var(--orange);text-decoration:none;">I-06</a> /
-          <a href="impl/i07_cmake_target_based_build.html" style="color:var(--orange);text-decoration:none;">I-07</a>。先建立 source、object、linker、debugger、VSCode、Make、CMake 和 third-party library 的工程地圖。
+          <a href="impl/i07_cmake_target_based_build.html" style="color:var(--orange);text-decoration:none;">I-07</a> /
+          <a href="impl/i19_preprocessor_compile_time_configuration.html" style="color:var(--orange);text-decoration:none;">I-19</a> /
+          <a href="impl/i20_dependency_management_third_party_integration.html" style="color:var(--orange);text-decoration:none;">I-20</a> /
+          <a href="impl/i18_diagnostics_sanitizers_static_analysis.html" style="color:var(--orange);text-decoration:none;">I-18</a>。先建立 source、object、linker、debugger、VSCode、Make、CMake、preprocessor、dependency、diagnostics 和 third-party library 的工程地圖。
         </div>
       </div>
       <div class="road-item">
@@ -605,15 +761,20 @@ body {
         <div class="road-desc">
           <a href="theory/t02_type_system_initialization.html" style="color:var(--blue);text-decoration:none;">T-02</a> /
           <a href="theory/t03_object_model_storage_lifetime_ub.html" style="color:var(--blue);text-decoration:none;">T-03</a> /
-          <a href="theory/t06_raii_resource_ownership_exception_safety.html" style="color:var(--blue);text-decoration:none;">T-06</a>。把 type、initialization、storage、object lifetime、RAII 與 ownership map 接起來，這是 framebuffer / SDL_Texture / Win32 handle 的地基。
+          <a href="theory/t18_casts_type_punning_bit_cast.html" style="color:var(--blue);text-decoration:none;">T-18</a> /
+          <a href="theory/t06_raii_resource_ownership_exception_safety.html" style="color:var(--blue);text-decoration:none;">T-06</a> /
+          <a href="theory/t17_smart_pointer_ownership_adapters.html" style="color:var(--blue);text-decoration:none;">T-17</a>。把 type、initialization、storage、object lifetime、object representation、RAII、smart pointer 與 ownership map 接起來，這是 framebuffer / SDL_Texture / Win32 handle / future resource registry 的地基。
         </div>
       </div>
       <div class="road-item">
         <div class="road-name"><span class="road-tag">Part 2</span> Values Move Through the Program <span class="road-status road-status-done">完成</span></div>
         <div class="road-desc">
           <a href="theory/t04_value_category_reference_system.html" style="color:var(--blue);text-decoration:none;">T-04</a> /
+          <a href="theory/t22_const_cv_value_category.html" style="color:var(--blue);text-decoration:none;">T-22</a> /
+          <a href="theory/t23_overload_conversion_operator_design.html" style="color:var(--blue);text-decoration:none;">T-23</a> /
+          <a href="theory/t24_type_deduction_auto_decltype_forwarding.html" style="color:var(--blue);text-decoration:none;">T-24</a> /
           <a href="theory/t05_copy_move_object_transfer.html" style="color:var(--blue);text-decoration:none;">T-05</a> /
-          <a href="theory/t07_callable_overload_lambda.html" style="color:var(--blue);text-decoration:none;">T-07</a>。理解 expression category、reference binding、copy/move/elision、lambda capture，避免 shader/UI callback 或 operator return 留下 dangling path。
+          <a href="theory/t07_callable_overload_lambda.html" style="color:var(--blue);text-decoration:none;">T-07</a>。理解 expression category、reference binding、const capability、overload/conversion/operator、type deduction、copy/move/elision、lambda capture，避免 shader/UI callback 或 operator return 留下 dangling path。
         </div>
       </div>
       <div class="road-item">
@@ -634,7 +795,8 @@ body {
           <a href="impl/i10_win32_display_backend.html" style="color:var(--orange);text-decoration:none;">I-10</a> /
           <a href="impl/i11_sdl_display_backend.html" style="color:var(--orange);text-decoration:none;">I-11</a> /
           <a href="impl/i12_cross_platform_development_path.html" style="color:var(--orange);text-decoration:none;">I-12</a> /
-          <a href="impl/i13_renderer_frontend_backend_boundary.html" style="color:var(--orange);text-decoration:none;">I-13</a>。把 renderer core、owned framebuffer、DisplayBackend、Win32/SDL/macOS/Ubuntu platform layer 分清楚。
+          <a href="impl/i13_renderer_frontend_backend_boundary.html" style="color:var(--orange);text-decoration:none;">I-13</a> /
+          <a href="theory/t16_api_design_conventions.html" style="color:var(--blue);text-decoration:none;">T-16</a>。把 renderer core、owned framebuffer、DisplayBackend、Win32/SDL/macOS/Ubuntu platform layer 分清楚，並把 ownership/API contract 寫進函式簽名。
         </div>
       </div>
       <div class="road-item">
@@ -643,12 +805,37 @@ body {
           <a href="theory/t12_low_level_performance_memory_layout.html" style="color:var(--blue);text-decoration:none;">T-12</a> /
           <a href="theory/t13_concurrency_memory_model_job_system.html" style="color:var(--blue);text-decoration:none;">T-13</a> /
           <a href="theory/t14_modern_cpp_boundaries.html" style="color:var(--blue);text-decoration:none;">T-14</a> /
+          <a href="theory/t15_numeric_semantics_pixel_formats.html" style="color:var(--blue);text-decoration:none;">T-15</a> /
           <a href="impl/i14_immediate_mode_ui_integration_boundary.html" style="color:var(--orange);text-decoration:none;">I-14</a> /
           <a href="impl/i15_shader_pipeline_interface_boundary.html" style="color:var(--orange);text-decoration:none;">I-15</a> /
           <a href="impl/i16_verification_golden_image_regression_testing.html" style="color:var(--orange);text-decoration:none;">I-16</a> /
-          <a href="impl/i17_header_boundary_dependency_hygiene.html" style="color:var(--orange);text-decoration:none;">I-17</a>。整理 cache/layout/concurrency、UI、shader interface、golden image testing 與 dependency hygiene。
+          <a href="impl/i17_header_boundary_dependency_hygiene.html" style="color:var(--orange);text-decoration:none;">I-17</a>。整理 cache/layout/concurrency、numeric policy、UI、shader interface、golden image testing 與 dependency hygiene。
         </div>
       </div>
+    </div>
+  </div>
+
+  <div class="part">
+    <div class="part-header">
+      <span class="part-num">Appendix / Deep Dive</span>
+      <span class="part-title">問題驅動補充</span>
+      <span class="part-desc">不打斷主線，但保留值得深挖的歷史與語意問題</span>
+    </div>
+    <div class="chapters">
+      <a class="ch bonus done" href="bonus/a01_auto_ptr_move_semantics.html">
+        <span class="ch-num">A-01</span>
+        <div class="ch-body">
+          <div class="ch-title">auto_ptr 與 Move Semantics 的誕生 <span class="badge badge-done">deep dive</span></div>
+          <div class="ch-desc">從 destructive copy 看懂 C++11 為什麼需要 rvalue reference、deleted copy constructor、move constructor 與 unique_ptr。</div>
+          <div class="ch-tags">
+            <span class="ch-tag">auto_ptr</span>
+            <span class="ch-tag">move semantics</span>
+            <span class="ch-tag">unique_ptr</span>
+            <span class="ch-tag">regular type</span>
+          </div>
+        </div>
+        <span class="ch-arrow">→</span>
+      </a>
     </div>
   </div>
 
