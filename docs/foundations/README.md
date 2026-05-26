@@ -2,11 +2,16 @@
 
 這裡放 renderer 的基本規約與概念對照。這類文件應該短、穩定、可回查，避免每次寫 code 前重新討論座標系、矩陣、深度或數學語意。
 
-建議先補：
+目前入口：
 
 ```text
 rendering_conventions.md
 rasterization_edge_rules.md
+```
+
+後續建議再補：
+
+```text
 framebuffer_pixel_format.md
 interpolation_contract.md
 render_state.md
@@ -17,7 +22,7 @@ pipeline_flow.md
 math_to_renderer.md
 ```
 
-## Planned Files
+## Current Files
 
 ### `rendering_conventions.md`
 
@@ -49,6 +54,8 @@ integer edge function
 float precision / epsilon policy
 bbox half-open range
 ```
+
+## Planned Files
 
 ### `framebuffer_pixel_format.md`
 

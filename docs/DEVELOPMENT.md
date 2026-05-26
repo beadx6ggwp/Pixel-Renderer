@@ -279,16 +279,43 @@ Before merging:
 5. Check whether docs need updates.
 ```
 
-For important milestones, prefer a merge commit:
+Default policy for this personal project:
+
+```text
+Keep main linear when the branch can be cleanly replayed.
+Use rebase + fast-forward merge as the normal path.
+```
+
+Default merge path:
+
+```text
+git switch main
+git pull --ff-only
+
+git switch render/raster-baseline
+git rebase main
+
+git switch main
+git merge --ff-only render/raster-baseline
+```
+
+Use a merge commit only when the branch grouping itself is intentionally useful:
+
+```text
+large milestone branch
+multi-person review
+remote PR with discussion history
+branch with many commits that should remain visibly grouped
+```
+
+Explicit merge-commit path:
 
 ```text
 git switch main
 git merge --no-ff render/raster-baseline
 ```
 
-This keeps the feature as a readable group in `git log --graph`.
-
-For small linear changes, rebase/fast-forward is fine.
+This keeps the feature as a readable group in `git log --graph`, but it should be a deliberate choice, not the default.
 
 ---
 
@@ -337,4 +364,3 @@ This sequence may change, but changes should preserve the same principle:
 ```text
 correctness -> observability -> clear architecture -> performance
 ```
-
