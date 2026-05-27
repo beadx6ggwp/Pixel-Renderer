@@ -73,7 +73,7 @@ docs/foundations/rendering_conventions.md
 docs/foundations/rasterization_edge_rules.md
 ```
 
-`docs/HANDOFF.md` is the cross-machine / cross-session handoff entry. It captures the latest project state, decisions, next branch, and Windows-startup checklist. Keep this file concise and update it when a session creates durable direction that future agents cannot infer from git history alone.
+`docs/HANDOFF.md` is the cross-machine / cross-session handoff entry. It captures the latest project state, durable decisions, broad next directions, and Windows-startup checklist. Keep this file concise and update it when a session creates durable direction that future agents cannot infer from git history alone.
 
 Then inspect the current source and git state:
 
