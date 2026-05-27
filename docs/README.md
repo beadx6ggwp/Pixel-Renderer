@@ -8,6 +8,7 @@
 建議閱讀入口：
 
 ```text
+HANDOFF.md
 PROJECT_MAP.md
 ARCHITECTURE.md
 DEVELOPMENT.md
@@ -23,6 +24,7 @@ DEVELOPMENT.md
 
 ```text
 docs/
+  HANDOFF.md                 cross-session handoff and next-step checklist
   PROJECT_MAP.md              project-level overview
   ARCHITECTURE.md             short/mid/long technical target architecture
   DEVELOPMENT.md              git, branch, commit, experiment workflow

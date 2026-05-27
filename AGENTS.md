@@ -2,7 +2,7 @@
 
 This file gives repo-local instructions for Codex or other coding agents working on Pixel-Renderer.
 
-Last updated: 2026-05-22
+Last updated: 2026-05-27
 
 ## User Context
 
@@ -64,10 +64,16 @@ Do not force the project too early into only one direction such as FPGA, SwiftSh
 When entering this repo, read these first:
 
 ```text
+docs/HANDOFF.md
 docs/PROJECT_MAP.md
+docs/ARCHITECTURE.md
 docs/DEVELOPMENT.md
 docs/README.md
+docs/foundations/rendering_conventions.md
+docs/foundations/rasterization_edge_rules.md
 ```
+
+`docs/HANDOFF.md` is the cross-machine / cross-session handoff entry. It captures the latest project state, decisions, next branch, and Windows-startup checklist. Keep this file concise and update it when a session creates durable direction that future agents cannot infer from git history alone.
 
 Then inspect the current source and git state:
 
@@ -412,4 +418,3 @@ concrete case -> naive model -> failure -> deeper mechanism -> math -> code
 ```
 
 For implementation/debugging tasks, be concise first, then add deeper explanation only if useful.
-
