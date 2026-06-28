@@ -2,7 +2,7 @@
 
 This file gives repo-local instructions for Codex or other coding agents working on Pixel-Renderer.
 
-Last updated: 2026-05-27
+Last updated: 2026-06-28
 
 ## User Context
 
@@ -61,10 +61,9 @@ Do not force the project too early into only one direction such as FPGA, SwiftSh
 
 ## First Files To Read
 
-When entering this repo, read these first:
+For ordinary source or docs work, read these first:
 
 ```text
-docs/HANDOFF.md
 docs/PROJECT_MAP.md
 docs/ARCHITECTURE.md
 docs/DEVELOPMENT.md
@@ -73,7 +72,13 @@ docs/foundations/rendering_conventions.md
 docs/foundations/rasterization_edge_rules.md
 ```
 
-`docs/HANDOFF.md` is the cross-machine / cross-session handoff entry. It captures the latest project state, durable decisions, broad next directions, and Windows-startup checklist. Keep this file concise and update it when a session creates durable direction that future agents cannot infer from git history alone.
+Read `docs/HANDOFF.md` only when this is a fresh cross-machine / cross-session handoff, the project has not been opened for a while, the local context looks stale or conflicting, or the user explicitly asks for current-state orientation.
+
+When editing files under `docs/`, also follow:
+
+```text
+docs/AGENTS.md
+```
 
 Then inspect the current source and git state:
 
@@ -88,6 +93,7 @@ Important docs areas:
 ```text
 docs/tutorial-soft-renderer/   graphics and rasterization teaching track
 docs/tutorial-cpp/             C++ and engineering teaching track
+docs/AGENTS.md                 documentation workflow rules for docs/
 docs/notes/                    dated long-form discussion records
 docs/foundations/              stable conventions and math mapping
 docs/architecture/             renderer/backend/UI architecture
@@ -219,6 +225,8 @@ platform header isolation
 ```
 
 ## Documentation Workflow
+
+When editing docs, follow `docs/AGENTS.md`. It defines the local documentation workflow and note organization rules for the `docs/` subtree.
 
 Prefer stable docs for decisions and long-lived concepts:
 

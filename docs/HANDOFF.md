@@ -1,10 +1,12 @@
 # Pixel-Renderer Handoff
 
-Last updated: 2026-05-28
+Last updated: 2026-06-28
 
 This file is a cross-machine / cross-session orientation note. It should preserve the broad project direction and durable decisions, not prescribe a rigid next task.
 
 For detailed workflow, architecture, or implementation rules, follow the linked docs instead of expanding this file indefinitely.
+
+For general documentation workflow and note organization, follow `docs/AGENTS.md`; do not expand this handoff into a full docs rulebook.
 
 Read after opening a fresh session:
 
@@ -133,6 +135,12 @@ Dated records:
 
 ```text
 docs/notes/
+```
+
+Documentation workflow:
+
+```text
+docs/AGENTS.md
 ```
 
 Use these as durable context instead of relying on chat memory.
