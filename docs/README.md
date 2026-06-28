@@ -1,36 +1,62 @@
 # Pixel-Renderer Docs
 
-這個目錄分成兩種文件：
+`docs/` 放 project docs, stable conventions, rough notes, and tutorial tracks. 這裡不是單一 roadmap, 而是把不同層級的文件分開保存.
 
-1. 已有的長篇教學與討論紀錄，例如 `tutorial-soft-renderer/`、`tutorial-cpp/`、`notes/`。
-2. 後續要沉澱成穩定規格的短文件，例如 `foundations/`、`architecture/`、`verification/`、`mapping/`、`roadmap/`、`adr/`。
+## Reading Entry
 
-建議閱讀入口：
+一般閱讀從這裡開始:
 
 ```text
-HANDOFF.md
 PROJECT_MAP.md
 ARCHITECTURE.md
 DEVELOPMENT.md
-  -> foundations/
-  -> architecture/
-  -> verification/
-  -> mapping/
-  -> roadmap/
-  -> adr/
+foundations/rendering_conventions.md
+foundations/rasterization_edge_rules.md
+```
+
+如果是跨裝置, 跨 session, 久未開專案, 或 context 已經 stale, 再讀:
+
+```text
+HANDOFF.md
+```
+
+如果要編輯 `docs/` 子樹, 先看:
+
+```text
+AGENTS.md
+```
+
+## Document Roles
+
+```text
+PROJECT_MAP.md
+  project-level overview, knowledge map, and long-term direction
+
+ARCHITECTURE.md
+  short/mid/long technical target architecture
+
+DEVELOPMENT.md
+  git, branch, commit, experiment workflow
+
+HANDOFF.md
+  cross-session orientation only, not the general docs workflow
+
+AGENTS.md
+  docs subtree collaboration rules
 ```
 
 ## Directory Map
 
 ```text
 docs/
-  HANDOFF.md                 cross-session handoff and next-step checklist
-  PROJECT_MAP.md              project-level overview
-  ARCHITECTURE.md             short/mid/long technical target architecture
-  DEVELOPMENT.md              git, branch, commit, experiment workflow
   README.md                   this file
+  AGENTS.md                   docs subtree collaboration rules
+  HANDOFF.md                  cross-session handoff and stale-context entry
+  PROJECT_MAP.md              project-level overview
+  ARCHITECTURE.md             target architecture and technical direction
+  DEVELOPMENT.md              development workflow
 
-  foundations/                conventions, math mapping, pipeline vocabulary
+  foundations/                coordinate, depth, raster, math, pipeline conventions
   architecture/               renderer core, display backend, command queue, UI
   verification/               tests, debug views, traces, golden images
   mapping/                    commercial engine mapping and career mapping
@@ -39,5 +65,20 @@ docs/
 
   tutorial-soft-renderer/     graphics and rasterization teaching track
   tutorial-cpp/               C++ and engineering teaching track
-  notes/                      dated discussion records and long-form notes
+  notes/                      rough ideas, learning traces, current-state analysis
 ```
+
+## Notes
+
+Use `docs/notes/` for rough ideas, learning traces, long-form discussion records, and current-state analysis.
+
+Current useful notes:
+
+```text
+notes/2026-06-28-current_status_and_decision_map.md
+notes/2026-06-28-docs_readme_cleanup_audit.md
+notes/2026-05-22-pixel_renderer_next_trusted_pipeline_plan.md
+notes/2026-05-22-rendering_systems_learning_record_and_plan.md
+```
+
+When a note becomes a durable project rule, extract only the stable part into `foundations/`, `architecture/`, `verification/`, `roadmap/`, or `adr/`.
