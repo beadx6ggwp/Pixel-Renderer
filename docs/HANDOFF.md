@@ -1,6 +1,6 @@
 # Pixel-Renderer Handoff
 
-Last updated: 2026-06-28
+Last updated: 2026-06-29
 
 This file is a cross-machine / cross-session orientation note. It should preserve the broad project direction and durable decisions, not prescribe a rigid next task.
 
@@ -12,6 +12,8 @@ Read after opening a fresh session:
 
 ```text
 AGENTS.md
+README.md
+docs/README.md
 docs/PROJECT_MAP.md
 docs/ARCHITECTURE.md
 docs/DEVELOPMENT.md
@@ -28,14 +30,14 @@ Pixel-Renderer should be treated as a `Rendering Systems Lab`.
 The central learning loop is:
 
 ```text
-implement a concept from first principles in Pixel-Renderer
+build a concept directly in Pixel-Renderer
   -> inspect or reproduce the same concept in a commercial / production-style engine
   -> document the mapping between mechanism, abstraction, workflow, tooling, and tradeoffs
 ```
 
 This is the `Pixel-Renderer + Engine Mirror Demo` strategy.
 
-The project should remain open-ended. FPGA, software GPU, Filament-style renderer architecture, Unity / Unreal engine fluency, UI/tooling, and technical art are all possible branches. The shared core is first-principles rendering knowledge plus the ability to test, debug, and explain each layer.
+The project should remain open-ended. FPGA, software GPU, Filament-style renderer architecture, Unity / Unreal engine fluency, UI/tooling, and technical art are all possible branches. The shared core is the ability to implement, test, debug, and explain each rendering layer.
 
 ---
 
@@ -99,7 +101,42 @@ This snapshot should orient the next session, not replace reading the code.
 
 ---
 
-## 4. Key Docs
+## 4. Current Docs / README Context
+
+Recent docs work adjusted the project entry points.
+
+Current `README.md` intent:
+
+```text
+stay close to the original compact project-intro style
+describe what Pixel-Renderer does, not the user's personal background
+explain current prototype state and near-term plan
+include simple current/future ASCII architecture diagrams
+mention SDL / Win32 display backend switching as planned work, not current source state
+avoid claiming depth, MVP, IShader, Material, Renderer, or DisplayBackend are already implemented
+```
+
+Current docs workflow intent:
+
+```text
+docs/README.md is the normal docs directory entry
+docs/AGENTS.md is the docs subtree workflow rule
+docs/HANDOFF.md is only for cross-machine / cross-session / stale-context orientation
+rough ideas and learning traces start in docs/notes/
+durable decisions are extracted later into stable topic docs or ADRs
+```
+
+Most recent current-state analysis:
+
+```text
+docs/notes/2026-06-28-current_status_and_decision_map.md
+```
+
+That note is still rough analysis, but it is the best single document for understanding why the recommended next source branch is `render/raster-baseline`, with `test/raster-core` style tests folded into it.
+
+---
+
+## 5. Key Docs
 
 Primary project map:
 
@@ -147,7 +184,7 @@ Use these as durable context instead of relying on chat memory.
 
 ---
 
-## 5. Preserved Decisions
+## 6. Preserved Decisions
 
 Rendering convention:
 
@@ -181,7 +218,7 @@ extract useful experiment results into docs, tests, or clean feature branches
 
 ---
 
-## 6. Choosing The Next Task
+## 7. Choosing The Next Task
 
 Do not treat this handoff as a command queue. Choose the next task by asking what the current session needs most:
 
@@ -202,11 +239,32 @@ experimentation:
   prototype a small idea in exp/* and extract only useful results
 ```
 
-The strongest near-term center of gravity is still the trusted raster core, but architecture or tooling work is valid when it directly supports correctness, observability, or future implementation clarity.
+The strongest near-term center of gravity is still the trusted raster core.
+
+Recommended default branch:
+
+```text
+render/raster-baseline
+```
+
+Recommended implementation style:
+
+```text
+small testable raster helpers
+edge-function coverage
+pixel-center sampling
+top-left shared-edge rule
+color interpolation
+depth interpolation
+depth buffer and depth test
+simple debug views or deterministic demos
+```
+
+Architecture or tooling work is valid when it directly supports correctness, observability, or future implementation clarity. If depth ownership, tests, or headless output become awkward, split a small `arch/render-target` branch for owned `Framebuffer` / `RenderTarget` before broad `DisplayBackend` work.
 
 ---
 
-## 7. Windows Startup
+## 8. Windows Startup
 
 When reopening on Windows:
 
@@ -234,13 +292,15 @@ Before making code changes, choose a branch name that describes the engineering 
 
 ---
 
-## 8. If Context Conflicts
+## 9. If Context Conflicts
 
 Prefer current source code over older planning notes.
 
 Prefer stable docs over chat memory:
 
 ```text
+README.md
+docs/README.md
 PROJECT_MAP.md
 ARCHITECTURE.md
 DEVELOPMENT.md

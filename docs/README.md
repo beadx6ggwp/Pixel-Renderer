@@ -76,7 +76,6 @@ Current useful notes:
 
 ```text
 notes/2026-06-28-current_status_and_decision_map.md
-notes/2026-06-28-docs_readme_cleanup_audit.md
 notes/2026-05-22-pixel_renderer_next_trusted_pipeline_plan.md
 notes/2026-05-22-rendering_systems_learning_record_and_plan.md
 ```
