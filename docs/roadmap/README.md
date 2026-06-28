@@ -1,6 +1,6 @@
 # Roadmap
 
-這裡放未來實作順序、milestone、短中長期計畫。它應該比 `notes/` 更穩定，比 `PROJECT_MAP.md` 更具體。
+這裡放未來實作順序、milestone、短中長期計畫。它應該比 `notes/journal` 上的 rough notes 更穩定，比 `PROJECT_MAP.md` 更具體。
 
 建議先補：
 
