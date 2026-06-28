@@ -141,10 +141,9 @@ Pixel-Renderer/
     mapping/
     roadmap/
     adr/
-    notes/
-    tutorial-soft-renderer/
-    tutorial-cpp/
 ```
+
+Long-form learning notes and tutorial drafts are kept on branch `notes/journal`, not on `main`.
 
 ## Roadmap
 

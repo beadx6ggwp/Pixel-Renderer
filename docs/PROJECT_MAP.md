@@ -793,10 +793,17 @@ Correctness
 
 ## 11. Docs 導覽
 
-### Stable doc folders
+`main` 只保存 current project truth 與 stable project docs. 完整 learning history, long-form notes, and tutorial drafts 保存在 branch `notes/journal`.
+
+### Stable docs on main
 
 ```text
 docs/README.md
+docs/AGENTS.md
+docs/HANDOFF.md
+docs/PROJECT_MAP.md
+docs/ARCHITECTURE.md
+docs/DEVELOPMENT.md
 docs/foundations/
 docs/architecture/
 docs/verification/
@@ -808,66 +815,26 @@ docs/adr/
 用途：
 
 ```text
-把 notes 中已經沉澱的方向整理成穩定規格文件。
+把 journal 中已經沉澱的方向整理成穩定規格文件。
 foundations 放基本規約，architecture 放工程邊界，
 verification 放 debug/testing，mapping 放商業引擎與職涯對照，
 roadmap 放里程碑，adr 放重要架構決策。
 ```
 
-### Graphics / Rasterization
+### Project journal
 
 ```text
-docs/tutorial-soft-renderer/index.html
+branch: notes/journal
+index: docs/notes/JOURNAL_INDEX.md
 ```
 
 用途：
 
 ```text
-從 SetPixel 到 MVP / IShader / perspective-correct interpolation 的圖學主線。
-```
+保存 rough thinking, learning notes, tutorial tracks, and historical reasoning.
+需要歷史脈絡時才讀:
 
-### C++ / Engineering
-
-```text
-docs/tutorial-cpp/index.html
-docs/tutorial-cpp/ROADMAP.md
-docs/tutorial-cpp/AUDIT.md
-```
-
-用途：
-
-```text
-C++ theory、toolchain、build system、backend boundary、testing、dependency hygiene。
-```
-
-### Current architecture
-
-```text
-docs/tutorial-cpp/impl/i01_current_renderer_architecture_walkthrough.html
-docs/notes/2026-05-15-renderer-architecture-map.md
-docs/notes/2026-05-15-owned-framebuffer-ui-imgui.md
-```
-
-用途：
-
-```text
-理解目前 Application / ScreenManager / RenderDevice / Rasterizer 的責任與後續重構方向。
-```
-
-### 2026-05-22 planning notes
-
-```text
-docs/notes/2026-05-22-rendering_systems_learning_record_and_plan.md
-docs/notes/2026-05-22-pixel_renderer_architecture_and_learning_roadmap.md
-docs/notes/2026-05-22-pixel_renderer_next_trusted_pipeline_plan.md
-docs/notes/2026-05-22-pixel_renderer_debug_testing_architecture.md
-docs/notes/2026-05-22-pixel_renderer_hidden_spine.md
-```
-
-用途：
-
-```text
-整理 Rendering Systems 定位、Engine Mirror 策略、可信 pipeline、debug/testing、隱性主幹。
+git show notes/journal:docs/notes/JOURNAL_INDEX.md
 ```
 
 ---

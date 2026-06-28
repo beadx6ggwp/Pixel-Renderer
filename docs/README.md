@@ -1,6 +1,12 @@
 # Pixel-Renderer Docs
 
-`docs/` 放 project docs, stable conventions, rough notes, and tutorial tracks. 這裡不是單一 roadmap, 而是把不同層級的文件分開保存.
+`docs/` 放 stable project docs, renderer conventions, architecture notes, verification policy, roadmap, and ADR. 這裡保存 current project truth, 不保存完整學習歷程.
+
+Long-form learning notes, teaching drafts, and historical reasoning live on branch:
+
+```text
+notes/journal
+```
 
 ## Reading Entry
 
@@ -62,22 +68,14 @@ docs/
   mapping/                    commercial engine mapping and career mapping
   roadmap/                    milestone planning and execution order
   adr/                        architecture decision records
-
-  tutorial-soft-renderer/     graphics and rasterization teaching track
-  tutorial-cpp/               C++ and engineering teaching track
-  notes/                      rough ideas, learning traces, current-state analysis
 ```
 
-## Notes
+## Project Journal
 
-Use `docs/notes/` for rough ideas, learning traces, long-form discussion records, and current-state analysis.
+Historical notes were moved out of `main` to keep `main` focused. Read them only when the task needs past reasoning:
 
-Current useful notes:
-
-```text
-notes/2026-06-28-current_status_and_decision_map.md
-notes/2026-05-22-pixel_renderer_next_trusted_pipeline_plan.md
-notes/2026-05-22-rendering_systems_learning_record_and_plan.md
+```bash
+git show notes/journal:docs/notes/JOURNAL_INDEX.md
 ```
 
-When a note becomes a durable project rule, extract only the stable part into `foundations/`, `architecture/`, `verification/`, `roadmap/`, or `adr/`.
+Do not treat `notes/journal` as current source truth. When a note becomes a durable project rule, extract only the stable part into `foundations/`, `architecture/`, `verification/`, `roadmap/`, or `adr/` through a focused `docs/*` branch.

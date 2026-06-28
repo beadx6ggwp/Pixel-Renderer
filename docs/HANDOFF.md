@@ -122,14 +122,14 @@ Current docs workflow intent:
 docs/README.md is the normal docs directory entry
 docs/AGENTS.md is the docs subtree workflow rule
 docs/HANDOFF.md is only for cross-machine / cross-session / stale-context orientation
-rough ideas and learning traces start in docs/notes/
+rough ideas, learning traces, and tutorial drafts live on branch notes/journal
 durable decisions are extracted later into stable topic docs or ADRs
 ```
 
 Most recent current-state analysis:
 
 ```text
-docs/notes/2026-06-28-current_status_and_decision_map.md
+notes/journal:docs/notes/2026-06-28-current_status_and_decision_map.md
 ```
 
 That note is still rough analysis, but it is the best single document for understanding why the recommended next source branch is `render/raster-baseline`, with `test/raster-core` style tests folded into it.
@@ -168,10 +168,11 @@ Rasterization edge rules:
 docs/foundations/rasterization_edge_rules.md
 ```
 
-Dated records:
+Historical project journal:
 
 ```text
-docs/notes/
+branch: notes/journal
+index: docs/notes/JOURNAL_INDEX.md
 ```
 
 Documentation workflow:
@@ -214,6 +215,7 @@ keep main readable and preferably buildable
 prefer rebase + fast-forward merge for clean personal branches
 use exp/* as disposable experiment branches
 extract useful experiment results into docs, tests, or clean feature branches
+keep learning history on notes/journal and extract only stable conclusions back to main
 ```
 
 ---
@@ -308,5 +310,13 @@ rendering_conventions.md
 rasterization_edge_rules.md
 HANDOFF.md
 ```
+
+If historical reasoning is needed, read the journal branch explicitly:
+
+```bash
+git show notes/journal:docs/notes/JOURNAL_INDEX.md
+```
+
+Do not treat `notes/journal` as current source truth.
 
 If a future session changes a durable direction, update the relevant doc instead of leaving the decision only in the chat.

@@ -91,16 +91,14 @@ rg --files src docs | head
 Important docs areas:
 
 ```text
-docs/tutorial-soft-renderer/   graphics and rasterization teaching track
-docs/tutorial-cpp/             C++ and engineering teaching track
 docs/AGENTS.md                 documentation workflow rules for docs/
-docs/notes/                    dated long-form discussion records
 docs/foundations/              stable conventions and math mapping
 docs/architecture/             renderer/backend/UI architecture
 docs/verification/             tests, traces, debug views, golden images
 docs/mapping/                  engine mirror and career mapping
 docs/roadmap/                  milestone planning
 docs/adr/                      architecture decision records
+notes/journal branch           learning history, thinking records, tutorial drafts
 ```
 
 ## Current Source State
@@ -226,7 +224,7 @@ platform header isolation
 
 ## Documentation Workflow
 
-When editing docs, follow `docs/AGENTS.md`. It defines the local documentation workflow and note organization rules for the `docs/` subtree.
+When editing docs, follow `docs/AGENTS.md`. It defines the local documentation workflow for the `docs/` subtree.
 
 Prefer stable docs for decisions and long-lived concepts:
 
@@ -239,7 +237,7 @@ docs/verification/testing_strategy.md
 docs/verification/debug_visualization.md
 ```
 
-Use `docs/notes/` for dated long-form thinking and conversation records.
+Use branch `notes/journal` for dated long-form thinking, conversation records, learning notes, and tutorial drafts. Do not merge that branch wholesale into `main`; extract only stable project conclusions back through focused `docs/*`, `render/*`, `arch/*`, or `test/*` branches.
 
 Use `docs/adr/` only for decisions that will affect future branches, such as:
 
