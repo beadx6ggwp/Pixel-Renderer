@@ -141,6 +141,40 @@ rough architecture comparisons
 git show notes/journal:docs/notes/JOURNAL_INDEX.md
 ```
 
+`notes/journal` 有兩種資料來源:
+
+```text
+main-derived notes:
+  completed feature branch -> main -> notes/journal
+
+experiment-derived notes:
+  exp/* branch -> notes/journal note
+```
+
+主流流程是讓 journal 跟著穩定 code 前進:
+
+```bash
+# after a feature branch is merged into main
+git switch notes/journal
+git merge main
+
+# then write learning notes, teaching notes, or reasoning records
+```
+
+這代表 `notes/journal` 可以針對最新穩定 source code 繼續寫筆記, 但仍然不會反過來定義 current project truth.
+
+如果某個 `exp/*` branch 不打算 merge 回 `main`, 但值得保存研究過程, 可以在 `notes/journal` 寫 experiment-derived note. 這類 note 應標明:
+
+```text
+source branch
+experiment status
+what was learned
+what may be extracted later
+what should not be treated as current behavior
+```
+
+預設不要把未完成 feature branch 直接 merge 進 `notes/journal`. 等 feature branch 進 `main` 後, 再讓 `notes/journal` merge `main`.
+
 當 journal 裡的內容成熟成 project rule, 只抽取 stable conclusion 回 `main`:
 
 ```bash
