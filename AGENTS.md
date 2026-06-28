@@ -2,7 +2,7 @@
 
 This file gives repo-local instructions for Codex or other coding agents working on Pixel-Renderer.
 
-Last updated: 2026-06-28
+Last updated: 2026-06-29
 
 ## User Context
 
@@ -290,6 +290,31 @@ exp/gjk-2d
 Use local branches by default. Push remote branches only for long-running, high-risk, cross-machine, backup, CI, or PR/discussion work.
 
 Do not keep remote branches as permanent history. The readable project history should live on `main`, docs, tags, and ADRs.
+
+Important git operations are user-owned by default. Agents should not run these unless the user explicitly asks the agent to operate git directly:
+
+```text
+git switch -c
+git branch -d
+git add
+git commit
+git merge
+git rebase
+git push
+git reset
+```
+
+For these operations, prefer giving the user:
+
+```text
+recommended branch name
+files to stage
+commit message
+merge / cleanup sequence
+pre-merge checks
+```
+
+Agents may still inspect repository state with read-only commands such as `git status`, `git log`, `git diff`, `git branch`, and `git show`.
 
 ## Commit Messages
 
