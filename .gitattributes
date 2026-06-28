@@ -1,1 +1,18 @@
+* text=auto eol=lf
+
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.exe binary
+*.dll binary
+*.obj binary
+*.o binary
+*.lib binary
+*.pdb binary
+
 docs/** linguist-detectable=false
