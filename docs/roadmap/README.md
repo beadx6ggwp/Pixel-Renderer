@@ -6,9 +6,30 @@
 
 ```text
 milestones.md
-next_steps.md
 branching_map.md
 ```
+
+## Current Files
+
+### `next_steps.md`
+
+整理下一個近期 source slice：
+
+```text
+render/raster-baseline
+```
+
+這份文件只回答近期問題：
+
+```text
+what to implement next
+what files or modules are likely involved
+what tests to add
+what is explicitly out of scope
+when to split arch/render-target
+```
+
+它不是完整 project roadmap。
 
 ## Planned Files
 
@@ -26,18 +47,6 @@ Milestone F: Material / Renderer Skeleton
 Milestone G: CommandQueue / Debug UI
 ```
 
-### `next_steps.md`
-
-整理當前最近要做的任務：
-
-```text
-what to implement next
-what files to touch
-what tests to add
-what docs to update
-what not to do yet
-```
-
 ### `branching_map.md`
 
 整理中長期分支：
@@ -50,4 +59,3 @@ Software GPU
 FPGA / hardware GPU
 Engine Mirror Demo
 ```
-
