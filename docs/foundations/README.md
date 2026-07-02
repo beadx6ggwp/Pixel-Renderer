@@ -7,13 +7,13 @@
 ```text
 rendering_conventions.md
 rasterization_edge_rules.md
+interpolation_contract.md
 ```
 
 後續建議再補：
 
 ```text
 framebuffer_pixel_format.md
-interpolation_contract.md
 render_state.md
 trace_dump_format.md
 profiling_metrics.md
@@ -55,6 +55,25 @@ float precision / epsilon policy
 bbox half-open range
 ```
 
+### `interpolation_contract.md`
+
+整理 barycentric weights 從 coverage 變成 data transport 時的規約：
+
+```text
+coverage vs interpolation
+screen-space linear interpolation
+depth buffer depth vs view-space z
+perspective-correct varying interpolation
+OpenGL-style / Vulkan-style projection convention boundary
+```
+
+這份文件先讓 `render/raster-baseline` 不被 MVP / projection convention 卡住：
+
+```text
+ScreenVertex.z 先視為 normalized framebuffer depth [0, 1].
+完整 OpenGL-style 或 Vulkan-style post-projection contract 留到 viewport / perspective branch 明確選定。
+```
+
 ## Planned Files
 
 ### `framebuffer_pixel_format.md`
@@ -71,20 +90,6 @@ linear color vs sRGB
 alpha convention
 depth format
 clear values
-```
-
-### `interpolation_contract.md`
-
-整理 barycentric 從 inside test 升級成 pipeline data transport 的規約：
-
-```text
-screen-space linear interpolation
-perspective-correct interpolation
-depth interpolation
-color interpolation
-UV interpolation
-normal interpolation
-varying ownership
 ```
 
 ### `render_state.md`

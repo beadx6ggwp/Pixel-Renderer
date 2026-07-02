@@ -5,27 +5,37 @@
 建議先補：
 
 ```text
-testing_strategy.md
 debug_visualization.md
 pipeline_trace.md
 golden_image_tests.md
 ```
 
-## Planned Files
+## Current Files
 
 ### `testing_strategy.md`
 
-整理測試分層：
+整理第一階段 renderer testing strategy：
 
 ```text
-math unit tests
-rasterizer unit tests
-depth buffer tests
-viewport tests
-pipeline tests
-golden image tests
-regression tests
+pure raster helper tests
+small CPU framebuffer tests
+deterministic raster demos
+golden image tests later
 ```
+
+目前重點是 `render/raster-baseline`：
+
+```text
+edge function
+half-open bbox
+pixel-center sampling
+top-left shared-edge rule
+barycentric weights
+depth pass / fail
+color interpolation
+```
+
+## Planned Files
 
 ### `debug_visualization.md`
 

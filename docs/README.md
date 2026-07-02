@@ -20,6 +20,14 @@ foundations/rendering_conventions.md
 foundations/rasterization_edge_rules.md
 ```
 
+如果要接下一個 `render/raster-baseline` branch，再看：
+
+```text
+roadmap/next_steps.md
+verification/testing_strategy.md
+foundations/interpolation_contract.md
+```
+
 如果是跨裝置, 跨 session, 久未開專案, 或 context 已經 stale, 再讀:
 
 ```text

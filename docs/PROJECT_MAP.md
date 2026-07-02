@@ -301,12 +301,21 @@ class 名字像 engine，
 10. Documentation structure
 ```
 
-建議優先補三份短文件：
+目前優先對齊這幾份 stable docs：
 
 ```text
-docs/rendering_conventions.md
-docs/pipeline_flow.md
-docs/math_to_renderer.md
+docs/foundations/rendering_conventions.md
+docs/foundations/rasterization_edge_rules.md
+docs/foundations/interpolation_contract.md
+docs/verification/testing_strategy.md
+docs/roadmap/next_steps.md
+```
+
+後續如果 MVP / viewport 開始進 source，再補：
+
+```text
+docs/foundations/pipeline_flow.md
+docs/foundations/math_to_renderer.md
 ```
 
 ### 6.1 Rendering Conventions

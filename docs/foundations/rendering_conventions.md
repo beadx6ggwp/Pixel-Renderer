@@ -36,12 +36,12 @@ Screen-space rasterizer 在 y-flipped screen 判斷 CCW.
 
 ## 2. Reference API Policy
 
-Pixel-Renderer 的規約可以參考 Vulkan，但不要為了模仿 Vulkan 而過早架構化。
+Pixel-Renderer 的規約可以參考 Vulkan，但不要為了模仿 Vulkan 而過早架構化，也不要在 raster baseline 前把完整 projection convention 定死。
 
 Target policy:
 
 ```text
-Use Vulkan as a reference for post-projection rendering conventions:
+Use Vulkan as a provisional reference for post-projection rendering conventions:
   clip / NDC depth range
   viewport transform
   framebuffer coordinates
@@ -58,6 +58,7 @@ Reason:
 ```text
 Vulkan is useful as a precise external reference.
 Pixel-Renderer is still a learning renderer, so each abstraction must earn its place.
+The first raster baseline only needs a screen-space contract, not the full API convention.
 ```
 
 Important boundary:
@@ -67,11 +68,12 @@ Vulkan specifies the graphics API contract from shader outputs through rasteriza
 It does not force a single Object / World / View Space handedness for the user's math layer.
 ```
 
-So Pixel-Renderer will use:
+So the current stable docs use:
 
 ```text
-Vulkan-inspired post-projection conventions.
+Vulkan-inspired post-projection conventions as a named target direction.
 Learning-friendly first-principles math before projection.
+A branch may use OpenGL-style derivation, but must convert at an explicit boundary.
 ```
 
 ---
@@ -477,7 +479,7 @@ clear depth: 1.0
 depth test: incoming_depth < stored_depth
 ```
 
-This follows the Vulkan-style depth convention:
+This is compatible with the Vulkan-style depth convention:
 
 ```text
 clip-space depth satisfies 0 <= Zc <= Wc
@@ -490,12 +492,14 @@ For screen-space baseline:
 
 ```text
 ScreenVertex.z is already normalized depth in [0, 1].
+This is a framebuffer-depth contract, not a full projection convention.
 ```
 
 For future MVP pipeline:
 
 ```text
-clip -> NDC -> viewport should produce the same normalized depth convention.
+clip -> NDC -> viewport must choose one named post-projection convention.
+If it targets this doc's Vulkan-inspired path, it should produce normalized depth in [0, 1].
 ```
 
 Reverse-Z:
@@ -894,20 +898,19 @@ These gaps are acceptable for the current prototype, but future rendering work s
 
 ## 19. Short-Term Policy
 
-For the next raster baseline, use:
+For the next raster baseline, use the raster parts of this document:
 
 ```text
 Reference:
-  Vulkan-inspired where it clarifies post-projection conventions
-  learning-first where API complexity is not yet needed
+  Vulkan-inspired conventions are a useful target direction
+  but the next branch only commits to screen-space raster behavior
 
 Screen Space:
   origin top-left, x right, y down
 
-Viewport:
-  NDC x [-1, 1] -> screen x [0, width]
-  NDC y [-1, 1] -> screen y [0, height]
-  NDC z [0, 1] -> depth [minDepth, maxDepth]
+Raster Input:
+  ScreenVertex.x/y are framebuffer pixel coordinates
+  ScreenVertex.z is normalized framebuffer depth in [0, 1]
 
 Triangle sampling:
   pixel center (x + 0.5, y + 0.5)
@@ -926,12 +929,15 @@ Color:
 
 Framebuffer:
   target owned Framebuffer, current Win32 DIBSection until refactor
+
+Deferred:
+  full OpenGL-style vs Vulkan-style projection choice belongs to render/viewport-ndc or render/perspective
 ```
 
-This gives the next branch a concrete contract:
+This gives the next branch a concrete raster contract:
 
 ```text
-render/raster-baseline should make triangle behavior match this document.
+render/raster-baseline should make triangle behavior match the screen-space, coverage, interpolation, and depth parts of this document.
 ```
 
 ---
