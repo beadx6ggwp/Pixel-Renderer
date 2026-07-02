@@ -70,6 +70,23 @@ body {
 .ov-num  { font-family: 'Consolas', monospace; font-size: 2em; font-weight: bold; margin-bottom: 4px; }
 .ov-label { color: var(--muted); font-size: 0.82em; }
 
+/* ── Convention note ────────────────────────────────────────── */
+.track-note {
+  background: var(--bg1); border: 1px solid var(--border);
+  border-left: 4px solid var(--yellow); border-radius: 8px;
+  padding: 20px 24px; margin-bottom: 32px;
+}
+.track-note h3 {
+  color: var(--yellow); font-family: 'Consolas', monospace;
+  font-size: 0.9em; margin-bottom: 12px;
+}
+.track-note p {
+  color: var(--text); font-size: 0.88em; line-height: 1.85;
+  margin-bottom: 10px;
+}
+.track-note p:last-child { margin-bottom: 0; }
+.track-note code { font-family: 'Consolas', monospace; color: var(--blue); }
+
 /* ── Part headers ────────────────────────────────────────────── */
 .part {
   margin-bottom: 40px;
@@ -191,6 +208,30 @@ body {
 </div>
 
 <div class="container">
+
+  <div class="track-note">
+    <h3>▌ Convention 閱讀提醒</h3>
+    <p>
+      這條教學線屬於 <code>notes/journal</code> 的 learning track，不是 <code>main</code> 的 current source truth。
+      Ch18–Ch21 目前主要採用 OpenGL-style textbook route：先把投影後的 NDC 視為 <code>[-1, 1]^3</code>，
+      再由 viewport 把 z remap 到 framebuffer depth <code>[0, 1]</code>。這樣適合先建立對稱 NDC cube 和 MVP 管線直覺。
+    </p>
+    <p>
+      Pixel-Renderer 的 stable docs 目前只要求下一個 <code>render/raster-baseline</code> 固定 screen-space contract：
+      <code>ScreenVertex.x/y</code> 是 pixel coordinates，<code>ScreenVertex.z</code> 是 normalized framebuffer depth <code>[0, 1]</code>，
+      且 smaller depth is closer。完整 OpenGL-style 或 Vulkan-style projection convention 會留到 viewport / perspective branch 明確選定。
+    </p>
+    <p>
+      後續整理 Ch20 / Ch21 時，可以同時講 OpenGL-style 和 Vulkan-style：OpenGL-style 保留歷史與教科書常見的
+      <code>[-1, 1]</code> depth 推導；Vulkan-style 使用 <code>[0, 1]</code> depth、explicit viewport/depth contract，
+      更貼近現代 framebuffer depth usage。重點不是誰比較正確，而是 projection、clipping、viewport、depth test、
+      debug view 必須使用同一套 named boundary。
+    </p>
+    <p>
+      另外，Ch10 把 barycentric interpolation 當成屬性搬運的直覺入口；在 screen-space / orthographic 情境可以先這樣理解。
+      進入 perspective projection 後，UV、normal、custom varyings 需要 Ch26 的 perspective-correct interpolation。
+    </p>
+  </div>
 
   <!-- Overview -->
   <div class="overview">

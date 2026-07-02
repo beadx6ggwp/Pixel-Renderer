@@ -148,6 +148,23 @@ tr:hover td { background: var(--bg1); }
   這樣光柵化才知道該把三角形畫在畫面的哪個位置。
 </p>
 
+<div class="box box-yellow">
+  <strong>Convention 提醒</strong>：本章先用 OpenGL-style textbook convention 推導，
+  也就是 NDC z 使用 \([-1, 1]\)，再由 viewport / depth range 映射到 framebuffer depth \([0, 1]\)。
+  這不是說 Pixel-Renderer 最終一定採用 OpenGL-style，而是因為這條路線最常見於教科書，且 \([-1,1]^3\)
+  的對稱 cube 很適合先理解 MVP、clip space、perspective divide。
+  <br><br>
+  Vulkan-style 的選擇不同：clip depth 使用 \(0 \leq Z_c \leq W_c\)，perspective divide 後 NDC z 直接是 \([0,1]\)。
+  這讓 viewport depth mapping 更接近 framebuffer depth buffer 的實際使用，也符合 Vulkan 作為 explicit low-level API
+  的設計方向：projection、viewport、depth test 都要明確說出自己的 contract。
+  <br><br>
+  所以這裡應該學到的不是「OpenGL 對」或「Vulkan 對」，而是：
+  <strong>同一條 pipeline 裡，projection matrix、clipping rule、NDC z range、viewport mapping、depth test、
+  debug depth view 必須選同一套 named boundary。</strong>
+  Pixel-Renderer 的下一個 raster baseline 只先固定 screen-space input 和 framebuffer depth \([0,1]\)，
+  完整 projection convention 會在 viewport / perspective branch 再明確選定。
+</div>
+
 <!-- ══════════════════════════════════════════════════════════════ -->
 <h2><div class="n">1</div>NDC 空間的定義</h2>
 
