@@ -1,6 +1,6 @@
 # Pixel-Renderer Handoff
 
-Last updated: 2026-06-29
+Last updated: 2026-07-03
 
 This file is a cross-machine / cross-session orientation note. It should preserve the broad project direction and durable decisions, not prescribe a rigid next task.
 
@@ -19,6 +19,9 @@ docs/ARCHITECTURE.md
 docs/DEVELOPMENT.md
 docs/foundations/rendering_conventions.md
 docs/foundations/rasterization_edge_rules.md
+docs/foundations/interpolation_contract.md
+docs/roadmap/next_steps.md
+docs/verification/testing_strategy.md
 ```
 
 ---
@@ -66,7 +69,9 @@ Important learning boundary:
 
 ```text
 Vulkan is a useful reference for precise post-projection conventions.
+OpenGL-style derivations are still useful for teaching and comparison.
 Vulkan API architecture is reference material, not an implementation template.
+Each implementation branch should choose one named post-projection contract.
 ```
 
 ---
@@ -126,13 +131,24 @@ rough ideas, learning traces, and tutorial drafts live on branch notes/journal
 durable decisions are extracted later into stable topic docs or ADRs
 ```
 
-Most recent current-state analysis:
+Recent stable docs added for the next raster branch:
 
 ```text
-notes/journal:docs/notes/2026-06-28-current_status_and_decision_map.md
+docs/foundations/interpolation_contract.md
+docs/roadmap/next_steps.md
+docs/verification/testing_strategy.md
 ```
 
-That note is still rough analysis, but it is the best single document for understanding why the recommended next source branch is `render/raster-baseline`, with `test/raster-core` style tests folded into it.
+These documents define the immediate `render/raster-baseline` scope: screen-space input, edge-function coverage, pixel-center sampling, top-left shared-edge rules, color/depth interpolation, depth buffer behavior, and deterministic tests.
+
+Recent tutorial context on `notes/journal`:
+
+```text
+docs/tutorial-soft-renderer/index.html
+docs/tutorial-soft-renderer/theory/ch20_viewport.html
+```
+
+Those notes now warn that Ch18-Ch21 are an OpenGL-style teaching route and that future teaching should compare OpenGL-style and Vulkan-style conventions explicitly. Treat them as learning context, not current source truth.
 
 ---
 
@@ -168,6 +184,24 @@ Rasterization edge rules:
 docs/foundations/rasterization_edge_rules.md
 ```
 
+Interpolation / depth / varying contract:
+
+```text
+docs/foundations/interpolation_contract.md
+```
+
+Next raster implementation slice:
+
+```text
+docs/roadmap/next_steps.md
+```
+
+Renderer testing strategy:
+
+```text
+docs/verification/testing_strategy.md
+```
+
 Historical project journal:
 
 ```text
@@ -190,12 +224,13 @@ Use these as durable context instead of relying on chat memory.
 Rendering convention:
 
 ```text
-Vulkan-inspired, learning-first
+Vulkan-inspired target direction, learning-first
+OpenGL-style derivations allowed for teaching and comparison
 NDC x/y: [-1, 1]
-NDC z: [0, 1]
 screen origin: top-left
 screen y: down
-depth: [0, 1], smaller is closer
+screen-space raster baseline depth: [0, 1], smaller is closer
+full projection convention deferred to viewport / perspective work
 ```
 
 Rasterization convention:
@@ -263,6 +298,8 @@ simple debug views or deterministic demos
 ```
 
 Architecture or tooling work is valid when it directly supports correctness, observability, or future implementation clarity. If depth ownership, tests, or headless output become awkward, split a small `arch/render-target` branch for owned `Framebuffer` / `RenderTarget` before broad `DisplayBackend` work.
+
+Do not start with MVP, IShader, Material, CommandQueue, SDL backend, full DisplayBackend, texture loading, OBJ loading, or lighting. Those belong after the raster baseline is trustworthy.
 
 ---
 
