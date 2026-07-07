@@ -5,7 +5,7 @@ Paper:
 - Blaise Tine, Fares Elsabbagh, Krishna Yalamarthy, Hyesoon Kim.
 - "Vortex: Extending the RISC-V ISA for GPGPU and 3D-Graphics Research."
 - MICRO 2021.
-- Source PDF: https://vortex.cc.gatech.edu/publications/vortex_micro21_final.pdf
+- Source PDF: [vortex_micro21_final.pdf](https://vortex.cc.gatech.edu/publications/vortex_micro21_final.pdf)
 
 Related note:
 
@@ -1301,4 +1301,3 @@ Pixel-Renderer
 ```
 
 等 source 進到 texture/depth/debug trace 後, 再把 stable conclusion 抽到 `docs/verification/` 或 `docs/foundations/`.
-
