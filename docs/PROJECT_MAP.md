@@ -802,7 +802,7 @@ Correctness
 
 ## 11. Docs 導覽
 
-`main` 同時保存 formal renderer、stable project docs 與 `learning/` workspace. 這些內容的 authority 不同: `docs/` 是 current project truth, `learning/` 保存完整推導、tutorial、readings 與探索紀錄.
+`main` 同時保存 formal renderer、stable project docs、`learning/` workspace 與 `experiments/`. 這些內容的 authority 不同: `docs/` 是 current project truth, `learning/` 保存完整推導、tutorial、readings 與探索紀錄, `experiments/` 保存比較、behavior probe 與尚未升格的 evidence.
 
 ### Stable docs on main
 
@@ -844,6 +844,21 @@ learning/software-renderer/
 ```text
 保存 rough thinking, learning notes, tutorial tracks, readings, and historical reasoning.
 它們與 source 共存, 不需要切換 branch, 但不能取代 current source、stable docs 或實際驗證結果.
+```
+
+### Experiments
+
+```text
+experiments/README.md
+experiments/<topic>/
+```
+
+用途：
+
+```text
+保存 self-contained algorithm comparison、current-source behavior probe、architecture spike 與 build trial.
+Experiment 可以依賴 selected src interfaces; src 不得反向依賴 experiments/.
+預設直接存在於 main, 只有需要隔離 incompatible formal source state 時才使用 exp/* branch.
 ```
 
 ---

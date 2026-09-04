@@ -91,6 +91,7 @@ docs/README.md
 docs/foundations/rendering_conventions.md
 docs/foundations/rasterization_edge_rules.md
 learning/README.md when the task concerns learning notes, tutorials, or labs
+experiments/README.md when the task concerns experiments, spikes, or behavior probes
 ```
 
 Read `docs/HANDOFF.md` only when this is a fresh cross-machine / cross-session handoff, the project has not been opened for a while, the local context looks stale or conflicting, or the user explicitly asks for current-state orientation.
@@ -106,7 +107,7 @@ Then inspect the current source and git state:
 ```bash
 git status --short
 git branch --show-current
-rg --files src docs learning | head
+rg --files src docs learning experiments | head
 ```
 
 Important docs areas:
@@ -120,6 +121,7 @@ docs/mapping/                  engine mirror and career mapping
 docs/roadmap/                  milestone planning
 docs/adr/                      architecture decision records
 learning/                      learning notes, tutorial tracks, readings, and small labs
+experiments/                   self-contained comparisons, behavior probes, and disposable prototypes
 ```
 
 ## Current Source State
@@ -386,7 +388,7 @@ Branch commits can be exploratory, but commits merged into `main` should be read
 
 Experiments are allowed and useful.
 
-Use `exp/*` for work like:
+Use `experiments/` by default for work like:
 
 ```text
 DDA vs Bresenham comparison
@@ -395,16 +397,22 @@ GJK collision prototype
 temporary math experiments
 ```
 
+The directory classifies the content. A branch isolates an alternative repository state.
+
 Rules:
 
 ```text
-1. exp/* may contain messy commits.
-2. exp/* may contain competing implementations.
-3. exp/* should not merge directly into main.
-4. Extract useful results into docs, tests, or a clean render/arch/test branch.
+1. Self-contained experiments and experiments that only call current src may live on main.
+2. experiments/ may contain competing implementations and negative results.
+3. src/ must never depend on learning/, experiments/, or tests/.
+4. The root build must not automatically discover learning/ or experiments/.
+5. Use exp/* only when formal source needs an isolated, possibly incompatible state.
+6. Extract accepted results into clean src, tests, docs, or a focused feature branch.
 ```
 
-For example, DDA may become a reference implementation or teaching note, while Bresenham becomes the production `Rasterizer::DrawLine` path.
+An experiment may include headers from `src/` and link explicitly selected implementation files. It should not include `.cpp` files as headers. See `experiments/README.md` for the dependency, build, branch, and result-flow rules.
+
+For example, DDA may remain a reference implementation or teaching note, while Bresenham becomes the production `Rasterizer::DrawLine` path. A shared-edge probe may start under `experiments/`, then become a deterministic test after the expected behavior is known.
 
 ## Code Editing Guidance
 
@@ -412,7 +420,7 @@ Before editing:
 
 ```text
 git status --short
-rg --files src docs learning
+rg --files src docs learning experiments
 ```
 
 Do not revert user changes unless explicitly asked.

@@ -75,3 +75,5 @@ docs/
 ## Learning Workspace
 
 Read [`../learning/README.md`](../learning/README.md) for learning notes, tutorial tracks, readings, and small labs. Learning material lives on `main`, but it is not automatically current source truth. When a note becomes a durable project rule, extract only the stable part into `foundations/`, `architecture/`, `verification/`, `roadmap/`, or `adr/`.
+
+Read [`../experiments/README.md`](../experiments/README.md) for algorithm comparisons, behavior probes, architecture spikes, build trials, dependency direction, and experiment-to-production flow. Experiments live on `main` by default but do not become stable truth until their conclusions are extracted into source, tests, or docs.

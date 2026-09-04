@@ -10,6 +10,8 @@
 
 Long-form learning notes, historical reasoning, tutorial tracks, readings, and exploratory records live under `learning/` on `main`. They are useful learning context, but they are not current source truth or the current source roadmap.
 
+Executable comparisons, behavior probes, architecture spikes, and build/toolchain trials live under `experiments/` on `main` by default. They produce evidence, but they are not production source or stable project truth. Use an `exp/*` branch only when an experiment needs an incompatible formal source state.
+
 `docs/adr/` 只放會約束未來 branch 的 architecture decisions, 例如 owned `Framebuffer`, `DisplayBackend` boundary, depth convention, screen-space triangle before MVP, `CommandQueue` sequencing.
 
 其他 stable docs 依主題使用, 例如 `foundations/`, `architecture/`, `verification/`, `mapping/`, `roadmap/`. 這些資料夾是可用出口, 不是唯一出口.
@@ -24,6 +26,9 @@ learning/
 
 docs/
   states what the current project can rely on
+
+experiments/
+  records what was compared or observed before a production decision
 ```
 
 如果 learning note 變成 durable project rule, 把 stable conclusion 重寫到對應的 foundation, architecture, verification, roadmap, 或 ADR 文件. 不要因為一篇 learning note 很完整, 就把其中所有探索性內容視為正式決策.

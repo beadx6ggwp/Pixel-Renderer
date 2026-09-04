@@ -54,6 +54,9 @@ docs/
 
 src/ + tests/ + examples/
   show what the formal renderer currently implements and verifies
+
+experiments/
+  tests uncertainty by comparing alternatives or observing actual behavior
 ```
 
 Learning material 可以引用 current source, 但不要只靠舊 note 斷言目前行為. 如果 source、stable docs 與舊 note 不一致, 優先檢查 source 和 git state.
@@ -77,6 +80,26 @@ a frame-by-frame Dry Run
 
 如果內容成熟成 durable convention 或 architecture decision, 把結論整理進 `docs/`. 完整推導仍可保留在這裡.
 
+## From Learning To Experiment
+
+Learning 和 experiment 的邊界由問題決定, 不是由檔案是否包含 C++ 決定.
+
+```text
+How or why does this mechanism work?
+  -> learning/
+
+What actually happens with these inputs or alternatives?
+  -> experiments/
+
+Which implementation has the project selected?
+  -> src/
+
+What result must remain true?
+  -> tests/
+```
+
+A learning lab may be executable and may reference current source for teaching. Move or create a corresponding entry under `experiments/` when the main purpose becomes comparison, measurement, behavior probing, or hypothesis testing. See [`../experiments/README.md`](../experiments/README.md) for dependency and build rules.
+
 ## When A Branch Is Useful
 
 Branch 是 code-state isolation tool, 不是 learning category.
@@ -90,7 +113,7 @@ two implementations need side-by-side repository states
 the work needs independent review or a multi-day integration path
 ```
 
-單純新增 note、tutorial、reading 或 self-contained lab, 通常直接放進 `learning/` 即可.
+單純新增 note、tutorial、reading 或 self-contained lab, 通常直接放進 `learning/` 即可. Self-contained experiment 或只呼叫 current source 的 behavior probe 也可以直接放在 `main` 的 `experiments/`; 只有需要隔離另一份 formal source state 時才使用 branch.
 
 ## Entry Points
 

@@ -144,7 +144,7 @@ branch
   isolates an alternative repository state
 ```
 
-只有在 experiment 或 implementation 需要修改同一批正式 source、可能破壞 build、需要獨立 review, 或會持續多日並與主線衝突時, 才需要 branch. 完全獨立的 note、tutorial、reading 或 small lab 可以直接放進 `learning/`.
+只有在 experiment 或 implementation 需要修改同一批正式 source、可能破壞 build、需要獨立 review, 或會持續多日並與主線衝突時, 才需要 branch. 完全獨立的 note、tutorial、reading 或 small lab 可以直接放進 `learning/`; self-contained comparison 或只呼叫 current source 的 behavior probe 可以直接放進 `experiments/`.
 
 當 learning material 產生 durable project rule 時, 把 stable conclusion 重寫到對應的 `docs/foundations/`, `docs/architecture/`, `docs/verification/`, `docs/roadmap/`, 或 `docs/adr/`. 原始推導可以繼續留在 `learning/`.
 
@@ -223,33 +223,122 @@ Branch commits can be exploratory, but commits merged into `main` should be read
 
 ## 6. Experiments
 
-Experiments are allowed, but they must not silently become production code.
+Experiments are allowed and useful, but they must not silently become production code or a second source tree. Read `../experiments/README.md` for the complete local rules.
 
-Use `exp/*` for:
+Use `experiments/` on `main` by default for:
 
 ```text
 DDA vs Bresenham comparison
 triangle edge-rule exploration
 GJK collision prototype
 temporary math experiments
+current Rasterizer behavior probes
+compiler flag and build configuration trials
 ```
 
-Experiment branch rules:
+The first distinction is purpose:
 
 ```text
-1. It may contain messy commits.
-2. It may contain multiple competing implementations.
-3. It should not be merged directly into main.
-4. Useful results should be extracted into docs, tests, or a clean feature branch.
+learning/
+  asks how and why a mechanism works
+
+experiments/
+  asks what actually happens or which option fits the project
+
+src/
+  contains the currently selected production implementation
+
+tests/
+  preserve behavior whose expected result is already known
+
+docs/
+  record durable project truth
 ```
+
+Not every task must traverse every area. A discussion may end without a file, a learning note may remain exploratory, and a valid experiment may reject every candidate.
+
+### Experiment Types
+
+```text
+self-contained algorithm sandbox
+  keeps the smallest candidate implementations inside experiments/
+  does not need src
+
+integration experiment
+  includes current src headers
+  links only the required implementation translation units
+
+replacement prototype
+  stays self-contained when possible
+  uses exp/* only when formal src needs an incompatible repository state
+```
+
+Dependency direction:
+
+```text
+learning/     ---> src/       allowed
+experiments/  ---> src/       allowed
+tests/        ---> src/       allowed
+
+src/ -X-> learning/
+src/ -X-> experiments/
+src/ -X-> tests/
+```
+
+Do not `#include` a `.cpp` file. Include headers and compile/link the required translation units. Until a reusable `renderer_core` library exists, a headless raster experiment may explicitly link `src/core/render_device.cpp` and `src/render/rasterizer.cpp` without linking `Application`, `ScreenManager`, or the Win32 presentation path.
+
+### Build Isolation
+
+The root `makefile` builds the formal application and must not automatically scan `learning/` or `experiments/`.
+
+```text
+pure note or observation
+  no build
+
+single-file sample
+  compile command recorded in its README
+
+multi-file or repeatable experiment
+  local Makefile or CMakeLists.txt
+
+formal application
+  root makefile
+```
+
+Put generated executables, temporary traces, benchmark output, and failed diffs under ignored output directories such as `build/experiments/`. Commit stable fixtures only when they are intentional verification inputs.
+
+### Result And Branch Flow
+
+```text
+question
+  -> learning/ when understanding is missing
+  -> experiments/ when comparison or observation is needed
+  -> src/ when a production implementation is selected
+  -> tests/ when the result becomes a stable behavioral contract
+  -> docs/ or docs/adr/ when it becomes a durable project rule
+```
+
+Use an `exp/*` branch only when the experiment modifies formal source incompatibly, may temporarily break the build, needs a separate review/CI path, lasts across conflicting work, or requires a distinct repository state. Calling existing source or keeping competing implementations entirely under `experiments/` does not by itself require a branch.
+
+An `exp/*` branch may contain messy commits and temporary competing implementations. Do not merge that temporary state wholesale. Extract useful results into clean source, tests, stable docs, or a focused feature branch.
 
 Example:
 
 ```text
-exp/dda-vs-bresenham
-  -> docs: record tradeoffs
-  -> test: keep DDA as reference if useful
-  -> render: merge only the selected production DrawLine path
+learning/software-renderer/edge-function/
+  -> understand edge functions, winding, and pixel centers
+
+experiments/triangle-shared-edge/
+  -> call the current Rasterizer and observe shared-edge coverage
+
+tests/rasterizer/shared_edge_test.cpp
+  -> preserve the expected ownership rule after it is known
+
+src/render/rasterizer.cpp
+  -> contain only the selected production path
+
+docs/foundations/rasterization_edge_rules.md
+  -> record the durable convention and rationale
 ```
 
 ---

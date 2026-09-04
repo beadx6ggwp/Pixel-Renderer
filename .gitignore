@@ -37,6 +37,12 @@
 *.out
 *.app
 
+# Generated build and experiment output
+build/
+trace-output/
+benchmark-output/
+golden-diff/
+
 # debug information files
 *.dwo
 

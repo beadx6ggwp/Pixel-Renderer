@@ -248,7 +248,8 @@ Git workflow:
 use engineering branch names
 keep main readable and preferably buildable
 prefer rebase + fast-forward merge for clean personal branches
-use exp/* as disposable experiment branches
+keep self-contained experiments and behavior probes under experiments/ on main
+use exp/* only when an experiment needs an incompatible formal source state
 extract useful experiment results into docs, tests, or clean feature branches
 keep learning history under learning/ and extract durable conclusions into stable docs
 ```
@@ -273,7 +274,7 @@ learning bridge:
   map a completed Pixel-Renderer concept to Vulkan / Unity / Unreal / Filament-style abstractions
 
 experimentation:
-  prototype a small idea in exp/* and extract only useful results
+  prototype under experiments/ and use exp/* only when source-state isolation is needed
 ```
 
 The strongest near-term center of gravity is still the trusted raster core.

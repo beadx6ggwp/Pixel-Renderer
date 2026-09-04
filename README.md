@@ -136,6 +136,10 @@ Pixel-Renderer/
     cpp/
     software-renderer/
 
+  experiments/
+    README.md
+    <topic>/
+
   docs/
     README.md
     PROJECT_MAP.md
@@ -150,6 +154,8 @@ Pixel-Renderer/
 ```
 
 Long-form learning notes, tutorial tracks, readings, and small labs live in [`learning/`](learning/README.md). They coexist with the formal renderer on `main`, but they are learning context rather than current source truth.
+
+Algorithm comparisons, behavior probes, build trials, and disposable prototypes live in [`experiments/`](experiments/README.md). Experiments may use selected `src/` interfaces, but formal source never depends on experiments. A separate `exp/*` branch is needed only when an experiment must isolate incompatible changes to formal source.
 
 ## Roadmap
 
