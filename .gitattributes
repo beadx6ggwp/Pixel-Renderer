@@ -16,3 +16,6 @@
 *.pdb binary
 
 docs/** linguist-detectable=false
+
+# Teaching pages are documentation; learning C++ code remains detectable.
+learning/**/*.html linguist-documentation
