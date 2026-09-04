@@ -80,6 +80,7 @@ Do not treat `notes/journal` as current source state.
 ## Current Useful Notes
 
 ```text
+docs/notes/2026-08-21-game_ui_popup_navigation_architecture.md
 docs/notes/2026-07-08-render-baseline-reference-map.md
 docs/notes/2026-07-08-nyuzi-raster-paper-reading.md
 docs/notes/2026-07-08-vortex-riscv-gpgpu-graphics-paper-reading.md
