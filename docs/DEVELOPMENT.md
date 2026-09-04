@@ -1,6 +1,6 @@
 # Development Workflow
 
-Last updated: 2026-06-29
+Last updated: 2026-09-05
 
 這份文件定義 Pixel-Renderer 的輕量開發規範. 目標不是建立複雜流程, 而是讓 `main` 的 history 可讀, branch 不互相污染, experiment 可以存在但不破壞主線.
 
@@ -12,6 +12,7 @@ Last updated: 2026-06-29
 
 ```text
 main = source + build/test + stable project docs
+main = learning notes + tutorial tracks + small self-contained labs
 main = readable, explainable, preferably buildable history
 ```
 
@@ -29,6 +30,10 @@ architecture boundaries
 verification strategy
 roadmap
 ADR
+learning notes
+tutorial tracks
+paper readings
+small self-contained labs
 ```
 
 `main` 不應該長期包含:
@@ -39,14 +44,13 @@ unclear WIP commit
 large unrelated mixed change
 temporary debug output
 generated test diff
-long-form learning notes
-teaching drafts
-raw brainstorming records
+unbounded experiment output
+private or source-unbounded conversation dumps
 ```
 
 如果某次 commit 讓 `main` 暫時不能 build, commit message 或後續 commit 必須清楚說明原因.
 
-完整 learning history 不放在 `main`, 而是保存在 `notes/journal`.
+`learning/` 可以保存在 `main`. 它和 `docs/` 的差別是 authority, 不是 branch: `learning/` 解釋與探索, `docs/` 記錄 current project 可以依賴的 stable truth.
 
 ---
 
@@ -65,7 +69,6 @@ debug/      debug visualization, trace, runtime inspection tools
 exp/        experiments that may not merge directly
 perf/       performance experiments or optimizations
 build/      build system and toolchain work
-notes/      project journal branches, not merged wholesale into main
 ```
 
 近期可能使用:
@@ -78,7 +81,6 @@ render/raster-baseline
 test/render-core
 debug/pipeline-trace
 exp/gjk-2d
-notes/journal
 ```
 
 避免一開始開太多 branch. 先讓工作自然分出邊界, 再開新 branch.
@@ -114,84 +116,37 @@ local branch -> push remote branch -> commit -> merge main -> delete temporary b
 6. 需要 CI 跑在 branch 上
 ```
 
-Remote branch 是暫時工作線, 不是永久歷史保存區. merge 後可以刪掉.
-
-`notes/journal` 是例外. 它是長期 project journal branch, 可以長期存在, 但不整條 merge 回 `main`.
+Remote branch 是暫時工作線, 不是永久的內容分類或歷史保存區. merge 後可以刪掉.
 
 ---
 
-## 4. Project Journal Branch
+## 4. Learning Workspace And Branches
 
-`notes/journal` 用來保存:
+`learning/` 用來保存:
 
 ```text
 long-form reasoning
-learning notes
-teaching drafts
-brainstorming
+learning notes and teaching drafts
+paper readings
+naive or broken examples
+small mechanism-focused labs
 historical decision context
 rough architecture comparisons
 ```
 
-它不是 current source truth.
-
-從 `main` 讀歷史脈絡時, 用:
-
-```bash
-git show notes/journal:docs/notes/JOURNAL_INDEX.md
-```
-
-`notes/journal` 有兩種資料來源:
+這些內容直接與 project 共存在 `main`, 不需要為了「這是學習內容」建立永久 branch. 但它們不是 current source truth; 涉及目前 code、build 或正式 architecture 時仍要驗證 source 與 stable docs.
 
 ```text
-main-derived notes:
-  completed feature branch -> main -> notes/journal
+directory
+  classifies what the content is
 
-experiment-derived notes:
-  exp/* branch -> notes/journal note
+branch
+  isolates an alternative repository state
 ```
 
-主流流程是讓 journal 跟著穩定 code 前進:
+只有在 experiment 或 implementation 需要修改同一批正式 source、可能破壞 build、需要獨立 review, 或會持續多日並與主線衝突時, 才需要 branch. 完全獨立的 note、tutorial、reading 或 small lab 可以直接放進 `learning/`.
 
-```bash
-# after a feature branch is merged into main
-git switch notes/journal
-git merge main
-
-# then write learning notes, teaching notes, or reasoning records
-```
-
-這代表 `notes/journal` 可以針對最新穩定 source code 繼續寫筆記, 但仍然不會反過來定義 current project truth.
-
-如果某個 `exp/*` branch 不打算 merge 回 `main`, 但值得保存研究過程, 可以在 `notes/journal` 寫 experiment-derived note. 這類 note 應標明:
-
-```text
-source branch
-experiment status
-what was learned
-what may be extracted later
-what should not be treated as current behavior
-```
-
-預設不要把未完成 feature branch 直接 merge 進 `notes/journal`. 等 feature branch 進 `main` 後, 再讓 `notes/journal` merge `main`.
-
-當 journal 裡的內容成熟成 project rule, 只抽取 stable conclusion 回 `main`:
-
-```bash
-git switch main
-git switch -c docs/<topic>
-
-# rewrite or copy only the stable conclusion
-
-git add <stable-docs>
-git commit -m "docs(<scope>): <summary>"
-
-git switch main
-git merge --ff-only docs/<topic>
-git branch -d docs/<topic>
-```
-
-不要把 rough note, tutorial draft, 或完整推導直接搬回 `main`, 除非它已經變成 project convention, architecture boundary, verification strategy, roadmap decision, or ADR.
+當 learning material 產生 durable project rule 時, 把 stable conclusion 重寫到對應的 `docs/foundations/`, `docs/architecture/`, `docs/verification/`, `docs/roadmap/`, 或 `docs/adr/`. 原始推導可以繼續留在 `learning/`.
 
 ---
 
@@ -309,7 +264,7 @@ Examples:
 docs/project-policy done when:
   README / AGENTS / DEVELOPMENT agree on the same workflow
   stale references are removed
-  notes/journal lookup is documented if needed
+  learning/ and docs/ authority boundaries are documented
 
 render/raster-baseline done when:
   ScreenVertex exists
@@ -367,7 +322,7 @@ docs update
 
 Docs-only branches can merge independently if they keep the project structure clear.
 
-Learning-heavy docs should go to `notes/journal` first. Stable docs on `main` should be concise enough to guide source work, not preserve the full learning path.
+Learning-heavy material should go to `learning/`. Stable docs should be concise enough to guide source work, not preserve the full learning path.
 
 ---
 
@@ -454,14 +409,12 @@ Golden images are allowed only when they are stable reference fixtures. Diff ima
 
 ## 11. Current Near-Term Flow
 
-Current branch state:
+Current repository shape:
 
 ```text
 main
   source + build/test + stable project docs
-
-notes/journal
-  learning history + tutorial drafts + rough reasoning
+  learning history + tutorial tracks + rough reasoning under learning/
 ```
 
 Recommended near-term source branch:

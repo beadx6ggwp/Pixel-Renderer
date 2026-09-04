@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Impl-02 — DrawLine</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #1e1e2e; color: #cdd6f4;
+  font-family: 'Georgia', serif; font-size: 15px;
+  padding: 0 20px 60px; max-width: 900px; margin: 0 auto;
+  line-height: 1.9;
+}
+nav {
+  font-family: 'Consolas', monospace; font-size: 0.78em; color: #6c7086;
+  padding: 14px 0; border-bottom: 1px solid #313244;
+  margin-bottom: 36px; display: flex; align-items: center; gap: 10px;
+}
+nav a { color: #6c7086; text-decoration: none; }
+nav a:hover { color: #fab387; }
+.ch-header { margin-bottom: 36px; }
+.ch-label {
+  font-family: 'Consolas', monospace; font-size: 0.78em;
+  color: #6c7086; letter-spacing: 0.1em; margin-bottom: 8px;
+}
+.ch-title { color: #fab387; font-size: 1.8em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub   { color: #6c7086; font-size: 0.88em; }
+h2 {
+  color: #cba6f7; font-family: 'Consolas', monospace; font-size: 1em;
+  letter-spacing: 0.05em; padding: 10px 0; border-bottom: 1px solid #313244;
+  margin: 40px 0 20px; display: flex; align-items: center; gap: 12px;
+}
+h2 .n {
+  background: #fab387; color: #1e1e2e; font-weight: bold;
+  border-radius: 50%; width: 26px; height: 26px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 0.85em;
+}
+h3 { color: #f9e2af; font-size: 0.95em; margin: 22px 0 10px; }
+p  { margin-bottom: 12px; }
+strong { color: #f9e2af; }
+em { color: #fab387; font-style: normal; }
+.theory-link {
+  background: #181825; border: 1px solid #313244; border-left: 3px solid #fab387;
+  border-radius: 6px; padding: 10px 16px; margin: 20px 0;
+  font-size: 0.88em; color: #6c7086;
+}
+.theory-link a { color: #89b4fa; text-decoration: none; }
+.theory-link a:hover { text-decoration: underline; }
+.code-block {
+  background: #11111b; border: 1px solid #313244; border-radius: 8px;
+  padding: 0; margin: 20px 0; overflow: hidden;
+}
+.code-header {
+  background: #181825; border-bottom: 1px solid #313244;
+  padding: 8px 16px; font-family: 'Consolas', monospace; font-size: 0.78em;
+  color: #6c7086; display: flex; align-items: center; gap: 10px;
+}
+.code-header .file { color: #89b4fa; }
+.code-body { padding: 16px 0; overflow-x: auto; }
+.code-body table { border-collapse: collapse; width: 100%; }
+.code-body td {
+  padding: 1px 0; font-family: 'Consolas', monospace; font-size: 0.84em;
+  line-height: 1.7; vertical-align: top;
+}
+.ln {
+  color: #45475a; text-align: right; padding: 0 16px 0 16px;
+  user-select: none; min-width: 48px;
+}
+.code { padding: 0 20px 0 12px; white-space: pre; color: #cdd6f4; }
+.code .kw  { color: #cba6f7; }
+.code .ty  { color: #89b4fa; }
+.code .cm  { color: #6c7086; }
+.code .fn  { color: #89b4fa; }
+.code .nm  { color: #fab387; }
+tr.hl td { background: #2a1e0a; }
+tr.hl .code { border-left: 2px solid #fab387; padding-left: 10px; }
+.annotation {
+  background: #181825; border-left: 3px solid #f9e2af;
+  border-radius: 0 6px 6px 0; padding: 10px 16px;
+  margin: -4px 0 16px; font-size: 0.88em; line-height: 1.7;
+}
+.box {
+  border-radius: 6px; padding: 14px 18px; margin: 16px 0;
+  font-size: 0.9em; line-height: 1.85;
+}
+.box-blue   { background: #1e1e2e; border-left: 4px solid #89b4fa; }
+.box-orange { background: #1e1e2e; border-left: 4px solid #fab387; }
+.box-green  { background: #1e1e2e; border-left: 4px solid #a6e3a1; }
+.math {
+  background: #181825; border: 1px solid #313244; border-radius: 6px;
+  padding: 12px 18px; margin: 12px 0;
+  font-family: 'Consolas', monospace; font-size: 0.87em; line-height: 2;
+}
+.chapter-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 56px; padding-top: 24px; border-top: 1px solid #313244;
+  font-family: 'Consolas', monospace; font-size: 0.85em;
+}
+.chapter-nav a { color: #6c7086; text-decoration: none; }
+.chapter-nav a:hover { color: #fab387; }
+.chapter-nav .next { color: #fab387; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">軟體光柵化</a>
+  <span style="color:#313244">/</span>
+  <span style="color:#fab387">實作</span>
+  <span style="color:#313244">/</span>
+  <span style="color:#cdd6f4">I-02 — DrawLine</span>
+  <span style="margin-left:auto;display:flex;gap:16px;">
+    <a href="ch01_framebuffer.html">← I-01</a>
+    <a href="ch03_drawtriangle.html">I-03 →</a>
+  </span>
+</nav>
+
+<div class="ch-header">
+  <div class="ch-label">IMPL-02 · Bresenham 直線實作</div>
+  <div class="ch-title">DrawLine — Bresenham 8 方向</div>
+  <div class="ch-sub">逐行解析 DrawLine()，把理論公式一一對應到程式碼</div>
+</div>
+
+<div class="theory-link">
+  對應理論章節：
+  <a href="../theory/ch04_bresenham_plain.html">Ch04 — 誤差累積法</a>、
+  <a href="../theory/ch05_bresenham_d1d2.html">Ch05 — d₁d₂ 距離法</a>、
+  <a href="../theory/ch06_bresenham_octants.html">Ch06 — 八個方向統一</a>
+</div>
+
+<!-- 1 -->
+<h2><span class="n">1</span> 完整程式碼一覽</h2>
+
+<div class="code-block">
+  <div class="code-header">
+    <span class="file">render_device.cpp</span>
+    <span>— RenderDevice::DrawLine()</span>
+  </div>
+  <div class="code-body">
+    <table>
+      <tr><td class="ln">29</td><td class="code"><span class="kw">void</span> <span class="ty">RenderDevice</span>::<span class="fn">DrawLine</span>(<span class="kw">int</span> x1, <span class="kw">int</span> y1, <span class="kw">int</span> x2, <span class="kw">int</span> y2, <span class="ty">uint32_t</span> color) {</td></tr>
+      <tr><td class="ln">30</td><td class="code">    <span class="cm">// Bresenham</span></td></tr>
+      <tr class="hl"><td class="ln">31</td><td class="code">    <span class="kw">int</span> dx = std::<span class="fn">abs</span>(x2 - x1);</td></tr>
+      <tr class="hl"><td class="ln">32</td><td class="code">    <span class="kw">int</span> dy = std::<span class="fn">abs</span>(y2 - y1);</td></tr>
+      <tr class="hl"><td class="ln">33</td><td class="code">    <span class="kw">int</span> sx = (x1 &lt; x2) ? <span class="nm">1</span> : <span class="nm">-1</span>;</td></tr>
+      <tr class="hl"><td class="ln">34</td><td class="code">    <span class="kw">int</span> sy = (y1 &lt; y2) ? <span class="nm">1</span> : <span class="nm">-1</span>;</td></tr>
+      <tr class="hl"><td class="ln">35</td><td class="code">    <span class="kw">int</span> err = dx - dy;</td></tr>
+      <tr><td class="ln">36</td><td class="code">    <span class="kw">while</span> (<span class="kw">true</span>) {</td></tr>
+      <tr><td class="ln">37</td><td class="code">        <span class="fn">SetPixel</span>(x1, y1, color);</td></tr>
+      <tr><td class="ln">38</td><td class="code">        <span class="kw">if</span> (x1 == x2 &amp;&amp; y1 == y2) <span class="kw">break</span>;</td></tr>
+      <tr class="hl"><td class="ln">39</td><td class="code">        <span class="kw">int</span> e2 = <span class="nm">2</span> * err;</td></tr>
+      <tr class="hl"><td class="ln">40</td><td class="code">        <span class="kw">if</span> (e2 &gt; -dy) {  err -= dy;  x1 += sx;  }</td></tr>
+      <tr class="hl"><td class="ln">44</td><td class="code">        <span class="kw">if</span> (e2 &lt; dx)  {  err += dx;  y1 += sy;  }</td></tr>
+      <tr><td class="ln">48</td><td class="code">    }</td></tr>
+      <tr><td class="ln">49</td><td class="code">}</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- 2 -->
+<h2><span class="n">2</span> 第 31–32 行：dx, dy — 絕對距離</h2>
+
+<div class="math">
+dx = |x2 - x1|  ← x 方向的總像素跨度<br>
+dy = |y2 - y1|  ← y 方向的總像素跨度
+</div>
+
+<p>
+  取絕對值後，<em>dx</em> 和 <em>dy</em> 永遠是正整數，不帶方向資訊。
+  方向資訊由 sx、sy 單獨處理。這樣做把「距離」和「方向」拆開，
+  讓後面的 err 邏輯不需要處理正負號問題。
+</p>
+
+<!-- 3 -->
+<h2><span class="n">3</span> 第 33–34 行：sx, sy — 步進方向</h2>
+
+<div class="math">
+sx = (x1 &lt; x2) ? +1 : -1   ← 每步 x 往右或往左走<br>
+sy = (y1 &lt; y2) ? +1 : -1   ← 每步 y 往下或往上走
+</div>
+
+<p>
+  sx 和 sy 就是理論 Ch06 中的「<strong>符號對稱</strong>」機制。
+  同一套 err 邏輯套上不同的 sx/sy，就能畫出 8 個方向的直線。
+  例如：sx=1, sy=1 是右下方；sx=-1, sy=1 是左下方。
+</p>
+
+<!-- 4 -->
+<h2><span class="n">4</span> 第 35 行：err = dx − dy — 初始誤差</h2>
+
+<div class="math">
+err = dx - dy
+</div>
+
+<p>
+  <em>err</em> 是 Bresenham 的核心狀態變數，代表「x 方向已累積的誤差減去 y 方向已累積的誤差」。
+  初始值 <code>dx - dy</code> 來自 d₁d₂ 法的推導（Ch05）：
+</p>
+
+<div class="box box-blue">
+  初始決策參數 P₀ = 2·dy − dx（d₁d₂ 法）<br>
+  誤差累積法的 err 初始值 = dx − dy<br>
+  兩者差一個常數移位（乘以 −1 再加 dx），數學上等價——見 Ch07。
+</div>
+
+<!-- 5 -->
+<h2><span class="n">5</span> 第 39–44 行：每步決策（兩個獨立的 if）</h2>
+
+<div class="code-block">
+  <div class="code-header"><span class="file">核心迴圈</span></div>
+  <div class="code-body">
+    <table>
+      <tr><td class="ln">39</td><td class="code"><span class="kw">int</span> e2 = <span class="nm">2</span> * err;                    <span class="cm">// 預乘 2，避免除法</span></td></tr>
+      <tr class="hl"><td class="ln">40</td><td class="code"><span class="kw">if</span> (e2 &gt; -dy) { err -= dy;  x1 += sx; } <span class="cm">// 條件：x 方向前進</span></td></tr>
+      <tr class="hl"><td class="ln">44</td><td class="code"><span class="kw">if</span> (e2 &lt; dx)  { err += dx;  y1 += sy; } <span class="cm">// 條件：y 方向前進</span></td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="annotation">
+  <strong>為什麼是兩個獨立的 if，不是 if-else？</strong><br>
+  對角線方向（例如 45°）同一步需要同時更新 x 和 y。
+  如果用 if-else，對角線就會漏掉一個軸的更新，畫出來的線會偏斜。
+  兩個獨立 if 允許同一步「x 和 y 都更新」——這正是對角線情況。<br><br>
+  <strong>e2 = 2 * err</strong><br>
+  避免小數：原本的條件是 err > -dy/2 和 err < dx/2，
+  兩邊乘 2 消分母，全程整數運算。
+</div>
+
+<h3>err 的更新邏輯</h3>
+
+<div class="math">
+x 前進時：err -= dy   ← 「x 走了一步，但理想線只需要 dy/dx 個 y 單位，補償不足」<br>
+y 前進時：err += dx   ← 「y 升一格，累積正誤差，等待下次 x 前進消耗」
+</div>
+
+<p>
+  你可以把 err 想成一個「y 欠債計數器」：
+  每走一步 x 就欠 dy 份 y，
+  每升一格 y 就還 dx 份。
+  當欠債超過門檻就升格（y 前進），低於門檻就繼續走 x。
+  這正是 Ch04 誤差累積法的核心直覺。
+</p>
+
+<!-- 6 -->
+<h2><span class="n">6</span> 終止條件：抵達終點就停</h2>
+
+<div class="code-block">
+  <div class="code-header"><span class="file">迴圈內</span></div>
+  <div class="code-body">
+    <table>
+      <tr><td class="ln">37</td><td class="code"><span class="fn">SetPixel</span>(x1, y1, color);              <span class="cm">// 先畫當前點</span></td></tr>
+      <tr class="hl"><td class="ln">38</td><td class="code"><span class="kw">if</span> (x1 == x2 &amp;&amp; y1 == y2) <span class="kw">break</span>;  <span class="cm">// 再判斷是否到終點</span></td></tr>
+    </table>
+  </div>
+</div>
+
+<p>
+  「先畫後判斷」的順序確保終點也被畫到。
+  如果先判斷再畫，當起點 == 終點（單點線段）時就不會畫任何東西。
+</p>
+
+<!-- 7 -->
+<h2><span class="n">7</span> 目前 render_device 的完整狀態</h2>
+
+<div class="box box-green">
+  ✓ Clear()：填滿畫面<br>
+  ✓ SetPixel()：安全寫入單一像素<br>
+  ✓ DrawLine()：Bresenham，支援所有 8 個方向，純整數運算<br>
+  ⬜ DrawTriangle()：見 <a href="ch03_drawtriangle.html" style="color:#fab387">I-03</a>
+</div>
+
+<div class="chapter-nav">
+  <a href="ch01_framebuffer.html">← I-01 — Framebuffer</a>
+  <a class="next" href="ch03_drawtriangle.html">I-03 — DrawTriangle →</a>
+</div>
+
+</body>
+</html>

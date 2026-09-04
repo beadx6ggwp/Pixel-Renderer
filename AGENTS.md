@@ -2,7 +2,7 @@
 
 This file gives repo-local instructions for Codex or other coding agents working on Pixel-Renderer.
 
-Last updated: 2026-06-29
+Last updated: 2026-09-05
 
 ## User Context
 
@@ -29,6 +29,26 @@ concrete case
 ```
 
 Avoid generic advice. When making a recommendation, explain the reasoning and the tradeoff.
+
+## Default AI Role
+
+The AI is a tutor, coach, professor, reviewer, debugger, and research partner first. It is a coding agent second.
+
+Default to helping the user:
+
+- locate the current question inside the rendering system;
+- expose the naive model and the concrete case where it breaks;
+- connect intuition, geometry, math, GPU behavior, C++ boundaries, and commercial engine abstractions;
+- form a hypothesis and design the smallest useful experiment;
+- review user-written code and reasoning;
+- preserve the larger project map while exploring one topic deeply;
+- suggest useful next directions without turning the roadmap into permission gates.
+
+Do not force every conversation into a fixed lesson template, milestone, branch, artifact, or implementation task. Prediction, Dry Run, diagrams, counterexamples, and experiments are teaching tools to use when helpful, not mandatory ceremony.
+
+The roadmap describes dependencies and recommended focus. It does not restrict curiosity. The user may explore rasterization, math, C++, GPU history, FPGA, UI, tooling, or commercial engines at any time. Clearly distinguish exploratory learning from a verified capability of the formal renderer.
+
+If the user explicitly asks to implement, refactor, test, or finish something, complete that scope without forcing a teaching exercise first. If the code itself is the concept the user wants to learn, prefer guidance and review unless implementation was requested.
 
 ## Project Identity
 
@@ -70,6 +90,7 @@ docs/DEVELOPMENT.md
 docs/README.md
 docs/foundations/rendering_conventions.md
 docs/foundations/rasterization_edge_rules.md
+learning/README.md when the task concerns learning notes, tutorials, or labs
 ```
 
 Read `docs/HANDOFF.md` only when this is a fresh cross-machine / cross-session handoff, the project has not been opened for a while, the local context looks stale or conflicting, or the user explicitly asks for current-state orientation.
@@ -85,7 +106,7 @@ Then inspect the current source and git state:
 ```bash
 git status --short
 git branch --show-current
-rg --files src docs | head
+rg --files src docs learning | head
 ```
 
 Important docs areas:
@@ -98,7 +119,7 @@ docs/verification/             tests, traces, debug views, golden images
 docs/mapping/                  engine mirror and career mapping
 docs/roadmap/                  milestone planning
 docs/adr/                      architecture decision records
-notes/journal branch           learning history, thinking records, tutorial drafts
+learning/                      learning notes, tutorial tracks, readings, and small labs
 ```
 
 ## Current Source State
@@ -159,7 +180,7 @@ CommandQueue
 
 ## Near-Term Technical Priority
 
-Do not jump directly to a full mini-Filament skeleton, Material system, CommandQueue, SwiftShader-like architecture, FPGA work, OBJ/texture/Phong/shadow, or full UI framework.
+The recommended core sequence does not jump directly to a full mini-Filament skeleton, Material system, CommandQueue, SwiftShader-like architecture, FPGA implementation, OBJ/texture/Phong/shadow, or full UI framework. Independent learning and bounded experiments in those areas are still welcome.
 
 First build a trusted raster pipeline:
 
@@ -237,7 +258,7 @@ docs/verification/testing_strategy.md
 docs/verification/debug_visualization.md
 ```
 
-Use branch `notes/journal` for dated long-form thinking, conversation records, learning notes, and tutorial drafts. Do not merge that branch wholesale into `main`; extract only stable project conclusions back through focused `docs/*`, `render/*`, `arch/*`, or `test/*` branches.
+Use `learning/` for dated long-form thinking, learning notes, tutorial tracks, readings, and small labs. These files live with the project on `main`; creating a separate branch is not required. Keep `docs/` for stable project truth, and extract durable conclusions from `learning/` into the appropriate foundation, architecture, verification, roadmap, or ADR document.
 
 Use `docs/adr/` only for decisions that will affect future branches, such as:
 
@@ -391,7 +412,7 @@ Before editing:
 
 ```text
 git status --short
-rg --files src docs
+rg --files src docs learning
 ```
 
 Do not revert user changes unless explicitly asked.

@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>I-05 — VSCode Build / Debug / IntelliSense Setup</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#1e1e2e; --bg1:#181825; --bg2:#11111b; --border:#313244;
+  --muted:#6c7086; --text:#cdd6f4; --blue:#89b4fa; --green:#a6e3a1;
+  --yellow:#f9e2af; --orange:#fab387; --red:#f38ba8; --purple:#cba6f7; --teal:#94e2d5;
+}
+body { background: var(--bg); color: var(--text); font-family: 'Georgia', serif; font-size: 15px; padding: 0 20px 80px; max-width: 900px; margin: 0 auto; line-height: 1.9; }
+nav { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); padding: 14px 0; border-bottom: 1px solid var(--border); margin-bottom: 36px; display: flex; align-items: center; gap: 10px; }
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--orange); }
+.nav-sep { color: var(--border); }
+.nav-cur { color: var(--text); }
+.nav-right { margin-left: auto; display: flex; gap: 16px; }
+.ch-header { margin-bottom: 40px; }
+.ch-label { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px; }
+.ch-title { color: var(--orange); font-size: 1.7em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub { color: var(--muted); font-size: 0.88em; margin-bottom: 14px; }
+.ch-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.ch-tag { font-family: 'Consolas', monospace; font-size: 0.72em; padding: 1px 7px; border-radius: 4px; background: var(--bg2); color: var(--muted); border: 1px solid var(--border); }
+h2 { color: var(--purple); font-size: 1em; font-family: 'Consolas', monospace; letter-spacing: 0.05em; padding: 10px 0; border-bottom: 1px solid var(--border); margin: 44px 0 20px; display: flex; align-items: center; gap: 12px; }
+h2 .n { background: var(--purple); color: var(--bg2); font-weight: bold; border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.85em; }
+h3 { color: var(--yellow); font-size: 0.95em; margin: 24px 0 10px; }
+p { margin-bottom: 12px; }
+strong { color: var(--yellow); }
+em { color: var(--orange); font-style: normal; }
+code { font-family: 'Consolas', monospace; color: var(--teal); }
+ul, ol { margin: 8px 0 14px 26px; line-height: 2.2; }
+.box { border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 0.9em; line-height: 1.85; background: var(--bg1); }
+.box-blue { border-left: 4px solid var(--blue); }
+.box-green { border-left: 4px solid var(--green); }
+.box-yellow { border-left: 4px solid var(--yellow); }
+.box-red { border-left: 4px solid var(--red); }
+.box-purple { border-left: 4px solid var(--purple); }
+.code { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em; line-height: 2.1; margin: 14px 0; overflow-x: auto; }
+.code .cmt { color: var(--muted); } .code .kw { color: var(--purple); } .code .val { color: var(--orange); } .code .tp { color: var(--blue); } .code .fn { color: var(--teal); }
+.ascii { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.82em; line-height: 1.55; margin: 14px 0; overflow-x: auto; color: var(--text); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9em; }
+thead { background: var(--bg1); }
+th { color: var(--muted); font-family: 'Consolas', monospace; font-size: 0.85em; padding: 8px 14px; text-align: left; border-bottom: 2px solid var(--border); }
+td { padding: 8px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.next-ch { margin-top: 56px; padding: 20px 24px; background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 20px; }
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+.next-title { color: var(--orange); font-size: 1em; }
+.next-desc { color: var(--muted); font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: var(--orange); font-size: 1.6em; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">C++ for Pixel-Renderer</a>
+  <span class="nav-sep">/</span>
+  <span class="nav-cur">I-05 — VSCode Build / Debug / IntelliSense Setup</span>
+  <div class="nav-right">
+    <a href="i04_debugger_fundamentals_gdb_lldb.html">&larr; I-04</a>
+  </div>
+</nav>
+
+<div class="ch-header">
+  <div class="ch-label">IMPLEMENTATION TRACK &middot; I-05</div>
+  <div class="ch-title">VSCode Build / Debug / IntelliSense Setup</div>
+  <div class="ch-sub">VSCode 不是 compiler；它只是協調 build command、debugger、editor language service</div>
+  <div class="ch-tags">
+    <span class="ch-tag">tasks.json</span>
+    <span class="ch-tag">launch.json</span>
+    <span class="ch-tag">IntelliSense</span>
+  </div>
+</div>
+
+<p>
+前面三章已經拆過 toolchain、build workflow、debugger。這章回到 VSCode，但不是教你「按哪個按鈕」。我們要把 VSCode 的三份設定檔放回底層模型：<code>tasks.json</code> 只是執行 build command，<code>launch.json</code> 只是啟動 debugger，<code>c_cpp_properties.json</code> 只是餵 IntelliSense。
+</p>
+
+<p>
+這件事對 Pixel-Renderer 很重要，因為你很快會同時面對 Windows MinGW、macOS Apple Clang、可能的 SDL library、之後的 CMake。若你把 VSCode 紅線、compiler error、link error、debugger failure 混在一起，會很難判斷到底該改 editor、build system，還是程式碼。
+</p>
+
+<div class="box box-blue">
+<strong>本章範圍</strong> &mdash; 讀目前 repo 的 <code>.vscode/tasks.json</code>、<code>.vscode/launch.json</code>、<code>.vscode/c_cpp_properties.json</code>，從底層解釋 VSCode 如何包住 make、GDB、IntelliSense。這章只寫教學筆記，不修改專案設定檔。
+</div>
+
+<h2><span class="n">1</span> naive model：VSCode 會編譯 C++</h2>
+
+<p>
+最常見的直覺是：
+</p>
+
+<pre class="ascii">I press Run in VSCode
+VSCode compiles C++
+VSCode runs the program
+VSCode shows errors</pre>
+
+<p>
+這個模型會讓你調錯地方。VSCode 本身不會編譯 C++。它呼叫外部工具，然後把結果呈現在 UI 裡。
+</p>
+
+<pre class="ascii">VSCode
+  |
+  +-- tasks.json
+  |     runs external build command
+  |     e.g. make debug
+  |
+  +-- launch.json
+  |     starts external debugger
+  |     e.g. GDB through cppdbg / MI
+  |
+  +-- c_cpp_properties.json
+        configures editor language service
+        e.g. includePath, compilerPath, intelliSenseMode</pre>
+
+<p>
+所以第一性原理的診斷問題是：
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>現象</th>
+      <th>先懷疑哪一層</th>
+      <th>不要先改什麼</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>terminal 說找不到 header</td>
+      <td>真實 compile command 的 <code>-I</code>。</td>
+      <td>不要只改 IntelliSense。</td>
+    </tr>
+    <tr>
+      <td>Problems panel 有紅線，但 <code>make debug</code> 成功</td>
+      <td>IntelliSense model。</td>
+      <td>不要亂改 makefile。</td>
+    </tr>
+    <tr>
+      <td>linker 說 undefined reference</td>
+      <td>object files / libraries / link order。</td>
+      <td>不要改 <code>includePath</code>。</td>
+    </tr>
+    <tr>
+      <td>按 F5 找不到 exe</td>
+      <td><code>launch.json</code> 的 <code>program</code> 或 <code>preLaunchTask</code>。</td>
+      <td>不要先猜 C++ source 壞了。</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2><span class="n">2</span> 目前 repo 的 VSCode 快照</h2>
+
+<p>
+目前 repo 有三個 VSCode 設定檔：
+</p>
+
+<pre class="ascii">.vscode/
+  tasks.json
+  launch.json
+  c_cpp_properties.json</pre>
+
+<p>
+它們和 <code>makefile</code> 的關係是：
+</p>
+
+<pre class="ascii">Ctrl+Shift+B
+  |
+  v
+.vscode/tasks.json
+  |
+  | command: make
+  | args: ["debug"]
+  v
+makefile
+  |
+  | CXX = g++.exe
+  | INCLUDES = -I. -Itool -Isrc
+  | LIBS = -lgdi32 -luser32
+  v
+build/debug/PixelRenderer_debug.exe
+
+F5
+  |
+  v
+.vscode/launch.json
+  |
+  | preLaunchTask: make debug Pixel-Renderer
+  | MIMode: gdb
+  v
+GDB launches build/debug/PixelRenderer_debug.exe</pre>
+
+<p>
+IntelliSense 則是另一條線：
+</p>
+
+<pre class="ascii">editor opens .cpp/.h
+  |
+  v
+C/C++ extension reads c_cpp_properties.json
+  |
+  | includePath
+  | compilerPath
+  | cppStandard
+  | intelliSenseMode
+  v
+parse source for autocomplete / squiggles / go-to-definition</pre>
+
+<div class="box box-yellow">
+<strong>目前有一個 drift 例子</strong> &mdash; makefile 的 include path 是 <code>-I. -Itool -Isrc</code>，但 <code>c_cpp_properties.json</code> 目前只有 <code>${workspaceFolder}</code> 和 <code>${workspaceFolder}/src</code>。因為 root include path 可能讓 <code>tool/...</code> 仍然被找到，所以不一定立刻壞；但這就是 editor model 和 build model 可能不同步的例子。
+</div>
+
+<h2><span class="n">3</span> tasks.json：把 build command 包起來</h2>
+
+<p>
+目前 <code>tasks.json</code> 的 debug task 核心是：
+</p>
+
+<div class="code">
+<span class="kw">"label"</span>: <span class="val">"make debug Pixel-Renderer"</span>,<br>
+<span class="kw">"type"</span>: <span class="val">"shell"</span>,<br>
+<span class="kw">"command"</span>: <span class="val">"make"</span>,<br>
+<span class="kw">"args"</span>: [<span class="val">"debug"</span>],<br>
+<span class="kw">"options"</span>: {<br>
+&nbsp;&nbsp;<span class="kw">"cwd"</span>: <span class="val">"${workspaceFolder}"</span>,<br>
+&nbsp;&nbsp;<span class="kw">"shell"</span>: {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">"executable"</span>: <span class="val">"C:\\Program Files\\Git\\bin\\bash.exe"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">"args"</span>: [<span class="val">"-c"</span>]<br>
+&nbsp;&nbsp;}<br>
+},<br>
+<span class="kw">"problemMatcher"</span>: [<span class="val">"$gcc"</span>]
+</div>
+
+<p>
+這段設定可以逐層拆開：
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>欄位</th>
+      <th>底層意思</th>
+      <th>目前效果</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>label</code></td>
+      <td>這個 task 的名字。</td>
+      <td><code>launch.json</code> 用 <code>preLaunchTask</code> 找它。</td>
+    </tr>
+    <tr>
+      <td><code>type: shell</code></td>
+      <td>透過 shell 執行 command。</td>
+      <td>不是直接 exec compiler，而是跑 shell command。</td>
+    </tr>
+    <tr>
+      <td><code>command: make</code></td>
+      <td>真正被呼叫的 build driver。</td>
+      <td>由 makefile 決定 compile/link 規則。</td>
+    </tr>
+    <tr>
+      <td><code>args: ["debug"]</code></td>
+      <td>傳給 make 的 target。</td>
+      <td>執行 <code>make debug</code>。</td>
+    </tr>
+    <tr>
+      <td><code>cwd</code></td>
+      <td>command 執行目錄。</td>
+      <td>讓 make 在 repo root 找到 <code>makefile</code>。</td>
+    </tr>
+    <tr>
+      <td><code>problemMatcher: "$gcc"</code></td>
+      <td>把 GCC-style error 解析成 Problems。</td>
+      <td>不影響編譯，只影響 UI 如何定位錯誤。</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+注意 <code>problemMatcher</code> 不是 compiler，也不是 linter。它只是把 terminal output 裡像 <code>file.cpp:line:col: error:</code> 的文字解析成 VSCode 可以點擊的 Problems entry。
+</p>
+
+<h3>為什麼用 Git Bash</h3>
+
+<p>
+目前 task 指定：
+</p>
+
+<div class="code">
+<span class="kw">"executable"</span>: <span class="val">"C:\\Program Files\\Git\\bin\\bash.exe"</span>
+</div>
+
+<p>
+原因很務實：makefile 裡使用了 Unix-like command，例如 <code>mkdir -p</code> 和 <code>rm -rf build</code>。在 Windows 上，Git Bash 提供比較接近 Unix shell 的環境，讓這些指令可以跑。
+</p>
+
+<pre class="ascii">VSCode task
+  |
+  v
+Git Bash
+  |
+  v
+make debug
+  |
+  v
+makefile uses mkdir -p / rm -rf / g++.exe</pre>
+
+<div class="box box-yellow">
+<strong>小心文件漂移</strong> &mdash; 目前 <code>tasks.json</code> 底部註解寫的是 <code>mingw32-make</code>，但實際 command 是 <code>make</code>。這不一定代表錯，因為你的 shell PATH 可能讓 <code>make</code> 指到正確工具；但教學和設定檔最好不要長期不一致。
+</div>
+
+<h2><span class="n">4</span> launch.json：把 debugger 啟動方式包起來</h2>
+
+<p>
+Debug configuration 的核心是：
+</p>
+
+<div class="code">
+<span class="kw">"type"</span>: <span class="val">"cppdbg"</span>,<br>
+<span class="kw">"request"</span>: <span class="val">"launch"</span>,<br>
+<span class="kw">"program"</span>: <span class="val">"${workspaceFolder}/build/debug/PixelRenderer_debug.exe"</span>,<br>
+<span class="kw">"cwd"</span>: <span class="val">"${workspaceFolder}"</span>,<br>
+<span class="kw">"externalConsole"</span>: <span class="val">true</span>,<br>
+<span class="kw">"MIMode"</span>: <span class="val">"gdb"</span>,<br>
+<span class="kw">"preLaunchTask"</span>: <span class="val">"make debug Pixel-Renderer"</span>
+</div>
+
+<p>
+這裡的流程是：
+</p>
+
+<pre class="ascii">F5 / Start Debugging
+  |
+  v
+VSCode reads selected launch configuration
+  |
+  v
+run preLaunchTask
+  |
+  v
+tasks.json: make debug
+  |
+  v
+check program path exists
+  |
+  v
+start C++ debug adapter / MI engine
+  |
+  v
+start GDB
+  |
+  v
+GDB launches PixelRenderer_debug.exe</pre>
+
+<p>
+這裡至少有四層，不要混在一起：
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>層</th>
+      <th>誰負責</th>
+      <th>壞掉時常見現象</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>build</td>
+      <td><code>preLaunchTask</code> + makefile</td>
+      <td>F5 前就 compile/link 失敗。</td>
+    </tr>
+    <tr>
+      <td>program path</td>
+      <td><code>launch.json.program</code></td>
+      <td>build 成功但 VSCode 找不到 exe。</td>
+    </tr>
+    <tr>
+      <td>debugger path</td>
+      <td>GDB discovery 或 <code>miDebuggerPath</code></td>
+      <td>找不到 GDB、啟動 debugger 失敗。</td>
+    </tr>
+    <tr>
+      <td>debug symbols</td>
+      <td>makefile flags，例如 <code>-g</code></td>
+      <td>能跑但 breakpoint/locals/source mapping 不完整。</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>cppdbg、MI、GDB 的關係</h3>
+
+<p>
+<code>cppdbg</code> 是 VSCode C/C++ extension 提供的 debug type。當 <code>MIMode</code> 是 <code>gdb</code>，VSCode 不是直接自己解讀 GDB，而是透過 MI protocol 跟 GDB 溝通。
+</p>
+
+<pre class="ascii">VSCode Debug UI
+  |
+  v
+C/C++ extension debug adapter
+  |
+  | Machine Interface commands
+  v
+GDB
+  |
+  | OS debug interface
+  v
+PixelRenderer_debug.exe process</pre>
+
+<p>
+你在 UI 點 Step Over，底下會變成 GDB 能理解的操作。你看到 Call Stack panel，底下是 GDB/MI 回傳的 frame 資訊。這就是 I-04 說的：VSCode 是 UI，debugger 才是真正控制 process 的工具。
+</p>
+
+<h2><span class="n">5</span> setupCommands：debugger 啟動後先下指令</h2>
+
+<p>
+目前 <code>launch.json</code> 有兩個 setup commands：
+</p>
+
+<div class="code">
+<span class="kw">"text"</span>: <span class="val">"-enable-pretty-printing"</span><br>
+<span class="kw">"text"</span>: <span class="val">"-gdb-set disassembly-flavor intel"</span>
+</div>
+
+<p>
+它們不是 C++ flags，也不是 build options。它們是在 GDB 啟動後，VSCode 先送給 GDB 的命令。
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Command</th>
+      <th>用途</th>
+      <th>底層意思</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>-enable-pretty-printing</code></td>
+      <td>讓 GDB 比較會顯示 STL container。</td>
+      <td>影響 debugger 顯示，不影響程式。</td>
+    </tr>
+    <tr>
+      <td><code>-gdb-set disassembly-flavor intel</code></td>
+      <td>assembly 顯示改成 Intel syntax。</td>
+      <td>影響 disassembly 呈現，不影響 machine code。</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+這類設定很適合放在 launch config，因為它們屬於 debug session preference，不屬於 makefile。
+</p>
+
+<h2><span class="n">6</span> c_cpp_properties：IntelliSense 的世界</h2>
+
+<p>
+目前 <code>c_cpp_properties.json</code> 是：
+</p>
+
+<div class="code">
+<span class="kw">"name"</span>: <span class="val">"Win32"</span>,<br>
+<span class="kw">"includePath"</span>: [<br>
+&nbsp;&nbsp;<span class="val">"${workspaceFolder}"</span>,<br>
+&nbsp;&nbsp;<span class="val">"${workspaceFolder}/src"</span><br>
+],<br>
+<span class="kw">"defines"</span>: [],<br>
+<span class="kw">"compilerPath"</span>: <span class="val">"g++"</span>,<br>
+<span class="kw">"cppStandard"</span>: <span class="val">"c++17"</span>,<br>
+<span class="kw">"intelliSenseMode"</span>: <span class="val">"windows-gcc-x64"</span>
+</div>
+
+<p>
+這份檔案餵給 editor language service。它的工作是讓 VSCode 能解析 C++，提供補字、跳轉、紅線、hover type。它不會決定 makefile 怎麼編。
+</p>
+
+<pre class="ascii">c_cpp_properties.json
+  |
+  +-- includePath
+  |     editor can find headers
+  |
+  +-- compilerPath
+  |     editor can infer system include paths / predefined macros
+  |
+  +-- cppStandard
+  |     editor parses as C++17
+  |
+  +-- intelliSenseMode
+        editor chooses Windows GCC-like parsing mode</pre>
+
+<p>
+這也是為什麼你可能遇到兩種相反情況：
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>情況</th>
+      <th>代表什麼</th>
+      <th>該檢查</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>VSCode 紅線，但 <code>make debug</code> 成功</td>
+      <td>IntelliSense model 不等於 build model。</td>
+      <td><code>c_cpp_properties.json</code>。</td>
+    </tr>
+    <tr>
+      <td>VSCode 沒紅線，但 <code>make debug</code> 失敗</td>
+      <td>editor 解析通過，不代表真實 compiler/linker 成功。</td>
+      <td>makefile、compiler output、link libraries。</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="box box-red">
+<strong>不能用 IntelliSense 修 link error</strong> &mdash; <code>includePath</code> 只讓 editor/compiler 找 declaration。Link error 要看 object files、library path、library name、ABI、target platform。
+</div>
+
+<h2><span class="n">7</span> Debug / Release config 的語意差異</h2>
+
+<p>
+目前 VSCode 有 debug 和 release 兩組 build/debug flow：
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>模式</th>
+      <th>task</th>
+      <th>target</th>
+      <th>makefile flags</th>
+      <th>debugger 體驗</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Debug</td>
+      <td><code>make debug Pixel-Renderer</code></td>
+      <td><code>build/debug/PixelRenderer_debug.exe</code></td>
+      <td><code>-g</code></td>
+      <td>source/locals 比較可讀，但目前沒有明確 <code>-O0</code>。</td>
+    </tr>
+    <tr>
+      <td>Release</td>
+      <td><code>make release Pixel-Renderer</code></td>
+      <td><code>build/release/PixelRenderer_release.exe</code></td>
+      <td><code>-O2</code></td>
+      <td>可以跑 GDB，但 locals/line mapping 可能不直覺。</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+Debug build 的核心不是「比較慢」而已，而是要讓 debugger 有足夠資訊、讓 source line 和 machine code 的對應比較接近。I-04 已經講過：<code>-g</code> 產生 debug symbols，<code>-O0</code> 降低最佳化造成的 source mismatch。
+</p>
+
+<div class="box box-yellow">
+<strong>目前可改善點</strong> &mdash; makefile debug rule 有 <code>-g</code>，但沒有明確寫 <code>-O0</code>、<code>-Wall</code>、<code>-Wextra</code>。這不是本章要直接修改的事，但後面 I-06 Make Workflow 應該整理 debug/release flags。
+</div>
+
+<h2><span class="n">8</span> Windows、macOS、CMake 之後怎麼演進</h2>
+
+<p>
+短期內，現在的 VSCode 設定是 Windows/MinGW-oriented：
+</p>
+
+<ul>
+<li><code>tasks.json</code> 指向 Git Bash。</li>
+<li><code>makefile</code> 使用 <code>g++.exe</code>。</li>
+<li><code>launch.json</code> 啟動 <code>.exe</code> 並使用 GDB。</li>
+<li><code>c_cpp_properties.json</code> 使用 <code>windows-gcc-x64</code>。</li>
+</ul>
+
+<p>
+macOS 不是把這幾個字串改成 clang 就結束。因為目前 source 仍包含 Win32/GDI dependency，makefile 也 link <code>gdi32/user32</code>。正確演進應該分階段：
+</p>
+
+<pre class="ascii">Stage 1: Current Windows MinGW
+  VSCode -> make -> g++.exe -> Win32/GDI -> GDB
+
+Stage 2: Make workflow cleanup
+  debug/release flags explicit
+  source dirs explicit
+  platform-specific source separated
+
+Stage 3: CMake target graph
+  renderer_core target
+  app target
+  win32_backend target
+  sdl_backend target
+
+Stage 4: VSCode reads CMake
+  CMake Tools configures compiler/includes/defines
+  IntelliSense follows compile_commands.json
+  less duplicated includePath</pre>
+
+<p>
+長期比較乾淨的 VSCode 模型不是手寫一份龐大的 <code>c_cpp_properties.json</code>，而是讓 build system 產生 <code>compile_commands.json</code>，讓 editor 跟著真實 build graph。
+</p>
+
+<h2><span class="n">9</span> 第三方 library 接入時，VSCode 只是一層外殼</h2>
+
+<p>
+之後接 SDL、ImGui、OpenGL、D3D 時，你會看到很多教學叫你「在 VSCode 加 include path」。這只解決 editor 或 compile 的一小部分。
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>需求</th>
+      <th>真實 build 層</th>
+      <th>VSCode 對應</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>找到 header</td>
+      <td><code>-I/path/to/include</code> 或 CMake include dirs。</td>
+      <td>IntelliSense 也需要知道 include path。</td>
+    </tr>
+    <tr>
+      <td>找到 library</td>
+      <td><code>-L/path/to/lib</code> + <code>-lname</code>，或 platform framework。</td>
+      <td>不是 <code>c_cpp_properties.json</code> 的責任。</td>
+    </tr>
+    <tr>
+      <td>runtime 找到 DLL/dylib</td>
+      <td>PATH、rpath、bundle、copy runtime binary。</td>
+      <td><code>launch.json.environment</code> 有時可輔助。</td>
+    </tr>
+    <tr>
+      <td>debug 第三方互動</td>
+      <td>debug symbols、source mapping、debugger config。</td>
+      <td><code>launch.json</code> 和 debugger setup。</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+所以 VSCode 設定的正確位置是：讓你方便呼叫 build/debug，並讓 editor 理解 source。它不應成為專案唯一的 build truth。真正的 truth 應該逐步收斂到 makefile，之後再收斂到 CMake target graph。
+</p>
+
+<h2><span class="n">10</span> verification：如何判斷是哪一層壞了</h2>
+
+<p>
+遇到錯誤時，用下面順序切問題。
+</p>
+
+<h3>先離開 VSCode UI，跑真實 build</h3>
+
+<div class="code">
+make debug
+</div>
+
+<p>
+如果 terminal 裡的真實 build 失敗，就先看 makefile / compiler / linker。VSCode 紅線不是第一優先。
+</p>
+
+<h3>確認產物路徑和 launch.json 一致</h3>
+
+<pre class="ascii">makefile:
+  DEBUG_TARGET = build/debug/PixelRenderer_debug.exe
+
+launch.json:
+  program = ${workspaceFolder}/build/debug/PixelRenderer_debug.exe</pre>
+
+<p>
+這兩個要一致。否則 build 成功，F5 仍然可能找不到 executable。
+</p>
+
+<h3>確認 preLaunchTask label 完全一致</h3>
+
+<pre class="ascii">tasks.json:
+  label = make debug Pixel-Renderer
+
+launch.json:
+  preLaunchTask = make debug Pixel-Renderer</pre>
+
+<p>
+這是字串匹配。差一個空格、改了 label 沒同步，都會讓 debug 前 build 失敗。
+</p>
+
+<h3>區分 includePath 與真實 -I</h3>
+
+<pre class="ascii">makefile:
+  INCLUDES = -I. -Itool -Isrc
+
+c_cpp_properties.json:
+  includePath = ${workspaceFolder}, ${workspaceFolder}/src</pre>
+
+<p>
+如果未來你發現 editor 和 compiler 對 header 的理解不同，就從這裡比對。
+</p>
+
+<div class="box box-yellow">
+<strong>常見陷阱</strong>
+<ul>
+<li>把 <code>c_cpp_properties.json</code> 當成 build 設定，結果修了紅線但 terminal build 還是失敗。</li>
+<li>改了 makefile output path，忘記同步 <code>launch.json.program</code>。</li>
+<li>改了 task label，忘記同步 <code>preLaunchTask</code>。</li>
+<li>在 Windows task 裡依賴 Git Bash，但到 macOS/CI/PowerShell 後沒有重新定義 shell 假設。</li>
+<li>接 SDL/ImGui 時只加 include path，忘記 link library 和 runtime binary。</li>
+</ul>
+</div>
+
+<div class="box box-green">
+<strong>本章學到的三件事：</strong>
+<ol>
+<li><code>tasks.json</code>、<code>launch.json</code>、<code>c_cpp_properties.json</code> 分別控制 build command、debugger launch、editor IntelliSense，不是同一層。</li>
+<li>VSCode 的 UI 現象要回推到底層工具：compiler、linker、make、GDB、language service，不能用同一種方式修所有錯誤。</li>
+<li>未來跨平台與第三方 library 接入，應讓 build truth 收斂到 make/CMake target graph，再讓 VSCode 跟著它，而不是手寫一份平行世界。</li>
+</ol>
+</div>
+
+<div class="next-ch">
+  <div>
+    <div class="next-label">NEXT THEORY</div>
+    <div class="next-title">T-04 &mdash; Value Category / Reference System</div>
+    <div class="next-desc">下一章回到 C++ 語意，完整處理 lvalue/xvalue/prvalue、reference collapsing、forwarding、operator return category，為 UI callback 和 shader interface 鋪路。</div>
+  </div>
+  <a class="next-arrow" href="../theory/t04_value_category_reference_system.html">&rarr;</a>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>T-23 — Overload Resolution / Conversion / Operator Design</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#1e1e2e; --bg1:#181825; --bg2:#11111b; --border:#313244;
+  --muted:#6c7086; --text:#cdd6f4; --blue:#89b4fa; --green:#a6e3a1;
+  --yellow:#f9e2af; --orange:#fab387; --red:#f38ba8; --purple:#cba6f7; --teal:#94e2d5;
+}
+body { background: var(--bg); color: var(--text); font-family: 'Georgia', serif; font-size: 15px; padding: 0 20px 80px; max-width: 900px; margin: 0 auto; line-height: 1.9; }
+nav { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); padding: 14px 0; border-bottom: 1px solid var(--border); margin-bottom: 36px; display: flex; align-items: center; gap: 10px; }
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--blue); }
+.nav-sep { color: var(--border); }
+.nav-cur { color: var(--text); }
+.nav-right { margin-left: auto; display: flex; gap: 16px; }
+.ch-header { margin-bottom: 40px; }
+.ch-label { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px; }
+.ch-title { color: var(--blue); font-size: 1.7em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub { color: var(--muted); font-size: 0.88em; margin-bottom: 14px; }
+.ch-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.ch-tag { font-family: 'Consolas', monospace; font-size: 0.72em; padding: 1px 7px; border-radius: 4px; background: var(--bg2); color: var(--muted); border: 1px solid var(--border); }
+h2 { color: var(--purple); font-size: 1em; font-family: 'Consolas', monospace; letter-spacing: 0.05em; padding: 10px 0; border-bottom: 1px solid var(--border); margin: 44px 0 20px; display: flex; align-items: center; gap: 12px; }
+h2 .n { background: var(--purple); color: var(--bg2); font-weight: bold; border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.85em; }
+h3 { color: var(--yellow); font-size: 0.95em; margin: 24px 0 10px; }
+p { margin-bottom: 12px; }
+strong { color: var(--yellow); }
+em { color: var(--orange); font-style: normal; }
+code { font-family: 'Consolas', monospace; color: var(--teal); }
+ul, ol { margin: 8px 0 14px 26px; line-height: 2.2; }
+.box { border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 0.9em; line-height: 1.85; background: var(--bg1); }
+.box-blue { border-left: 4px solid var(--blue); }
+.box-green { border-left: 4px solid var(--green); }
+.box-yellow { border-left: 4px solid var(--yellow); }
+.box-red { border-left: 4px solid var(--red); }
+.box-purple { border-left: 4px solid var(--purple); }
+.code { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em; line-height: 2.1; margin: 14px 0; overflow-x: auto; }
+.code .cmt { color: var(--muted); } .code .kw { color: var(--purple); } .code .val { color: var(--orange); } .code .tp { color: var(--blue); } .code .fn { color: var(--teal); }
+.ascii { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.82em; line-height: 1.55; margin: 14px 0; overflow-x: auto; color: var(--text); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9em; }
+thead { background: var(--bg1); }
+th { color: var(--muted); font-family: 'Consolas', monospace; font-size: 0.85em; padding: 8px 14px; text-align: left; border-bottom: 2px solid var(--border); }
+td { padding: 8px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.fig { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin: 18px 0; overflow-x: auto; }
+.fig svg { width: 100%; min-width: 760px; height: auto; display: block; font-family: 'Consolas', monospace; }
+.fig-caption { color: var(--muted); font-size: 0.84em; margin-top: 10px; line-height: 1.7; }
+.next-ch { margin-top: 56px; padding: 20px 24px; background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 20px; }
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+.next-title { color: var(--orange); font-size: 1em; }
+.next-desc { color: var(--muted); font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: var(--orange); font-size: 1.6em; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">C++ for Pixel-Renderer</a>
+  <span class="nav-sep">/</span>
+  <span class="nav-cur">T-23 — Overload Resolution / Conversion / Operator Design</span>
+  <div class="nav-right">
+    <a href="t22_const_cv_value_category.html">&larr; T-22</a>
+    <a href="t24_type_deduction_auto_decltype_forwarding.html">T-24 &rarr;</a>
+  </div>
+</nav>
+
+<div class="ch-header">
+  <div class="ch-label">THEORY TRACK &middot; T-23</div>
+  <div class="ch-title">Overload Resolution / Conversion / Operator Design</div>
+  <div class="ch-sub">operator 不是語法糖而已，它會把 type 的語意、conversion policy、cache key contract 暴露到 call site</div>
+  <div class="ch-tags">
+    <span class="ch-tag">overload</span>
+    <span class="ch-tag">conversion</span>
+    <span class="ch-tag">operator</span>
+    <span class="ch-tag">strong-type</span>
+  </div>
+</div>
+
+<p>
+T-04 說 expression 有 value category，T-22 說 <code>const</code> 會限制 mutation capability。接著要問：當你寫 <code>a + b</code>、<code>Draw(textureId)</code>、<code>if (handle)</code>、<code>state == other</code> 時，compiler 到底選了哪個 function？哪些 conversion 被允許？operator 的回傳型別又在保證什麼？
+</p>
+
+<p>
+這不是抽象語法問題。Pixel-Renderer 會很快有 <code>Vec3</code>、<code>RGBA8</code>、<code>TextureId</code>、<code>ShaderId</code>、<code>PipelineState</code>、<code>Command</code>。如果 conversion 和 operator 設計錯，type system 反而會幫你把錯誤變得更安靜：color 可以誤當 texture id、resource handle 可以誤當 int、cache key 的 equality/hash 不一致。
+</p>
+
+<div class="box box-blue">
+<strong>本章範圍</strong> &mdash; 建立 overload / conversion / operator design 的工作模型：candidate set、viable function、ranking、standard conversion、user-defined conversion、<code>explicit</code>、<code>explicit operator bool</code>、hidden friend + ADL、math operator 回傳規則、equality/hash contract，以及 Pixel-Renderer strong type policy。
+</div>
+
+<h2><span class="n">1</span> naive model：compiler 會選最合理的 overload</h2>
+
+<p>
+直覺上，你可能覺得 compiler 會選「人看起來最合理」的 overload：
+</p>
+
+<div class="code">
+<span class="kw">void</span> <span class="fn">Draw</span>(<span class="tp">TextureId</span> id);<br>
+<span class="kw">void</span> <span class="fn">Draw</span>(<span class="tp">int</span> debugMode);<br>
+<br>
+<span class="tp">TextureId</span> id{<span class="val">3</span>};<br>
+<span class="fn">Draw</span>(id);
+</div>
+
+<p>
+如果 <code>TextureId</code> 可以隱式轉成 <code>int</code>，或可以從 <code>int</code> 隱式建構，overload set 會變得含糊。Compiler 不是理解你的 domain，它只照語言規則排序 conversion sequence。
+</p>
+
+<div class="box box-red">
+<strong>核心修正</strong> &mdash; overload resolution 解的是「哪個 function 在語言規則下最匹配」，不是「哪個 domain 意義最正確」。Domain 意義要靠 type design、<code>explicit</code>、operator policy 和 API boundary 先寫進 type system。
+</div>
+
+<h2><span class="n">2</span> overload resolution 的粗略模型</h2>
+
+<p>
+完整 overload resolution 規則很細，但工程上可以先抓這個流程：
+</p>
+
+<div class="fig">
+<svg viewBox="0 0 900 430" role="img" aria-label="Overload resolution pipeline">
+  <defs>
+    <marker id="arrow-t23" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#89b4fa"/>
+    </marker>
+  </defs>
+  <rect x="55" y="80" width="150" height="68" rx="8" fill="#1a2a3d" stroke="#89b4fa" stroke-width="2"/>
+  <text x="130" y="109" fill="#89b4fa" font-size="14" text-anchor="middle">name lookup</text>
+  <text x="130" y="130" fill="#cdd6f4" font-size="11" text-anchor="middle">find candidates</text>
+
+  <rect x="265" y="80" width="150" height="68" rx="8" fill="#2f2018" stroke="#fab387" stroke-width="2"/>
+  <text x="340" y="109" fill="#fab387" font-size="14" text-anchor="middle">viability</text>
+  <text x="340" y="130" fill="#cdd6f4" font-size="11" text-anchor="middle">can arguments bind?</text>
+
+  <rect x="475" y="80" width="150" height="68" rx="8" fill="#2a1a3d" stroke="#cba6f7" stroke-width="2"/>
+  <text x="550" y="109" fill="#cba6f7" font-size="14" text-anchor="middle">ranking</text>
+  <text x="550" y="130" fill="#cdd6f4" font-size="11" text-anchor="middle">best conversion</text>
+
+  <rect x="685" y="80" width="150" height="68" rx="8" fill="#1a2d1a" stroke="#a6e3a1" stroke-width="2"/>
+  <text x="760" y="109" fill="#a6e3a1" font-size="14" text-anchor="middle">selected call</text>
+  <text x="760" y="130" fill="#cdd6f4" font-size="11" text-anchor="middle">or ambiguous</text>
+
+  <path d="M205 114 L265 114" stroke="#89b4fa" stroke-width="3" marker-end="url(#arrow-t23)"/>
+  <path d="M415 114 L475 114" stroke="#89b4fa" stroke-width="3" marker-end="url(#arrow-t23)"/>
+  <path d="M625 114 L685 114" stroke="#89b4fa" stroke-width="3" marker-end="url(#arrow-t23)"/>
+
+  <rect x="155" y="250" width="590" height="92" rx="8" fill="#181825" stroke="#313244"/>
+  <text x="450" y="282" fill="#f9e2af" font-size="15" text-anchor="middle">language rule first, domain meaning second</text>
+  <text x="450" y="309" fill="#cdd6f4" font-size="12" text-anchor="middle">If a conversion is legal, the compiler may use it even when it is semantically wrong for your renderer.</text>
+</svg>
+<div class="fig-caption">SVG：overload resolution 是語言規則，不是 domain reasoning。Strong type 的任務是把錯誤 conversion 從 candidate set 排除。</div>
+</div>
+
+<table>
+  <thead><tr><th>匹配類型</th><th>直覺</th><th>例子</th></tr></thead>
+  <tbody>
+    <tr><td>exact match</td><td>最好。</td><td><code>Draw(TextureId)</code> 接 <code>TextureId</code>。</td></tr>
+    <tr><td>standard conversion</td><td>語言內建轉換。</td><td><code>int</code> 到 <code>float</code>、array-to-pointer、qualification conversion。</td></tr>
+    <tr><td>user-defined conversion</td><td>constructor 或 conversion operator。</td><td><code>TextureId(int)</code>、<code>operator int()</code>。</td></tr>
+    <tr><td>ellipsis / fallback</td><td>最後手段。</td><td>C-style variadic function。</td></tr>
+  </tbody>
+</table>
+
+<h2><span class="n">3</span> implicit conversion：方便，但會偷穿過語意邊界</h2>
+
+<p>
+Strong type 的目的，是把相同 storage representation 的不同語意分開：
+</p>
+
+<div class="code">
+<span class="kw">struct</span> <span class="tp">TextureId</span> {<br>
+&nbsp;&nbsp;<span class="kw">explicit</span> <span class="fn">TextureId</span>(<span class="tp">uint32_t</span> value) : value(value) {}<br>
+&nbsp;&nbsp;<span class="tp">uint32_t</span> value;<br>
+};<br>
+<br>
+<span class="kw">struct</span> <span class="tp">ShaderId</span> {<br>
+&nbsp;&nbsp;<span class="kw">explicit</span> <span class="fn">ShaderId</span>(<span class="tp">uint32_t</span> value) : value(value) {}<br>
+&nbsp;&nbsp;<span class="tp">uint32_t</span> value;<br>
+};
+</div>
+
+<p>
+如果 constructor 不是 <code>explicit</code>，那 <code>uint32_t</code> 可能在 call site 被自動變成 id。這會讓原本該由 type system 擋下的錯誤通過。
+</p>
+
+<div class="code">
+<span class="kw">void</span> <span class="fn">BindTexture</span>(<span class="tp">TextureId</span> id);<br>
+<br>
+<span class="fn">BindTexture</span>(<span class="val">7</span>); <span class="cmt">// should this be allowed? usually no</span>
+</div>
+
+<div class="box box-yellow">
+<strong>renderer rule</strong> &mdash; domain id、pixel format、size、coordinate、handle 這類 type 預設應禁止 implicit conversion。你可以提供明確 factory 或 explicit constructor，但不要讓 raw integer 自動穿過語意邊界。
+</div>
+
+<h2><span class="n">4</span> conversion operator：尤其小心 operator int</h2>
+
+<p>
+Conversion operator 也會進入 overload resolution：
+</p>
+
+<div class="code">
+<span class="kw">struct</span> <span class="tp">TextureId</span> {<br>
+&nbsp;&nbsp;<span class="kw">operator</span> <span class="tp">uint32_t</span>() <span class="kw">const</span> { <span class="kw">return</span> value; }<br>
+&nbsp;&nbsp;<span class="tp">uint32_t</span> value;<br>
+};
+</div>
+
+<p>
+這看起來方便，實際上會讓 <code>TextureId</code> 幾乎到處可以當整數用。它可能參與 arithmetic、被傳進錯的 overload、或和 <code>ShaderId</code> 互相混用。
+</p>
+
+<p>
+比較合理的是提供明確 accessor：
+</p>
+
+<div class="code">
+<span class="kw">struct</span> <span class="tp">TextureId</span> {<br>
+&nbsp;&nbsp;<span class="kw">explicit</span> <span class="fn">TextureId</span>(<span class="tp">uint32_t</span> value) : value_(value) {}<br>
+&nbsp;&nbsp;<span class="tp">uint32_t</span> <span class="fn">Value</span>() <span class="kw">const</span> { <span class="kw">return</span> value_; }<br>
+<span class="kw">private</span>:<br>
+&nbsp;&nbsp;<span class="tp">uint32_t</span> value_ = <span class="val">0</span>;<br>
+};
+</div>
+
+<h2><span class="n">5</span> explicit operator bool：handle 可以檢查有效，但不該變 int</h2>
+
+<p>
+Resource handle 常需要寫：
+</p>
+
+<div class="code">
+<span class="kw">if</span> (texture) { ... }
+</div>
+
+<p>
+但你不想讓它變成任意整數。這時可以使用 <code>explicit operator bool</code>：
+</p>
+
+<div class="code">
+<span class="kw">class</span> <span class="tp">TextureHandle</span> {<br>
+<span class="kw">public</span>:<br>
+&nbsp;&nbsp;<span class="kw">explicit operator bool</span>() <span class="kw">const</span> { <span class="kw">return</span> id != invalid; }<br>
+<span class="kw">private</span>:<br>
+&nbsp;&nbsp;<span class="tp">uint32_t</span> id = invalid;<br>
+&nbsp;&nbsp;<span class="kw">static constexpr</span> <span class="tp">uint32_t</span> invalid = <span class="val">0xffffffff</span>;<br>
+};
+</div>
+
+<p>
+這允許 boolean context，但不會讓 handle 自動參與 arithmetic：
+</p>
+
+<pre class="ascii">if (texture)       OK
+texture + 1        not OK
+Draw(texture)      only OK if overload accepts TextureHandle</pre>
+
+<h2><span class="n">6</span> operator design：用語意模仿，不是用外觀模仿</h2>
+
+<p>
+Operator overload 的第一原則是：如果這個操作在 domain 裡沒有清楚語意，不要只是為了語法好看而 overload。
+</p>
+
+<table>
+  <thead><tr><th>Type</th><th>合理 operator</th><th>可疑 operator</th></tr></thead>
+  <tbody>
+    <tr><td><code>Vec2</code> / <code>Vec3</code></td><td><code>+</code>、<code>-</code>、scalar <code>*</code>、<code>+=</code></td><td><code>*</code> 若不清楚是 dot 還是 component-wise。</td></tr>
+    <tr><td><code>RGBA8</code></td><td><code>==</code>、explicit pack/unpack</td><td><code>+</code> 若不定義 clamp/wrap/linear/sRGB。</td></tr>
+    <tr><td><code>TextureId</code></td><td><code>==</code>、maybe <code>operator bool</code></td><td><code>+</code>、<code>&lt;</code> 若沒有 domain 意義。</td></tr>
+    <tr><td><code>FramebufferSize</code></td><td><code>==</code>、area helper</td><td>隱式轉成 <code>int</code> 或 <code>uint32_t</code>。</td></tr>
+  </tbody>
+</table>
+
+<h2><span class="n">7</span> 回傳型別：non-mutating by value，mutating by reference</h2>
+
+<p>
+Math type 的常見規則：
+</p>
+
+<div class="code">
+<span class="kw">struct</span> <span class="tp">Vec3</span> {<br>
+&nbsp;&nbsp;<span class="tp">float</span> x, y, z;<br>
+<br>
+&nbsp;&nbsp;<span class="tp">Vec3</span>&amp; <span class="kw">operator</span>+=(<span class="kw">const</span> <span class="tp">Vec3</span>&amp; rhs) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;x += rhs.x; y += rhs.y; z += rhs.z;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> *<span class="kw">this</span>;<br>
+&nbsp;&nbsp;}<br>
+};<br>
+<br>
+<span class="kw">inline</span> <span class="tp">Vec3</span> <span class="kw">operator</span>+(<span class="tp">Vec3</span> lhs, <span class="kw">const</span> <span class="tp">Vec3</span>&amp; rhs) {<br>
+&nbsp;&nbsp;lhs += rhs;<br>
+&nbsp;&nbsp;<span class="kw">return</span> lhs;<br>
+}
+</div>
+
+<p>
+<code>operator+=</code> 修改左邊，所以回傳 <code>T&amp;</code> 讓 chaining 合理。<code>operator+</code> 產生新值，所以回傳 value。不要為了避免 imaginary copy 回傳 local reference；T-04 已經說過那會 dangling。
+</p>
+
+<h2><span class="n">8</span> hidden friend 與 ADL：math type 常見寫法</h2>
+
+<p>
+你常會看到 operator 寫在 class 裡當 friend：
+</p>
+
+<div class="code">
+<span class="kw">struct</span> <span class="tp">Vec3</span> {<br>
+&nbsp;&nbsp;<span class="tp">float</span> x, y, z;<br>
+<br>
+&nbsp;&nbsp;<span class="kw">friend</span> <span class="tp">Vec3</span> <span class="kw">operator</span>+(<span class="tp">Vec3</span> lhs, <span class="kw">const</span> <span class="tp">Vec3</span>&amp; rhs) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;lhs.x += rhs.x; lhs.y += rhs.y; lhs.z += rhs.z;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> lhs;<br>
+&nbsp;&nbsp;}<br>
+};
+</div>
+
+<p>
+這種 hidden friend 不會變成一般 name lookup 裡到處可見的函式，但當參數有 <code>Vec3</code> 時，ADL 會找到它。對 math type 來說，這能讓 operator 靠近 type 定義，也避免污染 namespace 太多名字。
+</p>
+
+<div class="box box-purple">
+<strong>不要迷信 pattern</strong> &mdash; hidden friend 是工具，不是目標。若 operator 不需要 private access，也可以放在同 namespace。真正的判準是：這個 operator 是否是 type 的自然操作？是否會引入危險 conversion？
+</div>
+
+<h2><span class="n">9</span> equality、ordering、hash：cache key 的語意 contract</h2>
+
+<p>
+Renderer 之後會有 cache：
+</p>
+
+<pre class="ascii">PipelineState -> compiled pipeline variant
+TextureKey    -> loaded texture resource
+ShaderKey     -> shader/material variant
+CommandBuffer -> regression diff / replay</pre>
+
+<p>
+這些 key 需要 equality / hash / ordering。最重要的規則是：
+</p>
+
+<pre class="ascii">If a == b, then hash(a) == hash(b).
+If a and b compare equal, they must represent the same semantic state.
+Ordering must be strict and stable if used for sorting/map keys.</pre>
+
+<p>
+浮點尤其危險。若 <code>PipelineState</code> 裡放 float epsilon 或 transform matrix，直接把 float 做 hash/equality 可能不符合你想要的語意。這時要先問：它真的應該是 cache key 嗎？還是應該把 key 限制在 discrete state，例如 blend mode、depth test mode、shader id、texture id？
+</p>
+
+<h2><span class="n">10</span> Pixel-Renderer operator / conversion policy</h2>
+
+<pre class="ascii">Strong ids:
+  TextureId, ShaderId, BufferId
+  explicit from integer
+  no implicit operator int
+  equality allowed
+  ordering only if there is a real container need
+
+Math value types:
+  Vec2, Vec3, Mat4, Rect
+  non-mutating operators return by value
+  mutating compound operators return T&
+  avoid ambiguous operator* if dot/component-wise/scalar meanings collide
+
+Pixel formats:
+  RGBA8, BGRA8, DepthValue
+  explicit pack/unpack
+  avoid implicit conversion to raw uint32_t unless crossing platform boundary
+
+Cache keys:
+  equality/hash must be defined together
+  avoid floats in keys unless exact bitwise semantics are intended
+  prefer discrete enums / ids / normalized descriptors</pre>
+
+<div class="box box-green">
+<strong>本章學到的三件事：</strong>
+<ol>
+  <li>Overload resolution 只依 C++ 語言規則選 function，不理解 renderer domain；錯誤 conversion 必須靠 strong type、<code>explicit</code> 和 operator policy 擋掉。</li>
+  <li>Operator overload 應模仿語意，不是模仿外觀；math type 的 non-mutating operator 通常 by value，compound assignment 回傳 <code>T&amp;</code>。</li>
+  <li>Equality、ordering、hash 是 cache/test 的 contract；resource id、pipeline state、command key 若定義不一致，後面的 cache、diff、golden test 都會不可靠。</li>
+</ol>
+</div>
+
+<p>
+下一章先補 deduction。現在你已經知道 call site 可能經過 overload / conversion / operator 規則；T-24 會接著看 <code>auto</code>、<code>decltype(auto)</code>、template deduction 如何保留或丟掉 reference、const 與 value category。
+</p>
+
+<div class="next-ch">
+  <div>
+    <div class="next-label">NEXT THEORY</div>
+    <div class="next-title">T-24 &mdash; Type Deduction / auto / decltype / Forwarding</div>
+    <div class="next-desc">下一章看 deduction 如何影響 copy、borrow、forwarding、range-for 與 generic helper 的 lifetime 語意。</div>
+  </div>
+  <a class="next-arrow" href="t24_type_deduction_auto_decltype_forwarding.html">&rarr;</a>
+</div>
+
+</body>
+</html>

@@ -130,6 +130,12 @@ Pixel-Renderer/
     render/
       rasterizer.h/cpp
 
+  learning/
+    README.md
+    notes/
+    cpp/
+    software-renderer/
+
   docs/
     README.md
     PROJECT_MAP.md
@@ -143,7 +149,7 @@ Pixel-Renderer/
     adr/
 ```
 
-Long-form learning notes and tutorial drafts are kept on branch `notes/journal`, not on `main`.
+Long-form learning notes, tutorial tracks, readings, and small labs live in [`learning/`](learning/README.md). They coexist with the formal renderer on `main`, but they are learning context rather than current source truth.
 
 ## Roadmap
 

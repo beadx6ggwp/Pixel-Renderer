@@ -1,6 +1,8 @@
 # Roadmap
 
-這裡放未來實作順序、milestone、短中長期計畫。它應該比 `notes/journal` 上的 rough notes 更穩定，比 `PROJECT_MAP.md` 更具體。
+這裡放未來實作順序、milestone、短中長期計畫。它應該比 `learning/` 裡的 rough notes 更穩定，比 `PROJECT_MAP.md` 更具體。
+
+Roadmap 描述 dependency 與 recommended focus, 不是 permission gate. 使用者可以隨時探索 UI、FPGA、GPU architecture、math、C++、commercial engine 或其他感興趣的方向; 只需區分 learning exploration 與 formal renderer 已驗證的能力.
 
 建議先補：
 

@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>T-02 — Type System / Initialization</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#1e1e2e; --bg1:#181825; --bg2:#11111b; --border:#313244;
+  --muted:#6c7086; --text:#cdd6f4; --blue:#89b4fa; --green:#a6e3a1;
+  --yellow:#f9e2af; --orange:#fab387; --red:#f38ba8; --purple:#cba6f7; --teal:#94e2d5;
+}
+body { background: var(--bg); color: var(--text); font-family: 'Georgia', serif; font-size: 15px; padding: 0 20px 80px; max-width: 900px; margin: 0 auto; line-height: 1.9; }
+nav { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); padding: 14px 0; border-bottom: 1px solid var(--border); margin-bottom: 36px; display: flex; align-items: center; gap: 10px; }
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--blue); }
+.nav-sep { color: var(--border); }
+.nav-cur { color: var(--text); }
+.nav-right { margin-left: auto; display: flex; gap: 16px; }
+.ch-header { margin-bottom: 40px; }
+.ch-label { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px; }
+.ch-title { color: var(--blue); font-size: 1.7em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub { color: var(--muted); font-size: 0.88em; margin-bottom: 14px; }
+.ch-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.ch-tag { font-family: 'Consolas', monospace; font-size: 0.72em; padding: 1px 7px; border-radius: 4px; background: var(--bg2); color: var(--muted); border: 1px solid var(--border); }
+h2 { color: var(--purple); font-size: 1em; font-family: 'Consolas', monospace; letter-spacing: 0.05em; padding: 10px 0; border-bottom: 1px solid var(--border); margin: 44px 0 20px; display: flex; align-items: center; gap: 12px; }
+h2 .n { background: var(--purple); color: var(--bg2); font-weight: bold; border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.85em; }
+h3 { color: var(--yellow); font-size: 0.95em; margin: 24px 0 10px; }
+p { margin-bottom: 12px; }
+strong { color: var(--yellow); }
+em { color: var(--orange); font-style: normal; }
+code { font-family: 'Consolas', monospace; color: var(--teal); }
+ul, ol { margin: 8px 0 14px 26px; line-height: 2.2; }
+.box { border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 0.9em; line-height: 1.85; background: var(--bg1); }
+.box-blue { border-left: 4px solid var(--blue); }
+.box-green { border-left: 4px solid var(--green); }
+.box-yellow { border-left: 4px solid var(--yellow); }
+.box-red { border-left: 4px solid var(--red); }
+.box-purple { border-left: 4px solid var(--purple); }
+.code { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em; line-height: 2.1; margin: 14px 0; overflow-x: auto; }
+.code .cmt { color: var(--muted); } .code .kw { color: var(--purple); } .code .val { color: var(--orange); } .code .tp { color: var(--blue); } .code .fn { color: var(--teal); }
+.ascii { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.82em; line-height: 1.55; margin: 14px 0; overflow-x: auto; color: var(--text); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9em; }
+thead { background: var(--bg1); }
+th { color: var(--muted); font-family: 'Consolas', monospace; font-size: 0.85em; padding: 8px 14px; text-align: left; border-bottom: 2px solid var(--border); }
+td { padding: 8px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.next-ch { margin-top: 56px; padding: 20px 24px; background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 20px; }
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+.next-title { color: var(--blue); font-size: 1em; }
+.next-desc { color: var(--muted); font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: var(--blue); font-size: 1.6em; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">C++ for Pixel-Renderer</a>
+  <span class="nav-sep">/</span>
+  <span class="nav-cur">T-02 — Type System / Initialization</span>
+  <div class="nav-right">
+    <a href="t01_compilation_linkage_abi.html">&larr; T-01</a>
+    <a href="t03_object_model_storage_lifetime_ub.html">T-03 &rarr;</a>
+  </div>
+</nav>
+
+<div class="ch-header">
+  <div class="ch-label">THEORY TRACK &middot; T-02</div>
+  <div class="ch-title">Type System / Initialization</div>
+  <div class="ch-sub">type 是語意邊界；initialization 是 object 進入第一個合法狀態</div>
+  <div class="ch-tags">
+    <span class="ch-tag">type-system</span>
+    <span class="ch-tag">initialization</span>
+    <span class="ch-tag">explicit</span>
+  </div>
+</div>
+
+<p>
+T-01 說明 C++ 程式如何變成 binary。T-03 說明 object 如何在 storage 裡開始 lifetime。但中間還缺一層：<strong>一個 object 開始 lifetime 時，為什麼它是某個 type 的合法 object？</strong>
+</p>
+
+<p>
+這就是 type system 和 initialization 的問題。對 Pixel-Renderer 來說，<code>Width</code>、<code>Height</code>、<code>Color</code>、<code>TextureId</code>、<code>FramebufferDesc</code> 不只是資料大小不同；它們代表不同語意。初始化也不是把 bytes 填進去而已，而是讓 object 從一開始就滿足它的 invariant。
+</p>
+
+<div class="box box-blue">
+<strong>本章範圍</strong> &mdash; 建立 C++ type 與 initialization 的工作模型：type 作為 states / operations / invariants 的邊界，default/value/direct/copy/list initialization、aggregate、narrowing、<code>explicit</code>、implicit conversion、<code>const</code>/<code>constexpr</code>/<code>consteval</code>、<code>enum class</code>、member initialization order。這章補上 T-02，是為了讓 T-03 object lifetime 和 T-04 value category 的地基更完整。
+</div>
+
+<h2><span class="n">1</span> naive model：type 只是記憶體大小和欄位排列</h2>
+
+<p>
+從 C 的角度看，type 很容易被理解成 layout：
+</p>
+
+<pre class="ascii">int      -> 4 bytes
+float    -> 4 bytes
+Vec3     -> 3 floats
+Color    -> 4 bytes
+TextureId -> maybe int</pre>
+
+<p>
+這個模型只看到 object representation，沒看到語意。兩個 type 可能底層都是 <code>uint32_t</code>，但不代表可以混用：
+</p>
+
+<div class="code">
+<span class="tp">uint32_t</span> color = <span class="val">0xff3366aa</span>;<br>
+<span class="tp">uint32_t</span> texture_id = <span class="val">7</span>;<br>
+<br>
+<span class="fn">DrawTexturedQuad</span>(color); <span class="cmt">// layout fits, semantics wrong</span>
+</div>
+
+<p>
+真正有用的 type model 是：
+</p>
+
+<pre class="ascii">type =
+  valid states
+  + allowed operations
+  + invariants
+  + cost model
+  + conversion rules</pre>
+
+<p>
+例如 <code>FramebufferDesc</code> 的 valid state 不是任意四個整數。<code>width</code> 和 <code>height</code> 應該大於 0，<code>pitch</code> 至少要能容納一列 pixels，<code>pixels</code> 指向的 storage 必須活得夠久。這些都是 type 設計要表達或保護的規則。
+</p>
+
+<h2><span class="n">2</span> initialization 不是 assignment</h2>
+
+<p>
+最常見的混淆是把初始化想成「先有 object，再賦值」：
+</p>
+
+<pre class="ascii">wrong model:
+  create empty object
+  assign values into it</pre>
+
+<p>
+但 C++ 裡 initialization 是 object lifetime 開始時建立第一個值。Assignment 是 object 已經存在後，把它改成另一個值。
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>操作</th>
+      <th>object 是否已存在</th>
+      <th>呼叫什麼</th>
+      <th>例子</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>initialization</td>
+      <td>還沒有，正在開始 lifetime。</td>
+      <td>constructor / aggregate initialization。</td>
+      <td><code>Vec3 v{1,2,3};</code></td>
+    </tr>
+    <tr>
+      <td>assignment</td>
+      <td>已經存在。</td>
+      <td><code>operator=</code>。</td>
+      <td><code>v = Vec3{4,5,6};</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+這跟 T-03 接起來就是：
+</p>
+
+<pre class="ascii">storage acquired
+  |
+  | initialization
+  v
+object lifetime begins with a valid value
+  |
+  | assignment may change existing value
+  v
+object remains alive
+  |
+  | destruction
+  v
+lifetime ends</pre>
+
+<div class="box box-yellow">
+<strong>第一個關鍵修正</strong> &mdash; constructor 不是「先 default 再 assign」的語法糖。Constructor 是 object 進入第一個合法狀態的入口。
+</div>
+
+<h2><span class="n">3</span> C++ 初始化語法為什麼這麼多</h2>
+
+<p>
+C++ 初始化語法多，是因為它要同時支援 C compatibility、class constructor、aggregate、initializer_list、narrowing 防護、copy/direct 語意。你不需要一開始背所有名字，但要知道它們不是完全等價。
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>形式</th>
+      <th>例子</th>
+      <th>直覺</th>
+      <th>注意</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>default initialization</td>
+      <td><code>Vec3 v;</code></td>
+      <td>用 default constructor；primitive local 可能未初始化。</td>
+      <td>對 <code>int x;</code> 這類要小心 uninitialized read。</td>
+    </tr>
+    <tr>
+      <td>value initialization</td>
+      <td><code>Vec3 v{};</code></td>
+      <td>傾向產生 zero / default value。</td>
+      <td>常作為安全預設。</td>
+    </tr>
+    <tr>
+      <td>direct initialization</td>
+      <td><code>Buffer b(1024);</code></td>
+      <td>直接呼叫 matching constructor。</td>
+      <td>允許 explicit constructor。</td>
+    </tr>
+    <tr>
+      <td>copy initialization</td>
+      <td><code>Buffer b = 1024;</code></td>
+      <td>像是從右邊轉成左邊 type。</td>
+      <td>不允許 explicit constructor。</td>
+    </tr>
+    <tr>
+      <td>list initialization</td>
+      <td><code>Vec3 v{1,2,3};</code></td>
+      <td>用 braces 初始化。</td>
+      <td>可阻擋 narrowing，但有 initializer_list 優先規則。</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+對 renderer math/value type，通常偏好 braces，因為它清楚地表達「用這些分量建立一個值」：
+</p>
+
+<div class="code">
+<span class="tp">Vec3</span> p{<span class="val">1.0f</span>, <span class="val">2.0f</span>, <span class="val">3.0f</span>};<br>
+<span class="tp">Color</span> c{<span class="val">255</span>, <span class="val">128</span>, <span class="val">64</span>, <span class="val">255</span>};
+</div>
+
+<h2><span class="n">4</span> list initialization 與 narrowing</h2>
+
+<p>
+Braces 有一個重要工程價值：阻擋 narrowing conversion。
+</p>
+
+<div class="code">
+<span class="tp">int</span> a = <span class="val">3.14</span>;  <span class="cmt">// allowed, loses information</span><br>
+<span class="tp">int</span> b{<span class="val">3.14</span>};   <span class="cmt">// error: narrowing</span>
+</div>
+
+<p>
+這對 graphics 很重要，因為你常在 float screen-space、int pixel coordinate、normalized color、byte color 之間轉換。你不希望某個隱式轉換偷偷把資料截斷。
+</p>
+
+<div class="box box-blue">
+<strong>Renderer consequence</strong> &mdash; 從 clip space / NDC / screen space / pixel coordinate 的轉換應該是顯式設計，不應靠隱式 narrowing。座標轉換越靠近 rasterizer hot path，越需要清楚。
+</div>
+
+<p>
+但 braces 不是完全沒有坑。若 type 有 <code>std::initializer_list</code> constructor，它可能優先被選到。這是 container 和 math type 設計時要注意的事，後面 STL/templates 章會再回來。
+</p>
+
+<h2><span class="n">5</span> aggregate：資料協議可以公開，但不保護 invariant</h2>
+
+<p>
+Aggregate 很適合表達公開資料協議：
+</p>
+
+<div class="code">
+<span class="kw">struct</span> <span class="tp">Vertex</span> {<br>
+&nbsp;&nbsp;<span class="tp">Vec3</span> position;<br>
+&nbsp;&nbsp;<span class="tp">Color</span> color;<br>
+};<br>
+<br>
+<span class="tp">Vertex</span> v{<span class="tp">Vec3</span>{<span class="val">0</span>, <span class="val">1</span>, <span class="val">0</span>}, <span class="tp">Color</span>{<span class="val">255</span>, <span class="val">0</span>, <span class="val">0</span>, <span class="val">255</span>}};
+</div>
+
+<p>
+這很適合 vertex、rect、clear color、config descriptor 這類「資料就是介面」的 type。但 aggregate 不會自動保護 invariant：
+</p>
+
+<div class="code">
+<span class="kw">struct</span> <span class="tp">FramebufferDesc</span> {<br>
+&nbsp;&nbsp;<span class="tp">int</span> width;<br>
+&nbsp;&nbsp;<span class="tp">int</span> height;<br>
+&nbsp;&nbsp;<span class="tp">int</span> pitch;<br>
+};<br>
+<br>
+<span class="tp">FramebufferDesc</span> bad{<span class="val">800</span>, <span class="val">600</span>, <span class="val">4</span>}; <span class="cmt">// syntactically valid, semantically wrong</span>
+</div>
+
+<p>
+如果一個 type 需要保證 <code>pitch &gt;= width * 4</code>，那它可能需要 constructor/factory validation，而不是純 aggregate。
+</p>
+
+<h2><span class="n">6</span> explicit：阻止意外 conversion</h2>
+
+<p>
+假設你有一個 resource type：
+</p>
+
+<div class="code">
+<span class="kw">class</span> <span class="tp">Buffer</span> {<br>
+<span class="kw">public</span>:<br>
+&nbsp;&nbsp;<span class="fn">Buffer</span>(<span class="tp">size_t</span> bytes);<br>
+};
+</div>
+
+<p>
+如果 constructor 不是 <code>explicit</code>，這種 code 可能成立：
+</p>
+
+<div class="code">
+<span class="kw">void</span> <span class="fn">Upload</span>(<span class="tp">Buffer</span> buffer);<br>
+<span class="fn">Upload</span>(<span class="val">4096</span>); <span class="cmt">// int/size_t implicitly converted to Buffer</span>
+</div>
+
+<p>
+這看起來方便，但語意很危險：一個數字突然變成 resource object。通常應該寫：
+</p>
+
+<div class="code">
+<span class="kw">class</span> <span class="tp">Buffer</span> {<br>
+<span class="kw">public</span>:<br>
+&nbsp;&nbsp;<span class="kw">explicit</span> <span class="fn">Buffer</span>(<span class="tp">size_t</span> bytes);<br>
+};<br>
+<br>
+<span class="fn">Upload</span>(<span class="tp">Buffer</span>{<span class="val">4096</span>});
+</div>
+
+<p>
+<code>explicit</code> 的本質是要求 caller 明確承認：「我正在從這個值建立一個 <code>Buffer</code>」。
+</p>
+
+<div class="box box-yellow">
+<strong>準則</strong> &mdash; 單參數 constructor 若會建立有語意成本或 resource/lifetime 的 type，預設考慮 <code>explicit</code>。讓隱式轉換只存在於真的像數學/值轉換的地方。
+</div>
+
+<h2><span class="n">7</span> enum class：把整數常數變成不會混用的語意</h2>
+
+<p>
+C-style enum 和整數很容易混在一起。Renderer 會有很多 mode / format / backend kind：
+</p>
+
+<div class="code">
+<span class="kw">enum class</span> <span class="tp">ColorFormat</span> { RGBA8, BGRA8 };<br>
+<span class="kw">enum class</span> <span class="tp">BackendKind</span> { Win32, SDL, MacOS };<br>
+<span class="kw">enum class</span> <span class="tp">DepthTest</span> { Disabled, Less, LessEqual };
+</div>
+
+<p>
+<code>enum class</code> 的好處：
+</p>
+
+<ul>
+<li>不會自動污染外層 scope。</li>
+<li>不會隨便跟 <code>int</code> 混用。</li>
+<li>不同 enum type 不會互相傳錯。</li>
+</ul>
+
+<p>
+這不是語法潔癖，而是把 state space 收窄。<code>ColorFormat::BGRA8</code> 不應該能被拿去當 <code>BackendKind</code>。
+</p>
+
+<h2><span class="n">8</span> const / constexpr / consteval：什麼時候值必須穩定</h2>
+
+<p>
+這三個詞常被混在一起：
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Keyword</th>
+      <th>核心意思</th>
+      <th>renderer 例子</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>const</code></td>
+      <td>這個 object 不能透過這個 name 被修改。</td>
+      <td><code>const FramebufferDesc&amp;</code> 表示只讀借用 config。</td>
+    </tr>
+    <tr>
+      <td><code>constexpr</code></td>
+      <td>可在 compile time 求值，如果語境需要。</td>
+      <td><code>constexpr int BytesPerPixel = 4;</code></td>
+    </tr>
+    <tr>
+      <td><code>consteval</code></td>
+      <td>必須在 compile time 求值。</td>
+      <td>少用；適合強制 compile-time 產生 table 或檢查。</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+對目前 Pixel-Renderer，比較實用的是先把明確不變的編譯期常數寫清楚：
+</p>
+
+<div class="code">
+<span class="kw">constexpr</span> <span class="tp">int</span> BytesPerPixel = <span class="val">4</span>;<br>
+<span class="kw">constexpr</span> <span class="tp">int</span> DefaultWidth = <span class="val">800</span>;
+</div>
+
+<p>
+但不要把 <code>const</code> 誤解成「compile-time」。<code>const int width = window.GetWidth();</code> 是 runtime object 不能被改，不代表它是 compile-time constant。
+</p>
+
+<h2><span class="n">9</span> member initialization order：不是照 initializer list 順序</h2>
+
+<p>
+Class members 的初始化順序是 declaration order，不是 constructor initializer list 的書寫順序。
+</p>
+
+<div class="code">
+<span class="kw">class</span> <span class="tp">Renderer</span> {<br>
+&nbsp;&nbsp;<span class="tp">Framebuffer</span> framebuffer;<br>
+&nbsp;&nbsp;<span class="tp">RenderDevice</span> device;<br>
+<span class="kw">public</span>:<br>
+&nbsp;&nbsp;<span class="fn">Renderer</span>()<br>
+&nbsp;&nbsp;&nbsp;&nbsp;: device(framebuffer), framebuffer(<span class="val">800</span>, <span class="val">600</span>) {} <span class="cmt">// misleading</span><br>
+};
+</div>
+
+<p>
+雖然 initializer list 寫 <code>device</code> 在前，實際仍然先初始化 <code>framebuffer</code>，因為它在 class 裡宣告比較早。這條規則是為了讓 destruction order 穩定：destructor 會用相反順序銷毀 members。
+</p>
+
+<div class="box box-red">
+<strong>不要讓 member order 和 dependency order 相反</strong> &mdash; 如果 <code>RenderDevice</code> 借用 <code>Framebuffer</code>，就讓 <code>Framebuffer</code> 在 class member declaration 中寫在 <code>RenderDevice</code> 前面。這是 type layout 層級的 lifetime 設計。
+</div>
+
+<h2><span class="n">10</span> Pixel-Renderer type design 判準</h2>
+
+<p>
+接下來專案擴充時，可以用下面判準決定 type 應該長什麼樣子。
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>需求</th>
+      <th>適合形式</th>
+      <th>例子</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>公開資料協議，沒有強 invariant。</td>
+      <td><code>struct</code> aggregate。</td>
+      <td><code>Vertex</code>、<code>Rect</code>、<code>ClearCommand</code>。</td>
+    </tr>
+    <tr>
+      <td>必須保證 state 一致。</td>
+      <td><code>class</code> + constructor/factory。</td>
+      <td><code>Framebuffer</code> 保證 width/height/pitch/pixels 一致。</td>
+    </tr>
+    <tr>
+      <td>不能和 int 混用的 mode。</td>
+      <td><code>enum class</code>。</td>
+      <td><code>ColorFormat</code>、<code>BackendKind</code>。</td>
+    </tr>
+    <tr>
+      <td>單參數建立 resource 或語意 type。</td>
+      <td><code>explicit</code> constructor。</td>
+      <td><code>TextureId</code>、<code>Buffer</code>、<code>Framebuffer</code>。</td>
+    </tr>
+    <tr>
+      <td>編譯期固定常數。</td>
+      <td><code>constexpr</code>。</td>
+      <td><code>BytesPerPixel</code>、small lookup constants。</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2><span class="n">11</span> verification：如何檢查 type / initialization 問題</h2>
+
+<h3>用 compiler 阻止 narrowing</h3>
+
+<div class="code">
+<span class="tp">int</span> x{<span class="val">3.14</span>}; <span class="cmt">// should fail</span>
+</div>
+
+<p>
+如果某段座標或顏色轉換會 narrowing，盡量讓它在 code 裡顯式出現，而不是默默發生。
+</p>
+
+<h3>用 explicit 阻止意外 conversion</h3>
+
+<div class="code">
+<span class="kw">explicit</span> <span class="fn">TextureId</span>(<span class="tp">uint32_t</span> id);<br>
+<span class="fn">BindTexture</span>(<span class="val">3</span>);              <span class="cmt">// should fail</span><br>
+<span class="fn">BindTexture</span>(<span class="tp">TextureId</span>{<span class="val">3</span>}); <span class="cmt">// explicit intent</span>
+</div>
+
+<h3>用 warning 檢查 initialization order</h3>
+
+<div class="code">
+-Wall -Wextra -Wreorder
+</div>
+
+<p>
+當 initializer list 順序和 member declaration order 不一致，compiler 可以提醒你。這對 owner/borrower 成員順序很有價值。
+</p>
+
+<div class="box box-green">
+<strong>本章學到的三件事：</strong>
+<ol>
+<li>Type 不是 layout label，而是 valid states、operations、invariants、conversion rules 和 cost model 的邊界。</li>
+<li>Initialization 是 object lifetime 開始時建立第一個合法值；assignment 是既有 object 的狀態改變，兩者不是同一件事。</li>
+<li>Pixel-Renderer 的 type design 要主動阻止錯誤狀態：用 aggregate 表達資料協議，用 constructor/explicit/enum class/constexpr/member order 表達語意與 lifetime 約束。</li>
+</ol>
+</div>
+
+<div class="next-ch">
+  <div>
+    <div class="next-label">NEXT THEORY</div>
+    <div class="next-title">T-03 &mdash; Object Model / Storage / Lifetime / UB</div>
+    <div class="next-desc">下一章往下拆到 object 如何真的存在於 storage：lifetime、alignment、object representation、strict aliasing 與 undefined behavior。</div>
+  </div>
+  <a class="next-arrow" href="t03_object_model_storage_lifetime_ub.html">&rarr;</a>
+</div>
+
+</body>
+</html>

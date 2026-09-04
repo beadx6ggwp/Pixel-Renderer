@@ -1,6 +1,6 @@
 # Pixel-Renderer Handoff
 
-Last updated: 2026-07-03
+Last updated: 2026-09-05
 
 This file is a cross-machine / cross-session orientation note. It should preserve the broad project direction and durable decisions, not prescribe a rigid next task.
 
@@ -127,7 +127,7 @@ Current docs workflow intent:
 docs/README.md is the normal docs directory entry
 docs/AGENTS.md is the docs subtree workflow rule
 docs/HANDOFF.md is only for cross-machine / cross-session / stale-context orientation
-rough ideas, learning traces, and tutorial drafts live on branch notes/journal
+rough ideas, learning traces, and tutorial drafts live under learning/ on main
 durable decisions are extracted later into stable topic docs or ADRs
 ```
 
@@ -141,11 +141,11 @@ docs/verification/testing_strategy.md
 
 These documents define the immediate `render/raster-baseline` scope: screen-space input, edge-function coverage, pixel-center sampling, top-left shared-edge rules, color/depth interpolation, depth buffer behavior, and deterministic tests.
 
-Recent tutorial context on `notes/journal`:
+Recent tutorial context under `learning/`:
 
 ```text
-docs/tutorial-soft-renderer/index.html
-docs/tutorial-soft-renderer/theory/ch20_viewport.html
+learning/software-renderer/index.html
+learning/software-renderer/theory/ch20_viewport.html
 ```
 
 Those notes now warn that Ch18-Ch21 are an OpenGL-style teaching route and that future teaching should compare OpenGL-style and Vulkan-style conventions explicitly. Treat them as learning context, not current source truth.
@@ -202,11 +202,11 @@ Renderer testing strategy:
 docs/verification/testing_strategy.md
 ```
 
-Historical project journal:
+Learning workspace:
 
 ```text
-branch: notes/journal
-index: docs/notes/JOURNAL_INDEX.md
+learning/README.md
+learning/notes/README.md
 ```
 
 Documentation workflow:
@@ -250,7 +250,7 @@ keep main readable and preferably buildable
 prefer rebase + fast-forward merge for clean personal branches
 use exp/* as disposable experiment branches
 extract useful experiment results into docs, tests, or clean feature branches
-keep learning history on notes/journal and extract only stable conclusions back to main
+keep learning history under learning/ and extract durable conclusions into stable docs
 ```
 
 ---
@@ -348,12 +348,13 @@ rasterization_edge_rules.md
 HANDOFF.md
 ```
 
-If historical reasoning is needed, read the journal branch explicitly:
+If historical reasoning or tutorial context is needed, read the learning workspace:
 
-```bash
-git show notes/journal:docs/notes/JOURNAL_INDEX.md
+```text
+learning/README.md
+learning/notes/README.md
 ```
 
-Do not treat `notes/journal` as current source truth.
+Do not treat historical learning notes as current source truth.
 
 If a future session changes a durable direction, update the relevant doc instead of leaving the decision only in the chat.

@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>課外知識 — 真實引擎怎麼渲染？</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #1e1e2e; color: #cdd6f4;
+  font-family: 'Georgia', serif; font-size: 15px;
+  padding: 0 20px 60px; max-width: 960px; margin: 0 auto;
+  line-height: 1.9;
+}
+
+nav {
+  font-family: 'Consolas', monospace; font-size: 0.78em; color: #6c7086;
+  padding: 14px 0; border-bottom: 1px solid #313244;
+  margin-bottom: 36px; display: flex; align-items: center; gap: 10px;
+  flex-wrap: wrap;
+}
+nav a { color: #6c7086; text-decoration: none; }
+nav a:hover { color: #94e2d5; }
+
+/* TOC */
+.toc {
+  background: #181825; border: 1px solid #313244; border-left: 3px solid #94e2d5;
+  border-radius: 6px; padding: 18px 22px; margin: 0 0 40px;
+  font-family: 'Consolas', monospace; font-size: 0.82em;
+}
+.toc-title { color: #94e2d5; margin-bottom: 10px; letter-spacing: 0.05em; }
+.toc ol { margin-left: 18px; line-height: 2; }
+.toc a { color: #6c7086; text-decoration: none; }
+.toc a:hover { color: #94e2d5; }
+.toc li.sub { margin-left: 16px; list-style: lower-alpha; }
+
+.ch-header { margin-bottom: 36px; }
+.ch-label {
+  font-family: 'Consolas', monospace; font-size: 0.78em;
+  color: #6c7086; letter-spacing: 0.1em; margin-bottom: 8px;
+}
+.ch-title { color: #94e2d5; font-size: 1.8em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub   { color: #6c7086; font-size: 0.88em; }
+
+h2 {
+  color: #cba6f7; font-family: 'Consolas', monospace; font-size: 1em;
+  letter-spacing: 0.05em; padding: 10px 0; border-bottom: 1px solid #313244;
+  margin: 48px 0 20px; display: flex; align-items: center; gap: 12px;
+}
+h2 .n {
+  background: #94e2d5; color: #1e1e2e; font-weight: bold;
+  border-radius: 50%; width: 26px; height: 26px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 0.85em;
+}
+h3 { color: #f9e2af; font-size: 0.95em; margin: 24px 0 10px; }
+h4 { color: #89b4fa; font-size: 0.88em; margin: 18px 0 8px;
+     font-family: 'Consolas', monospace; letter-spacing: 0.03em; }
+p  { margin-bottom: 12px; }
+strong { color: #f9e2af; }
+em { color: #94e2d5; font-style: normal; }
+
+/* callout boxes */
+.callout {
+  background: #181825; border: 1px solid #313244; border-radius: 6px;
+  padding: 14px 18px; margin: 20px 0; font-size: 0.9em;
+}
+.callout.teal   { border-left: 3px solid #94e2d5; }
+.callout.yellow { border-left: 3px solid #f9e2af; }
+.callout.purple { border-left: 3px solid #cba6f7; }
+.callout.orange { border-left: 3px solid #fab387; }
+.callout.blue   { border-left: 3px solid #89b4fa; }
+.callout-title {
+  font-family: 'Consolas', monospace; font-size: 0.78em;
+  color: #6c7086; letter-spacing: 0.08em; margin-bottom: 6px;
+}
+
+/* comparison table */
+.cmp-table {
+  width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.86em;
+}
+.cmp-table th {
+  font-family: 'Consolas', monospace; font-size: 0.82em;
+  background: #181825; color: #cba6f7;
+  padding: 8px 14px; border: 1px solid #313244; text-align: left;
+}
+.cmp-table td {
+  padding: 8px 14px; border: 1px solid #313244; vertical-align: top;
+  color: #cdd6f4;
+}
+.cmp-table tr:nth-child(even) td { background: #11111b; }
+
+/* pipeline diagram */
+.pipe {
+  display: flex; flex-wrap: wrap; gap: 6px; margin: 20px 0;
+  font-size: 0.82em; font-family: 'Consolas', monospace;
+}
+.pipe-step {
+  background: #181825; border: 1px solid #313244; border-radius: 6px;
+  padding: 7px 13px; color: #cdd6f4;
+  display: flex; align-items: center; gap: 6px;
+}
+.pipe-arrow { color: #6c7086; padding: 0 2px; align-self: center; }
+.pipe-step.teal   { border-color: #94e2d5; color: #94e2d5; }
+.pipe-step.orange { border-color: #fab387; color: #fab387; }
+.pipe-step.purple { border-color: #cba6f7; color: #cba6f7; }
+.pipe-step.yellow { border-color: #f9e2af; color: #f9e2af; }
+.pipe-step.blue   { border-color: #89b4fa; color: #89b4fa; }
+
+/* GBuffer grid */
+.gbuf {
+  display: grid; grid-template-columns: 90px 1fr 1fr 1fr 1fr;
+  gap: 4px; margin: 20px 0; font-size: 0.82em; font-family: 'Consolas', monospace;
+}
+.gbuf-row-label {
+  display: flex; align-items: center; color: #6c7086; padding: 4px 8px; font-size: 0.88em;
+}
+.gbuf-cell {
+  background: #181825; border: 1px solid #313244; border-radius: 4px;
+  padding: 8px 10px; text-align: center; color: #cdd6f4; line-height: 1.4;
+}
+.gbuf-cell small { color: #6c7086; font-size: 0.85em; display: block; }
+.gbuf-cell.teal   { border-color: #94e2d5; color: #94e2d5; }
+.gbuf-cell.orange { border-color: #fab387; color: #fab387; }
+.gbuf-cell.purple { border-color: #cba6f7; color: #cba6f7; }
+.gbuf-cell.yellow { border-color: #f9e2af; color: #f9e2af; }
+.gbuf-cell.blue   { border-color: #89b4fa; color: #89b4fa; }
+.gbuf-header { font-size: 0.78em; color: #6c7086; text-align: center; padding: 4px; }
+
+/* Code block */
+.code-block {
+  background: #11111b; border: 1px solid #313244; border-radius: 8px;
+  margin: 16px 0; overflow: hidden;
+}
+.code-header {
+  background: #181825; border-bottom: 1px solid #313244;
+  padding: 6px 14px; font-family: 'Consolas', monospace;
+  font-size: 0.75em; color: #6c7086; display: flex; justify-content: space-between;
+}
+.code-body {
+  padding: 14px 18px; font-family: 'Consolas', monospace;
+  font-size: 0.83em; line-height: 1.7; overflow-x: auto;
+  white-space: pre; color: #cdd6f4;
+}
+.kw  { color: #cba6f7; }
+.cm  { color: #6c7086; font-style: italic; }
+.st  { color: #a6e3a1; }
+.nm  { color: #fab387; }
+.fn  { color: #89b4fa; }
+.tp  { color: #94e2d5; }
+
+/* book / paper cards */
+.ref-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 10px; margin: 16px 0;
+}
+@media(max-width:600px){ .ref-grid { grid-template-columns: 1fr; } }
+.ref-card {
+  background: #181825; border: 1px solid #313244; border-radius: 6px;
+  padding: 14px 16px;
+}
+.ref-card-title { color: #89b4fa; font-size: 0.88em; margin-bottom: 4px; line-height: 1.4; }
+.ref-card-author { color: #6c7086; font-family: 'Consolas', monospace; font-size: 0.76em; margin-bottom: 6px; }
+.ref-card-desc { color: #cdd6f4; font-size: 0.84em; line-height: 1.6; }
+.ref-card.paper { border-left: 3px solid #a6e3a1; }
+.ref-card.book  { border-left: 3px solid #89b4fa; }
+.ref-card.code  { border-left: 3px solid #fab387; }
+
+/* section divider label */
+.sec-label {
+  font-family: 'Consolas', monospace; font-size: 0.75em; color: #6c7086;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  border: 1px solid #313244; border-radius: 4px;
+  padding: 2px 8px; display: inline-block; margin-bottom: 20px;
+}
+
+code {
+  font-family: 'Consolas', monospace; font-size: 0.88em;
+  color: #89b4fa; background: #11111b;
+  padding: 1px 5px; border-radius: 3px;
+}
+
+ul, ol { margin: 10px 0 14px 24px; line-height: 2; }
+li { margin-bottom: 2px; }
+
+.footer-nav {
+  border-top: 1px solid #313244; margin-top: 60px; padding-top: 24px;
+  display: flex; justify-content: space-between; align-items: center;
+  font-family: 'Consolas', monospace; font-size: 0.82em; color: #6c7086;
+}
+.footer-nav a { color: #6c7086; text-decoration: none; }
+.footer-nav a:hover { color: #94e2d5; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">← 首頁</a>
+  <span>/</span>
+  <span style="color:#94e2d5">課外知識 B-01</span>
+  <span>/</span>
+  <span>真實引擎怎麼渲染？</span>
+</nav>
+
+<div class="ch-header">
+  <div class="ch-label">BONUS · 課外知識</div>
+  <div class="ch-title">真實引擎怎麼渲染？</div>
+  <div class="ch-sub">Unreal Engine 5 · Unity HDRP/URP · 開源渲染器 · 論文脈絡 · 書單</div>
+</div>
+
+<div class="callout yellow">
+  <div class="callout-title">▌ 這篇的定位</div>
+  你現在學的東西——framebuffer、DrawLine、DrawTriangle——是整個渲染管線最底層的磚塊。
+  這篇不是你現在需要完全搞懂的內容，而是「地圖」：讓你知道自己在走的路通往哪裡，
+  以及真實引擎是怎麼把這些磚塊疊成摩天大樓的。讀不懂的地方先跳過，以後回來看。
+</div>
+
+<!-- TOC -->
+<div class="toc">
+  <div class="toc-title">▌ 目錄</div>
+  <ol>
+    <li><a href="#s1">你現在在哪</a></li>
+    <li><a href="#s2">光柵化的兩條路線：掃描線 vs 包圍盒</a></li>
+    <li><a href="#s3">透視正確插值：rhw trick</a></li>
+    <li><a href="#s4">深度緩衝的設計細節</a></li>
+    <li><a href="#s5">Unreal Engine 5 深入</a>
+      <ol>
+        <li class="sub"><a href="#s5a">執行緒架構與 Render Dependency Graph</a></li>
+        <li class="sub"><a href="#s5b">Material 系統與 Shader 編譯</a></li>
+        <li class="sub"><a href="#s5c">Vertex Factory</a></li>
+        <li class="sub"><a href="#s5d">延遲渲染 Pass 順序</a></li>
+        <li class="sub"><a href="#s5e">Nanite 虛擬化幾何</a></li>
+        <li class="sub"><a href="#s5f">Lumen 全域光照</a></li>
+        <li class="sub"><a href="#s5g">Virtual Shadow Maps</a></li>
+        <li class="sub"><a href="#s5h">Visibility Buffer</a></li>
+      </ol>
+    </li>
+    <li><a href="#s6">Unity 深入</a>
+      <ol>
+        <li class="sub"><a href="#s6a">三套 Pipeline 的差異</a></li>
+        <li class="sub"><a href="#s6b">SRP 架構詳解</a></li>
+        <li class="sub"><a href="#s6c">ShaderLab 與 HLSL</a></li>
+        <li class="sub"><a href="#s6d">Batching 策略</a></li>
+        <li class="sub"><a href="#s6e">Volume 系統</a></li>
+        <li class="sub"><a href="#s6f">URP GBuffer 佈局</a></li>
+      </ol>
+    </li>
+    <li><a href="#s7">GBuffer 設計原則</a></li>
+    <li><a href="#s8">Deferred / Forward / Forward+ 比較</a></li>
+    <li><a href="#s9">陰影貼圖的演進</a></li>
+    <li><a href="#s10">抗鋸齒的演進</a></li>
+    <li><a href="#s11">開源軟體渲染器導讀</a></li>
+    <li><a href="#s12">推薦書單與論文</a></li>
+    <li><a href="#s13">對應關係總表</a></li>
+  </ol>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h2 id="s1"><span class="n">1</span> 你現在在哪？</h2>
+
+<p>
+  你目前寫的 <code>render_device.cpp</code> 是一個<strong>軟體光柵器</strong>（software rasterizer）：
+  完全跑在 CPU 上，你親手控制每一個像素怎麼被畫出來。
+  Unreal Engine 和 Unity 做的事情在概念上完全相同——只是它們把這些工作交給了 GPU，
+  並且在你手工完成的每個步驟上，疊加了大量效能最佳化和視覺技術。
+</p>
+
+<div class="pipe">
+  <div class="pipe-step teal">SetPixel</div>
+  <div class="pipe-arrow">→</div>
+  <div class="pipe-step teal">DrawLine</div>
+  <div class="pipe-arrow">→</div>
+  <div class="pipe-step teal">DrawTriangle</div>
+  <div class="pipe-arrow">→</div>
+  <div class="pipe-step orange">Z-buffer</div>
+  <div class="pipe-arrow">→</div>
+  <div class="pipe-step orange">MVP 矩陣</div>
+  <div class="pipe-arrow">→</div>
+  <div class="pipe-step purple">IShader</div>
+  <div class="pipe-arrow">→</div>
+  <div class="pipe-step yellow">紋理 / 光照</div>
+  <div class="pipe-arrow">→</div>
+  <div class="pipe-step blue">PBR / GI</div>
+</div>
+<p style="font-size:0.85em;color:#6c7086">你現在在最左側（teal）；每一步就是本系列後續章節；藍色是引擎才有的層次。</p>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h2 id="s2"><span class="n">2</span> 光柵化的兩條路線：掃描線 vs 包圍盒</h2>
+
+<p>
+  你的 <code>DrawTriangle</code> 用的是<em>包圍盒法</em>（Bounding Box + Barycentric Test）：
+  找出三角形的外接矩形，對矩形內每個像素計算重心座標，判斷是否在三角形內。
+  這是學術上最簡潔的方法，也是現代 GPU 硬體光柵器的原型。
+</p>
+<p>
+  另一條更古老的路線是<em>掃描線法</em>（Scanline Rasterization）：
+  把三角形分成梯形，逐行掃描，只計算每行的左右端點。
+  早期軟體渲染器（Quake、Doom 時代）幾乎都用這個方法，
+  你的參考資料 <code>mini3d.c</code> 也是這個架構。
+</p>
+
+<h3>mini3d.c 的掃描線架構</h3>
+<p>
+  mini3d.c 用一個叫 <code>trapezoid_t</code> 的結構來表示梯形（上下兩條水平邊 + 左右兩條斜邊），
+  任意三角形最多可以拆成 2 個梯形（以中間頂點的 Y 座標為切割線）：
+</p>
+
+<div class="code-block">
+  <div class="code-header"><span>mini3d.c — 三角形拆梯形（核心概念）</span></div>
+  <div class="code-body"><span class="cm">// 三角形按 Y 排序後，分三種情況：</span>
+<span class="cm">// 1. 平頂三角形  → 1 個梯形（直接就是梯形）</span>
+<span class="cm">// 2. 平底三角形  → 1 個梯形</span>
+<span class="cm">// 3. 一般三角形  → 2 個梯形（以中間頂點 Y 切割）</span>
+
+<span class="kw">int</span> <span class="fn">trapezoid_init_triangle</span>(trapezoid_t *trap, vertex_t *p1, p2, p3) {
+    <span class="cm">// 按 Y 座標排序 p1 &lt; p2 &lt; p3 ...</span>
+    <span class="kw">if</span> (p1->pos.y == p2->pos.y) { <span class="cm">// 平頂 → 1 梯形</span>
+        trap[0] = { top: p1.y, bottom: p3.y, left:(p1→p3), right:(p2→p3) };
+        <span class="kw">return</span> <span class="nm">1</span>;
+    }
+    <span class="kw">if</span> (p2->pos.y == p3->pos.y) { <span class="cm">// 平底 → 1 梯形</span>
+        trap[0] = { top: p1.y, bottom: p2.y, left:(p1→p2), right:(p1→p3) };
+        <span class="kw">return</span> <span class="nm">1</span>;
+    }
+    <span class="cm">// 一般 → 2 梯形，以 p2.y 為切割線</span>
+    trap[0] = { top: p1.y, bottom: p2.y, ... };
+    trap[1] = { top: p2.y, bottom: p3.y, ... };
+    <span class="kw">return</span> <span class="nm">2</span>;
+}</div>
+</div>
+
+<h3>兩種方法的比較</h3>
+<table class="cmp-table">
+  <thead>
+    <tr><th>方法</th><th>包圍盒 + 重心座標（你目前用的）</th><th>掃描線梯形法（mini3d.c）</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>原理</strong></td>
+      <td>逐像素測試是否在三角形內</td>
+      <td>直接算出每行的左右邊界，只畫邊界內的像素</td>
+    </tr>
+    <tr>
+      <td><strong>實作複雜度</strong></td>
+      <td>低，邏輯直接</td>
+      <td>中，需要梯形拆分 + 邊緣插值</td>
+    </tr>
+    <tr>
+      <td><strong>效能（CPU）</strong></td>
+      <td>包圍盒過大時浪費（測試很多不在三角形內的像素）</td>
+      <td>精確，沒有無效測試</td>
+    </tr>
+    <tr>
+      <td><strong>GPU 並行化</strong></td>
+      <td>天生適合（每個像素獨立，可並行）</td>
+      <td>掃描線有相依性，不適合 GPU</td>
+    </tr>
+    <tr>
+      <td><strong>現代用途</strong></td>
+      <td>GPU 硬體光柵器的核心概念</td>
+      <td>CPU 軟體渲染器、早期遊戲引擎</td>
+    </tr>
+    <tr>
+      <td><strong>參考論文</strong></td>
+      <td><em>Mileff et al. — Accelerated Half-Space Triangle Rasterization</em></td>
+      <td><em>The Setup for Triangle Rasterization</em></td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout blue">
+  <div class="callout-title">▌ 論文：Accelerated Half-Space Triangle Rasterization（Mileff, Nehez, Dudra）</div>
+  你的資料夾裡有這篇 paper。它研究的就是包圍盒法的硬體加速——
+  把「點是否在三角形內」的判斷用 edge function（有號面積的符號）表示，
+  讓三個邊函數可以增量計算（從上一個像素加一個差值），避免每次重新算叉積。
+  這是現代 GPU 光柵器的真實做法。
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h2 id="s3"><span class="n">3</span> 透視正確插值：rhw trick</h2>
+
+<p>
+  你目前的 <code>DrawTriangle</code> 在三角形內插值顏色用的是<em>線性插值</em>（屏幕空間）。
+  這對顏色在許多情況下看起來還好，但對 UV 座標（紋理）卻是錯誤的——
+  透視投影之後，屏幕空間的線性插值對應的是 3D 空間中的<em>非線性</em>分布。
+</p>
+
+<h3>問題的根源</h3>
+<p>
+  透視除法之後，頂點的 <em>x/y</em> 被除以 <em>w</em>（深度），
+  但 UV 座標沒有被除——它們還在原始空間。
+  如果你直接在屏幕空間線性插值 UV，相當於假設 UV 隨屏幕像素均勻分布，
+  但實際上越近的部分格子越大、越遠的越小（透視變形）。
+</p>
+
+<h3>解決方法：rhw trick（1/w 插值）</h3>
+<p>mini3d.c 在 <code>vertex_rhw_init()</code> 裡實作了這個：</p>
+
+<div class="code-block">
+  <div class="code-header"><span>mini3d.c — 透視正確插值（rhw trick）</span></div>
+  <div class="code-body"><span class="kw">void</span> <span class="fn">vertex_rhw_init</span>(<span class="tp">vertex_t</span> *v) {
+    <span class="kw">float</span> rhw = <span class="nm">1.0f</span> / v->pos.w;  <span class="cm">// rhw = 1/w（Reciprocal Homogeneous W）</span>
+    v->rhw   = rhw;
+    v->tc.u *= rhw;             <span class="cm">// UV 先乘以 1/w 再插值</span>
+    v->tc.v *= rhw;
+    v->color.r *= rhw;          <span class="cm">// 顏色同理</span>
+    v->color.g *= rhw;
+    v->color.b *= rhw;
+}
+
+<span class="cm">// 掃描線中，對每個像素取回原始值：</span>
+<span class="kw">float</span> w = <span class="nm">1.0f</span> / scanline->v.rhw;   <span class="cm">// w = 1 / rhw，取回真正的深度</span>
+<span class="kw">float</span> u = scanline->v.tc.u * w;      <span class="cm">// UV 還原：(UV/w_orig) / (1/w_orig) = UV_orig</span>
+<span class="kw">float</span> v = scanline->v.tc.v * w;</div>
+</div>
+
+<p>
+  數學上的原理是：<strong>1/w 在屏幕空間是線性的</strong>（可以正確插值），
+  而 UV/w 也是線性的——所以把 UV 除以 w 後插值，再乘回 w，就得到透視正確的 UV。
+  這就是 GLSL 裡為什麼 <code>varying</code> 可以正確插值的原因：
+  驅動和硬體在底層做了完全相同的事情。
+</p>
+
+<div class="callout purple">
+  <div class="callout-title">▌ 論文：Perspective Texture Mapping（Paul S. Heckbert, 1989）</div>
+  你資料夾裡的 <code>Perspective Texture.pdf</code> 和 <code>lowk_persp_interp_techrep.pdf</code> 就是研究這個問題的。
+  前者推導了透視正確插值的完整數學；後者研究在低成本硬體上如何用近似方法（每隔幾個像素才算一次精確值，中間線性補間）減少計算量——
+  Quake 就用了這種近似，那個略微的紋理扭曲感是刻意的效能取捨。
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h2 id="s4"><span class="n">4</span> 深度緩衝的設計細節</h2>
+
+<h3>Z-buffer vs W-buffer</h3>
+<p>
+  最直覺的深度緩衝是存<em>Z 座標</em>（NDC 的 z，範圍 [0, 1]）。
+  但 Z 在透視投影下有個問題：大部分精度集中在近處，遠處的精度急劇下降，
+  導致<em>Z-fighting</em>（遠處兩個面互相閃爍）。
+</p>
+<p>
+  W-buffer 存的是原始的視圖空間深度 <em>1/w</em>（也就是 mini3d.c 的 rhw）——
+  它在視圖空間是線性的，精度分布比 Z 均勻，但硬體支援度差，幾乎已被廢棄。
+</p>
+
+<h3>Reverse-Z（現代標準做法）</h3>
+<p>
+  現代引擎（Unreal Engine 4.2+ 起）預設使用<em>Reverse-Z</em>：
+  把深度值的範圍從 [0→near, 1→far] 改成 <strong>[1→near, 0→far]</strong>。
+  這樣做利用了浮點數的特性——靠近 0 的區域有最多的精度——
+  讓浮點 depth buffer 的有效精度分布接近 W-buffer 的效果。
+  現在 32-bit float depth + Reverse-Z 已是 AAA 引擎的標配。
+</p>
+
+<div class="callout blue">
+  <div class="callout-title">▌ 論文：Optimal Depth Buffer for Low-Cost Graphics Hardware</div>
+  你資料夾裡有這篇，分析了各種 depth buffer 精度方案的取捨（Z-buffer、W-buffer、log-depth、reverse-Z）。
+  如果你之後遇到遠處物件閃爍的問題，回來讀這篇會很有幫助。
+</div>
+
+<h3>Hierarchical Z-Buffer（HZB）</h3>
+<p>
+  把 depth buffer 建立 mip chain（HZB），讓每一層都存比下一層 2×2 像素的最小深度。
+  這樣可以快速做<em>遮蔽剔除</em>（Occlusion Culling）：
+  對一個物件的包圍盒，在 HZB 的適當 mip level 查詢，如果最近深度比包圍盒的遠端還近，
+  整個物件就可以跳過，不需要送進 GPU 光柵化。
+  Unreal 的 Early Z PrePass + HZB 是整個可見性剔除系統的基礎。
+</p>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h2 id="s5"><span class="n">5</span> Unreal Engine 5 深入</h2>
+
+<h3 id="s5a">5-a 執行緒架構與 Render Dependency Graph</h3>
+
+<p>Unreal 把 CPU 端的工作切成三條流水線化的執行緒：</p>
+
+<div class="pipe" style="flex-direction:column;gap:8px;">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div class="pipe-step teal" style="min-width:140px;justify-content:center;flex-shrink:0">Game Thread</div>
+    <span style="color:#6c7086;font-size:0.88em">跑遊戲邏輯、物理、動畫。用 <code>ENQUEUE_RENDER_CMD</code> 把「這幀的場景描述」推送給 Render Thread。比 Render Thread 早一幀。</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div class="pipe-step orange" style="min-width:140px;justify-content:center;flex-shrink:0">Render Thread</div>
+    <span style="color:#6c7086;font-size:0.88em">執行各 pass 邏輯（剔除、排序、生成 draw call）。不直接呼叫 GPU API，產生平台無關的 RHI 命令。</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div class="pipe-step purple" style="min-width:140px;justify-content:center;flex-shrink:0">RHI Thread</div>
+    <span style="color:#6c7086;font-size:0.88em">把 RHI 命令翻譯成真正的 API 呼叫（Vulkan <code>vkCmdDraw</code>、D3D12 <code>DrawIndexedInstanced</code>）。D3D11 沒有這一層。</span>
+  </div>
+</div>
+
+<h4>Render Dependency Graph（RDG）</h4>
+<p>
+  UE5 所有的 pass 都用 RDG 宣告。RDG 的運作分兩階段：
+</p>
+<ol>
+  <li><strong>宣告階段</strong>：Render Thread 宣告所有 pass（每個 pass 說明「我讀什麼 resource、我寫什麼 resource」）</li>
+  <li><strong>執行階段</strong>：RDG 編譯 → 剪掉 unreferenced pass → 計算 resource 生命週期（讓 transient resource 共享記憶體）→ 插入 GPU barrier → 執行所有 lambda</li>
+</ol>
+<p>
+  這等同於 Vulkan/D3D12 的 render pass 同步模型，但在高層次自動處理了大量 barrier 管理的細節。
+  你在未來實作 shader 系統時，也可以把「宣告 pass 資源依賴、批次執行」作為架構設計的靈感。
+</p>
+
+<h3 id="s5b">5-b Material 系統與 Shader 編譯</h3>
+
+<p>Unreal 的 shader 有三個層次，分別在不同粒度上編譯：</p>
+
+<table class="cmp-table">
+  <thead><tr><th>類型</th><th>每個什麼編譯一次</th><th>用途</th></tr></thead>
+  <tbody>
+    <tr><td><code>FGlobalShaderType</code></td><td>整個引擎</td><td>全螢幕 pass、工具用途（Bloom、SSAO 等）</td></tr>
+    <tr><td><code>FMaterialShaderType</code></td><td>每個 Material（相同 Material 的所有物件共用）</td><td>Base Pass、光照 pass</td></tr>
+    <tr><td><code>FMeshMaterialShaderType</code></td><td>Material × Vertex Factory 組合</td><td>不同類型 mesh（靜態/蒙皮/Nanite）用相同材質時各自的排列</td></tr>
+  </tbody>
+</table>
+
+<p>
+  Material 節點圖（Node Graph）在編輯器裡編譯成 HLSL，再用 DXC 編譯成各平台格式：
+  DXIL（D3D12）、SPIR-V（Vulkan）、GLSL（OpenGL/ES）、MSL（Metal）。
+  編譯結果快取在 DDC（Derived Data Cache），下次啟動不需要重新編譯。
+  一個複雜的 Material 可能有幾百個 permutation（靜態開關不同、品質設定不同）。
+</p>
+
+<h3 id="s5c">5-c Vertex Factory</h3>
+<p>
+  Vertex Factory 是 Unreal 抽象頂點輸入格式的機制。同一個 Material Shader 需要能處理不同種類的 Mesh：
+</p>
+<ul>
+  <li><code>FLocalVertexFactory</code> — 靜態 Mesh（Static Mesh）</li>
+  <li><code>FGPUSkinVertexFactory</code> — 蒙皮動畫 Mesh（Skeletal Mesh）</li>
+  <li><code>FNaniteVertexFactory</code> — Nanite 的 Visibility Buffer path</li>
+  <li><code>FInstancedStaticMeshVertexFactory</code> — 實例化的靜態 Mesh</li>
+</ul>
+<p>
+  這就是為什麼一個 Material 在引擎內部會編譯出多份 shader：
+  Material × Vertex Factory 的每個組合都需要一份。
+  你的 IShader 設計（Ch23）雖然簡化很多，但 <code>payload_t</code> 裡的各種矩陣和屬性陣列，
+  和 Unreal 的 Vertex Factory 解決的是同一個問題：如何讓 shader 跟輸入格式解耦。
+</p>
+
+<h3 id="s5d">5-d 延遲渲染 Pass 順序</h3>
+
+<div class="pipe" style="flex-direction:column;gap:8px;font-size:0.85em;">
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div class="pipe-step purple" style="min-width:190px;justify-content:center;flex-shrink:0">① Early Z PrePass</div>
+    <span style="color:#6c7086">只寫 depth，不計算光照。後面所有 pass 用 <code>EQUAL</code> depth test，完全消除 overdraw。</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div class="pipe-step blue" style="min-width:190px;justify-content:center;flex-shrink:0">② HZB 生成</div>
+    <span style="color:#6c7086">Depth buffer 降採樣建 mip chain，用於 GPU 遮蔽剔除（Nanite 的 instance culling 也依賴這個）。</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div class="pipe-step teal" style="min-width:190px;justify-content:center;flex-shrink:0">③ Base Pass（GBuffer 填充）</div>
+    <span style="color:#6c7086">畫所有不透明物件，把材質屬性（Normal、BaseColor、Metallic、Roughness）寫入 GBuffer，<strong style="color:#f9e2af">完全不做光照</strong>。靜態預計算光（Lightmap）在這步一起合併。</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div class="pipe-step orange" style="min-width:190px;justify-content:center;flex-shrink:0">④ Shadow Depth Pass</div>
+    <span style="color:#6c7086">從光源視角渲染 shadow depth map（或 VSM 的 page 更新）。</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div class="pipe-step orange" style="min-width:190px;justify-content:center;flex-shrink:0">⑤ Deferred Lighting</div>
+    <span style="color:#6c7086">讀取 GBuffer，對每個可見像素計算所有光源貢獻。光源先用 Tile/Cluster 剔除，再批次計算。</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div class="pipe-step yellow" style="min-width:190px;justify-content:center;flex-shrink:0">⑥ SSAO / Lumen GI</div>
+    <span style="color:#6c7086">環境遮蔽、全域光照（Lumen 的間接光）。</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div class="pipe-step yellow" style="min-width:190px;justify-content:center;flex-shrink:0">⑦ 透明物件（Forward）</div>
+    <span style="color:#6c7086">透明物件無法寫 GBuffer，改用 Forward 渲染，按距離排序後疊加。</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div class="pipe-step purple" style="min-width:190px;justify-content:center;flex-shrink:0">⑧ 後製 Stack</div>
+    <span style="color:#6c7086">Bloom → Tonemapping → TSR（時域超解析度）→ 色彩分級 LUT。</span>
+  </div>
+</div>
+
+<h3 id="s5e">5-e Nanite 虛擬化幾何</h3>
+
+<p>Nanite 解決的問題：</p>
+<ul>
+  <li>傳統 LOD 系統需要美術手動製作多個精度版本的模型</li>
+  <li>高多邊形模型（雕刻細節）不能直接放入遊戲場景</li>
+  <li>小三角形的 GPU 效率極差（setup 成本 > 實際填充成本）</li>
+</ul>
+
+<h4>離線預處理</h4>
+<p>
+  Mesh 在 import 時被切成約 128 個三角形的 cluster（一個 GPU wavefront 的大小）。
+  Cluster 之間建立一個 LOD DAG（有向無環圖）：葉節點是最高精度，根節點是最低精度，
+  每層的 cluster 覆蓋相同的表面積但用更少的三角形。
+  相鄰 LOD 層的 cluster 邊界被「鎖定」（錯誤容差限制），讓不同精度 cluster 混用時沒有接縫。
+</p>
+
+<h4>執行時管線</h4>
+<ol>
+  <li><strong>Instance Culling</strong>：GPU 用上一幀的 HZB 做視錐 + 遮蔽剔除</li>
+  <li><strong>Cluster LOD 選擇</strong>：persistent compute shader 走 BVH/DAG，根據每個 cluster 的屏幕像素大小選擇精度（目標：每像素 ~1 三角形）</li>
+  <li><strong>雙路光柵化</strong>：大三角形走硬體光柵器，小三角形（sub-pixel）走 compute shader 實作的軟體光柵器（就是你現在做的事，只是在 GPU 上）</li>
+  <li><strong>Visibility Buffer 輸出</strong>：不輸出顏色，輸出 ClusterID + TriangleID</li>
+  <li><strong>材質評估</strong>：根據 Visibility Buffer，每個材質執行一次全螢幕 pass，從 Visibility Buffer 重建頂點屬性，寫入標準 GBuffer</li>
+</ol>
+
+<div class="callout teal">
+  <div class="callout-title">▌ 為什麼要軟體光柵化小三角形？</div>
+  當一個三角形小於 1–2 個像素時，GPU 硬體的 rasterizer setup（interpolator 計算、ROP 同步）
+  的固定成本遠大於實際計算成本。一個 compute shader 可以對大量這樣的三角形並行處理，
+  完全跳過硬體 setup，效率更高。這和你的 DrawTriangle 概念完全相同，只是規模不同。
+</div>
+
+<h3 id="s5f">5-f Lumen 動態全域光照</h3>
+
+<p>Lumen 解決傳統 GI 的困境：預烘焙靜態光照無法應對動態光源，即時 Ray Tracing 又太貴。</p>
+
+<h4>Surface Cache（表面快取）</h4>
+<p>
+  每個 Mesh 有一組「card」——從不同角度覆蓋 mesh 表面的低解析度 atlas（類似 lightmap）。
+  Card 存儲 radiance、irradiance、albedo、normal。
+  當光源改變時，受影響的 card 重新計算（不是整個場景重算）。
+</p>
+
+<h4>Ray Tracing 後端（二選一）</h4>
+<ul>
+  <li><strong>Software RT（預設）</strong>：每個 Mesh 有 SDF（Signed Distance Field，一個存距離的 3D 體積紋理）。光線用球形步進（Sphere Marching）在 SDF 裡快速找到命中點。全局 SDF 用於長距離光線，mesh SDF 用於近距離精確計算。不需要 RTX 硬體。</li>
+  <li><strong>Hardware RT</strong>：使用 GPU 的 BVH 加速結構（RTX）。更精確但更貴，遠景用 SDF 近景才用 HW RT 是常見配置。</li>
+</ul>
+
+<h4>Final Gather（最終收集）</h4>
+<p>
+  不對每個像素追蹤光線。而是維護一組 screen-space 的<em>探針</em>（Probe），
+  每個探針每幀追蹤幾條光線並累積到 Surface Cache。最後每個像素從最近的探針插值取得間接光。
+  結合時域累積（exploiting temporal coherence），把每幀的實際光線數壓到可接受範圍。
+</p>
+
+<h3 id="s5g">5-g Virtual Shadow Maps（VSM）</h3>
+
+<p>
+  傳統 CSM（Cascaded Shadow Maps）的問題：解析度固定，近處細節不足。
+  VSM 的解法：維護一張<em>虛擬</em>的 16K×16K shadow map，用頁表（Page Table）按需分配物理記憶體。
+</p>
+
+<ul>
+  <li>只分配「實際被光照、且可見的」像素對應的 page（128×128 像素一個 page）</li>
+  <li>靜態幾何的 page：永久 cache，不重新渲染</li>
+  <li>動態物件的 page：每幀重新渲染（但只有動態物件所在的 page）</li>
+  <li>光源方向改變 → 所有 page 失效（虛擬地址空間重新映射）</li>
+</ul>
+
+<p>
+  這讓靜態場景的陰影幾乎免費，動態物件的陰影也只支付最小必要成本。
+  Nanite 可以直接光柵化到 VSM page，解析度達到 sub-pixel 精度——傳統 CSM 做不到這一點。
+</p>
+
+<div class="callout yellow">
+  <div class="callout-title">▌ 跟你的 Ch31 Shadow Mapping 的關係</div>
+  你的 Ch31 實作的是最基礎的兩次渲染法（Basic Shadow Map）。
+  理解了它的原理（深度比較），才能理解 PCF 為什麼可以軟化邊緣、
+  CSM 為什麼要分段、VSM 為什麼要用虛擬頁表——每一步都是解決上一步的問題。
+</div>
+
+<h3 id="s5h">5-h Visibility Buffer</h3>
+
+<p>
+  Visibility Buffer 是 Nanite 的輸出格式，也是現代 GPU-driven rendering 的核心概念。
+  傳統的 G-Buffer 在 base pass 直接寫入材質屬性（albedo、normal 等）——每個像素的材質資料都被寫入。
+  Visibility Buffer 的做法不同：base pass 只輸出 <strong>ClusterID + TriangleID</strong>（兩個 32-bit 整數），
+  延遲到 material pass 再根據這些 ID 重建完整的材質資料。
+</p>
+
+<p>好處：</p>
+<ul>
+  <li>大幅減少 base pass 的頻寬（只有 8 bytes/pixel vs GBuffer 的 32–64 bytes/pixel）</li>
+  <li>材質評估可以精確到每個像素只算一次（不因 overdraw 浪費）</li>
+  <li>適合 GPU-driven culling，base pass 可以完全在 GPU 上決定畫什麼</li>
+</ul>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h2 id="s6"><span class="n">6</span> Unity 深入</h2>
+
+<h3 id="s6a">6-a 三套 Pipeline 的差異</h3>
+
+<table class="cmp-table">
+  <thead><tr><th>Pipeline</th><th>定位</th><th>渲染路徑</th><th>主要用途</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Built-in</strong></td>
+      <td>舊版，即將棄用</td>
+      <td>Forward / Deferred / Vertex Lit</td>
+      <td>舊專案維護</td>
+    </tr>
+    <tr>
+      <td><strong>URP</strong><br><small>Universal RP</small></td>
+      <td>通用，輕量</td>
+      <td>Forward / Forward+ / Deferred</td>
+      <td>行動裝置、Switch、indie 遊戲</td>
+    </tr>
+    <tr>
+      <td><strong>HDRP</strong><br><small>High Definition RP</small></td>
+      <td>高端品質</td>
+      <td>Tile+Cluster Deferred + Forward 混用</td>
+      <td>PC、主機 AAA、影視視覺化</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="s6b">6-b SRP 架構詳解</h3>
+
+<p>SRP（Scriptable Render Pipeline）是 Unity 開放渲染管線給開發者用 C# 自訂的框架。核心類別：</p>
+
+<ul>
+  <li><code>RenderPipelineAsset</code>：存在 Project 裡的設定資產，<code>CreatePipeline()</code> 工廠方法產生 pipeline 實例</li>
+  <li><code>RenderPipeline</code>：你 override <code>Render(context, cameras)</code>，這是每幀的入口</li>
+  <li><code>ScriptableRenderContext</code>：<strong>延遲命令錄製器</strong>——所有呼叫都是「記錄」，不是執行。只有 <code>ctx.Submit()</code> 才真正送 GPU</li>
+  <li><code>CommandBuffer</code>：渲染命令列表（清屏、設定 RT、blit、draw 等）</li>
+</ul>
+
+<div class="code-block">
+  <div class="code-header"><span>Unity URP — Render() 核心流程（示意）</span><span>C#</span></div>
+  <div class="code-body"><span class="kw">protected override void</span> <span class="fn">Render</span>(ScriptableRenderContext ctx, Camera[] cameras) {
+    <span class="kw">foreach</span> (<span class="kw">var</span> camera <span class="kw">in</span> cameras) {
+        <span class="cm">// 1. 視錐剔除 → 取得可見物件清單</span>
+        camera.<span class="fn">TryGetCullingParameters</span>(<span class="kw">out var</span> cullingParams);
+        CullingResults culled = ctx.<span class="fn">Cull</span>(<span class="kw">ref</span> cullingParams);
+
+        <span class="cm">// 2. 設定相機矩陣（View / Projection）到 GPU constant buffer</span>
+        ctx.<span class="fn">SetupCameraProperties</span>(camera);
+
+        <span class="cm">// 3. 畫不透明物件（LightMode = "UniversalForward"）</span>
+        <span class="kw">var</span> drawSettings   = <span class="kw">new</span> <span class="fn">DrawingSettings</span>(shaderTagId, sortingSettings);
+        <span class="kw">var</span> filterSettings = <span class="kw">new</span> <span class="fn">FilteringSettings</span>(RenderQueueRange.opaque);
+        ctx.<span class="fn">DrawRenderers</span>(culled, <span class="kw">ref</span> drawSettings, <span class="kw">ref</span> filterSettings);
+
+        <span class="cm">// 4. 畫天空盒、透明物件...</span>
+        ctx.<span class="fn">DrawSkybox</span>(camera);
+
+        <span class="cm">// 5. 提交所有命令給 GPU（在此之前都只是「記錄」）</span>
+        ctx.<span class="fn">Submit</span>();
+    }
+}</div>
+</div>
+
+<p>
+  注意 <code>ctx.Submit()</code> 之前的所有呼叫都不會執行——這和你的 <code>SetPixel()</code> 同步直接寫入完全不同。
+  GPU 是非同步的：「記錄指令，批量提交」是現代 GPU API（Vulkan、D3D12、Metal）的核心設計。
+</p>
+
+<h4>ScriptableRendererFeature</h4>
+<p>
+  URP 的插件點。你可以繼承 <code>ScriptableRendererFeature</code>，在指定的 pass 之後注入自訂的 render pass
+  （例如：在所有不透明物件之後加一個 outline 效果、在後製之前加自訂的 SSAO）。
+  這相當於 Unreal 的 <code>FSceneViewExtension</code>。
+</p>
+
+<h3 id="s6c">6-c ShaderLab 與 HLSL</h3>
+
+<p>Unity 的 shader 格式是 ShaderLab，一個包裝 HLSL 的容器格式：</p>
+
+<div class="code-block">
+  <div class="code-header"><span>Unity ShaderLab 結構</span><span>HLSL</span></div>
+  <div class="code-body">Shader <span class="st">"MyShader"</span> {
+    Properties {
+        _Color (<span class="st">"Color"</span>, Color) = (<span class="nm">1</span>, <span class="nm">1</span>, <span class="nm">1</span>, <span class="nm">1</span>)
+        _MainTex (<span class="st">"Texture"</span>, <span class="tp">2D</span>) = <span class="st">"white"</span> {}
+    }
+    SubShader {
+        Tags { <span class="st">"RenderPipeline"</span> = <span class="st">"UniversalRenderPipeline"</span> }
+        Pass {
+            Name <span class="st">"ForwardLit"</span>
+            Tags { <span class="st">"LightMode"</span> = <span class="st">"UniversalForward"</span> }  <span class="cm">// 告訴 URP 這是哪個 pass</span>
+
+            HLSLPROGRAM
+            <span class="kw">#pragma</span> vertex vert
+            <span class="kw">#pragma</span> fragment frag
+            <span class="kw">#include</span> <span class="st">"Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"</span>
+
+            <span class="cm">// SRP Batcher 要求：所有 per-material 屬性放進這個 CBUFFER</span>
+            CBUFFER_START(UnityPerMaterial)
+                <span class="tp">float4</span> _Color;
+                <span class="tp">float4</span> _MainTex_ST;
+            CBUFFER_END
+
+            <span class="cm">// ... vertex / fragment shader ...</span>
+            ENDHLSL
+        }
+    }
+}</div>
+</div>
+
+<p>
+  <code>LightMode</code> tag 告訴 URP 在哪個 pass 呼叫這個 shader。
+  Unity 用 DXC 編譯 HLSL，再透過 shader compiler toolchain 轉成 GLSL/MSL/SPIR-V。
+</p>
+
+<h3 id="s6d">6-d Batching 策略</h3>
+
+<table class="cmp-table">
+  <thead>
+    <tr><th>策略</th><th>原理</th><th>限制</th><th>效益</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Static Batching</strong></td>
+      <td>Build 時把靜態 mesh 合并成一個大 vertex/index buffer</td>
+      <td>只適用靜態物件；記憶體增加（頂點資料複製）</td>
+      <td>Draw call 最少，效果最好</td>
+    </tr>
+    <tr>
+      <td><strong>GPU Instancing</strong></td>
+      <td>一次 <code>DrawIndexedInstanced</code> 畫 N 個相同 mesh，per-instance 資料存 buffer</td>
+      <td>必須相同 mesh + 相同 material；與 SRP Batcher 不相容</td>
+      <td>大量相同物件（樹、石頭）效果極佳</td>
+    </tr>
+    <tr>
+      <td><strong>SRP Batcher</strong></td>
+      <td>不減少 draw call；把 per-material uniform 常駐 GPU，每幀只 upload per-object transform</td>
+      <td>Shader 必須把 material 屬性放在 <code>CBUFFER UnityPerMaterial</code></td>
+      <td>消除 state change 開銷，CPU render loop 快很多</td>
+    </tr>
+    <tr>
+      <td><strong>Dynamic Batching</strong></td>
+      <td>CPU 端複製小 mesh 頂點到共用 buffer，一次 draw</td>
+      <td>頂點數限制 (&lt;300)；已幾乎過時</td>
+      <td>現代幾乎棄用</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout teal">
+  <div class="callout-title">▌ SRP Batcher 的關鍵觀念</div>
+  SRP Batcher 不減少 draw call，而是消除 draw call 之間的 <em>state change</em>。
+  傳統渲染每次 draw 前都要上傳 material 資料（顏色、貼圖偏移等），這個 CPU→GPU 上傳很昂貴。
+  SRP Batcher 把 material 資料永久存在 GPU 的 CBUFFER 裡，相同材質的物件只需要更新 per-object transform——
+  大量 draw call 但材質不換的場景，CPU 時間可以從幾毫秒降到幾乎為零。
+</div>
+
+<h3 id="s6e">6-e Volume 系統</h3>
+<p>
+  兩個引擎都有 Volume 系統：把後製效果（DoF 焦距、曝光、霧氣濃度等）用一個<em>空間碰撞體</em>來控制，
+  相機進入 Volume 範圍時，效果參數按距離/優先度混合。
+</p>
+<p>
+  這讓設計師可以在場景不同區域設定不同的大氣、光照風格，完全不需要程式碼介入。
+  Unreal 叫 <em>Post Process Volume</em>，Unity 叫 <em>Volume Override</em>。
+</p>
+
+<h3 id="s6f">6-f URP GBuffer 佈局（Deferred 路徑）</h3>
+
+<div class="gbuf">
+  <div></div>
+  <div class="gbuf-header">R</div><div class="gbuf-header">G</div>
+  <div class="gbuf-header">B</div><div class="gbuf-header">A</div>
+
+  <div class="gbuf-row-label">RT0 (RGBA32)</div>
+  <div class="gbuf-cell yellow">Albedo R<small>基礎色</small></div>
+  <div class="gbuf-cell yellow">Albedo G</div>
+  <div class="gbuf-cell yellow">Albedo B</div>
+  <div class="gbuf-cell">Flags<small>材質 bitmask</small></div>
+
+  <div class="gbuf-row-label">RT1 (RGBA32)</div>
+  <div class="gbuf-cell orange">Specular R</div>
+  <div class="gbuf-cell orange">Specular G</div>
+  <div class="gbuf-cell orange">Specular B</div>
+  <div class="gbuf-cell"></div>
+
+  <div class="gbuf-row-label">RT2 (RGBA32)</div>
+  <div class="gbuf-cell">Occlusion</div>
+  <div class="gbuf-cell teal">Normal X<small>encoded</small></div>
+  <div class="gbuf-cell teal">Normal Y</div>
+  <div class="gbuf-cell orange">Smoothness</div>
+
+  <div class="gbuf-row-label">RT3 (B10G11R11)</div>
+  <div class="gbuf-cell purple" style="grid-column:span 4">Emission + Baked Lighting（HDR 累積 target）</div>
+
+  <div class="gbuf-row-label">Depth (D32)</div>
+  <div class="gbuf-cell blue" style="grid-column:span 3">32-bit Depth</div>
+  <div class="gbuf-cell">Stencil<small>高 4 bit = 材質類型</small></div>
+</div>
+
+<p style="font-size:0.85em;color:#6c7086">
+  Normal 用壓縮編碼（octahedral 或 spheremap）存入 2 個 channel，在 lighting pass 解碼還原。
+  RT3 用 B10G11R11（RGB 各 10/11 bit 浮點），節省頻寬同時保留 HDR 精度。
+</p>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h2 id="s7"><span class="n">7</span> GBuffer 設計原則</h2>
+
+<h3>最低需求：PBR Deferred 所需的資料</h3>
+<ul>
+  <li><strong>法向量</strong>：至少 2 個 channel（XY 存儲，Z 用 <code>sqrt(1-x²-y²)</code> 重建），需要精度夠高（16-bit per channel 或 octahedral 編碼）</li>
+  <li><strong>BaseColor（Albedo）</strong>：sRGB，8-bit × 3 channel</li>
+  <li><strong>Roughness</strong>：8-bit</li>
+  <li><strong>Metallic</strong>：8-bit</li>
+  <li><strong>Depth</strong>：從 depth buffer 重建 world-space position，不需要額外存</li>
+</ul>
+
+<h3>常用 format 選擇</h3>
+<table class="cmp-table">
+  <thead><tr><th>資料</th><th>Format</th><th>理由</th></tr></thead>
+  <tbody>
+    <tr><td>Albedo</td><td>RGB8 sRGB</td><td>硬體 sRGB decode/encode 免費，比 RGB16F 省頻寬</td></tr>
+    <tr><td>Normal</td><td>RG16F 或 RG16_SNORM</td><td>精度需求高；RG16F 在大角度下精度更均勻</td></tr>
+    <tr><td>Roughness/Metallic</td><td>打包進 Albedo 的 A 或 Normal 的 BA</td><td>節省 render target 數量</td></tr>
+    <tr><td>Emissive / 光照累積</td><td>B10G11R11 或 R11G11B10F</td><td>HDR，無 alpha；頻寬比 RGBA16F 低 33%</td></tr>
+    <tr><td>Depth</td><td>D32F + Reverse-Z</td><td>精度最大化；32-bit float + reverse 分布</td></tr>
+  </tbody>
+</table>
+
+<h3>ShadingModelID（Unreal 的做法）</h3>
+<p>
+  Unreal 在 GBufferB.A 存一個整數 ID，標記每個像素用哪種 BRDF 模型（Default Lit、Subsurface、Clear Coat、Hair、Eye 等）。
+  Deferred Lighting pass 讀這個 ID，用 switch 分派到不同的 BRDF 函數。
+  這讓一個場景可以混用多種材質類型，而不需要多個 GBuffer layout 或多個 lighting pass。
+</p>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h2 id="s8"><span class="n">8</span> Deferred / Forward / Forward+ 比較</h2>
+
+<table class="cmp-table">
+  <thead>
+    <tr><th>考量點</th><th>Forward</th><th>Forward+（Clustered）</th><th>Deferred</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>光源成本</strong></td>
+      <td>O(物件 × 光源)</td>
+      <td>O(像素)，cluster 剔除</td>
+      <td>O(像素 × 光源)，tile/cluster 剔除</td>
+    </tr>
+    <tr>
+      <td><strong>透明物件</strong></td>
+      <td>直接支援</td>
+      <td>直接支援</td>
+      <td>需要 forward fallback</td>
+    </tr>
+    <tr>
+      <td><strong>MSAA</strong></td>
+      <td>硬體原生支援</td>
+      <td>支援</td>
+      <td>與 GBuffer 不相容（改用 TAA）</td>
+    </tr>
+    <tr>
+      <td><strong>記憶體頻寬</strong></td>
+      <td>最低</td>
+      <td>低（加一個 cluster buffer）</td>
+      <td>最高（多張全螢幕 RT 讀寫）</td>
+    </tr>
+    <tr>
+      <td><strong>行動裝置</strong></td>
+      <td>最適合（TBDR GPU）</td>
+      <td>適合</td>
+      <td>需要特別處理頻寬（ARM Mali/PowerVR 有 on-chip GBuffer 支援）</td>
+    </tr>
+    <tr>
+      <td><strong>代表引擎</strong></td>
+      <td>Unity URP（預設）</td>
+      <td>DOOM 2016、Unity URP Forward+</td>
+      <td>Unreal Engine、Unity HDRP</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Forward+ 的核心機制</h3>
+<p>
+  在 Forward pass 之前執行一個 compute shader，把 frustum 切成 3D 格子（tiles × depth slices = clusters），
+  把每個光源的影響範圍分配到相交的 cluster。
+  Forward pass 中每個像素只查自己所在 cluster 的光源清單，大幅減少不必要的光源計算，
+  同時保留 Forward 對透明物件和 MSAA 的天然相容性。
+</p>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h2 id="s9"><span class="n">9</span> 陰影貼圖的演進</h2>
+
+<div class="pipe" style="flex-direction:column;gap:6px;font-size:0.85em;">
+  <div style="display:flex;align-items:flex-start;gap:10px;">
+    <div class="pipe-step" style="min-width:180px;justify-content:center;flex-shrink:0">Basic Shadow Map</div>
+    <span style="color:#6c7086">從光源視角渲染深度圖，渲染時比較每個像素的深度。問題：精度不足（perspective aliasing）、shadow acne（自遮擋）。</span>
+  </div>
+  <div style="display:flex;align-items:flex-start;gap:10px;">
+    <div class="pipe-step orange" style="min-width:180px;justify-content:center;flex-shrink:0">PCF 軟陰影</div>
+    <span style="color:#6c7086">對 shadow map 取多個樣本，平均結果。核心大小決定陰影柔化程度。GPU 硬體支援 2×2 PCF（bilinear compare）。</span>
+  </div>
+  <div style="display:flex;align-items:flex-start;gap:10px;">
+    <div class="pipe-step orange" style="min-width:180px;justify-content:center;flex-shrink:0">PCSS 接觸軟化</div>
+    <span style="color:#6c7086">先搜尋 blocker 的平均深度，再根據 blocker-receiver 距離決定 PCF kernel 大小。接觸處陰影硬，遠離處柔——物理正確。</span>
+  </div>
+  <div style="display:flex;align-items:flex-start;gap:10px;">
+    <div class="pipe-step yellow" style="min-width:180px;justify-content:center;flex-shrink:0">CSM（Cascaded）</div>
+    <span style="color:#6c7086">把 camera frustum 切成 N 段（cascade），每段一張 shadow map，解析度分配更合理（近處高、遠處低）。Unreal 預設 4 cascade。</span>
+  </div>
+  <div style="display:flex;align-items:flex-start;gap:10px;">
+    <div class="pipe-step teal" style="min-width:180px;justify-content:center;flex-shrink:0">VSM（Virtual）</div>
+    <span style="color:#6c7086">虛擬頁表，按需分配。靜態場景永久 cache，動態物件只更新所在 page。Nanite 可直接光柵化到 VSM，解析度達 sub-pixel。</span>
+  </div>
+</div>
+
+<div class="callout blue">
+  <div class="callout-title">▌ 為什麼 shadow acne（自遮擋）會發生？</div>
+  Shadow map 的解析度有限——一個 texel 代表某個面積。
+  當我們從光源視角取樣這個 texel 的深度，和從相機視角看到的表面深度比較時，
+  浮點誤差和紋理解析度的不足導致表面「遮蔽了自己」，出現條紋狀的錯誤陰影。
+  解法：加一個 depth bias（讓陰影圖的深度稍微往光源方向偏移），代價是 peter panning（陰影和物件分離）。
+  選一個適合場景的 bias 值需要反覆調整。
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h2 id="s10"><span class="n">10</span> 抗鋸齒的演進</h2>
+
+<div class="pipe" style="flex-direction:column;gap:6px;font-size:0.85em;">
+  <div style="display:flex;align-items:flex-start;gap:10px;">
+    <div class="pipe-step" style="min-width:160px;justify-content:center;flex-shrink:0">SSAA</div>
+    <span style="color:#6c7086">超採樣：以 N倍解析度渲染，再縮小。效果最好，成本最高（O(N²)）。</span>
+  </div>
+  <div style="display:flex;align-items:flex-start;gap:10px;">
+    <div class="pipe-step orange" style="min-width:160px;justify-content:center;flex-shrink:0">MSAA</div>
+    <span style="color:#6c7086">多重採樣：每個像素多個 depth/coverage 採樣點，fragment shader 只跑一次。只抗幾何邊緣鋸齒，不抗 specular 高光鋸齒。與 Deferred 不相容。</span>
+  </div>
+  <div style="display:flex;align-items:flex-start;gap:10px;">
+    <div class="pipe-step yellow" style="min-width:160px;justify-content:center;flex-shrink:0">FXAA / SMAA</div>
+    <span style="color:#6c7086">後製抗鋸齒：對最終圖像做邊緣偵測、模糊。便宜但會模糊細節。SMAA 品質優於 FXAA。</span>
+  </div>
+  <div style="display:flex;align-items:flex-start;gap:10px;">
+    <div class="pipe-step purple" style="min-width:160px;justify-content:center;flex-shrink:0">TAA</div>
+    <span style="color:#6c7086">時域抗鋸齒：每幀 jitter 相機，累積多幀結果（指數移動平均）。現代引擎標配；問題：鬼影（ghosting）需要用 velocity buffer 修正。</span>
+  </div>
+  <div style="display:flex;align-items:flex-start;gap:10px;">
+    <div class="pipe-step teal" style="min-width:160px;justify-content:center;flex-shrink:0">DLSS / FSR / XeSS</div>
+    <span style="color:#6c7086">AI/機器學習超解析度：以低解析度渲染，用神經網路上採樣。DLSS（NVIDIA）最成熟，FSR（AMD）開放標準，XeSS（Intel）介於之間。</span>
+  </div>
+  <div style="display:flex;align-items:flex-start;gap:10px;">
+    <div class="pipe-step teal" style="min-width:160px;justify-content:center;flex-shrink:0">UE5 TSR</div>
+    <span style="color:#6c7086">Temporal Super Resolution：UE5 自研，與 DLSS 類似但不依賴 NVIDIA 硬體。品質接近 DLSS，跨平台支援。</span>
+  </div>
+</div>
+
+<p>
+  現代引擎幾乎都用 TAA 作為基礎，再加上 AI upscaling（DLSS/FSR）或引擎自研方案（TSR）。
+  你的 Ch32 學的 Wu's Line 和 MSAA 是理解這些方法「為什麼必要」的基礎——
+  鋸齒的本質是採樣頻率不足（Nyquist 定理），所有抗鋸齒方法都是在不同層次解決這個問題。
+</p>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h2 id="s11"><span class="n">11</span> 開源軟體渲染器導讀</h2>
+
+<p>你的資料夾裡有幾個很有價值的開源軟體渲染器，每個架構思路不同：</p>
+
+<div class="ref-grid" style="grid-template-columns:1fr;">
+
+  <div class="ref-card code">
+    <div class="ref-card-title">mini3d.c — 單檔案 C 軟體渲染器</div>
+    <div class="ref-card-author">skywind3000 · C · Win32 GDI</div>
+    <div class="ref-card-desc">
+      架構：掃描線梯形法 + 透視正確插值（rhw）+ Z-buffer + 紋理採樣 + 矩陣系統。
+      全部在一個 .c 檔，適合一次性通讀理解整個管線的實作細節。
+      <br><br>
+      重點學習：<code>vertex_rhw_init()</code>（透視正確插值）、<code>trapezoid_init_triangle()</code>（掃描線三角形拆分）、
+      <code>device_draw_scanline()</code>（含 Z-test + 紋理採樣的掃描線）。
+      <br><br>
+      與你的 render_device.cpp 的差異：mini3d 用掃描線法，你用包圍盒法；
+      mini3d 已有透視正確插值和 Z-buffer，這是你接下來要實作的 Ch11 和 Ch24。
+    </div>
+  </div>
+
+  <div class="ref-card code">
+    <div class="ref-card-title">SRender — C++ IShader 架構渲染器</div>
+    <div class="ref-card-author">C++ · CMake · TGA + OBJ</div>
+    <div class="ref-card-desc">
+      架構：有 IShader 抽象介面（<code>vertex_shader / fragment_shader</code>）、Phong Shader、PBR Shader（含 IBL：irradiance map + prefilter map + BRDF LUT）、Skybox Shader。
+      <br><br>
+      重點學習：<code>shader.h</code> 的 <code>payload_t</code> 結構（uniforms 的組織方式）、
+      <code>iblmap_t</code>（IBL 資源的載入與使用）。
+      這和你的 IShader 設計（Ch23）在概念上完全相同，可以對照參考。
+      <br><br>
+      還有 homogeneous clipping（齊次空間裁剪，Ch30 的內容）的 in/out buffer 設計。
+    </div>
+  </div>
+
+</div>
+
+<div class="callout orange">
+  <div class="callout-title">▌ 建議閱讀順序</div>
+  <ol style="margin-top:6px">
+    <li>先看 <code>mini3d.c</code> 的矩陣系統（LookAt、Perspective）——對應你的 Ch13-18</li>
+    <li>再看 <code>mini3d.c</code> 的 <code>vertex_rhw_init</code> + <code>device_draw_scanline</code>——對應 Ch24 透視正確插值</li>
+    <li>最後看 <code>SRender/shader/shader.h</code>——對應 Ch23 IShader 設計</li>
+  </ol>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h2 id="s12"><span class="n">12</span> 推薦書單與論文</h2>
+
+<div class="sec-label">重點書籍</div>
+
+<div class="ref-grid">
+  <div class="ref-card book">
+    <div class="ref-card-title">Real-Time Rendering (4th Ed.)</div>
+    <div class="ref-card-author">Akenine-Möller, Haines, Hoffman 等 · 1198 頁</div>
+    <div class="ref-card-desc">
+      實時渲染領域的「聖經」。涵蓋光柵化管線、陰影、全域光照、PBR、抗鋸齒、後製等所有主題。
+      建議把它當成百科全書——學到哪個主題就翻哪章，而不是從頭讀到尾。
+      你的資料夾有第 3 版（第 4 版新增 RTX / AI rendering 章節）。
+    </div>
+  </div>
+
+  <div class="ref-card book">
+    <div class="ref-card-title">Fundamentals of Computer Graphics (4th Ed.)</div>
+    <div class="ref-card-author">Shirley & Marschner</div>
+    <div class="ref-card-desc">
+      最好讀的 CG 教科書。數學基礎（向量、矩陣、光線追蹤、光柵化）循序漸進，
+      每個概念都有圖示和推導。特別推薦光柵化章節（Ch8）和相機/視圖章節（Ch7）。
+    </div>
+  </div>
+
+  <div class="ref-card book">
+    <div class="ref-card-title">3D Math Primer for Graphics and Game Development (2nd Ed.)</div>
+    <div class="ref-card-author">Dunn & Parberry</div>
+    <div class="ref-card-desc">
+      最友善的 3D 數學入門書。向量、矩陣、四元數、座標空間變換都有清晰解釋。
+      你資料夾有兩個版本（中文版《3D 數學基礎》和英文第 2 版）。
+      建議在學 Ch13-16（MVP 矩陣）之前通讀一遍。
+    </div>
+  </div>
+
+  <div class="ref-card book">
+    <div class="ref-card-title">Tricks of the 3D Game Programming Gurus</div>
+    <div class="ref-card-author">André LaMothe · 1024 頁</div>
+    <div class="ref-card-desc">
+      從零開始建立 3D 軟體渲染器的實戰書（Win32 + 純 C）。
+      掃描線光柵化、3D 裁剪、Z-buffer、紋理映射全部手工實作。
+      代碼已過時（DOS 時代），但推導過程清晰，適合理解「引擎內部到底在做什麼」。
+    </div>
+  </div>
+
+  <div class="ref-card book">
+    <div class="ref-card-title">Computer Graphics: Principles and Practice (3rd Ed.)</div>
+    <div class="ref-card-author">Hughes, van Dam, McGuire 等</div>
+    <div class="ref-card-desc">
+      CG 領域最嚴謹的教科書，數學密度高。
+      適合在有了直覺理解後，想要完整理論基礎的讀者。
+      光柵化、裁剪、投影的完整推導都在這裡。
+    </div>
+  </div>
+
+  <div class="ref-card book">
+    <div class="ref-card-title">GAME ENGINE BLACK BOOK: DOOM</div>
+    <div class="ref-card-author">Fabien Sanglard</div>
+    <div class="ref-card-desc">
+      剖析 DOOM 的引擎原始碼，包含 BSP 樹、Span-based 渲染、視野剪裁的所有實作細節。
+      是理解「為什麼早期引擎這樣設計」的絕佳讀物。
+      你資料夾有這本，閒暇時讀很有意思。
+    </div>
+  </div>
+</div>
+
+<div class="sec-label" style="margin-top:28px">關鍵論文（你資料夾裡都有）</div>
+
+<div class="ref-grid">
+  <div class="ref-card paper">
+    <div class="ref-card-title">Accelerated Half-Space Triangle Rasterization</div>
+    <div class="ref-card-author">Mileff, Nehez, Dudra · 2015</div>
+    <div class="ref-card-desc">
+      研究 edge function（半空間函數）的增量計算，讓三角形光柵化的 per-pixel 測試可以做成 incremental（從上一個像素加差值）。這是 GPU 硬體光柵器的算法基礎。建議學完 Ch09 包圍盒法後閱讀。
+    </div>
+  </div>
+
+  <div class="ref-card paper">
+    <div class="ref-card-title">Perspective Texture Mapping</div>
+    <div class="ref-card-author">Paul Heckbert · 1989</div>
+    <div class="ref-card-desc">
+      透視正確紋理插值的完整數學推導。解釋為什麼屏幕空間線性插值 UV 是錯誤的，以及 1/w trick 的理論基礎。對應你的 Ch24。
+    </div>
+  </div>
+
+  <div class="ref-card paper">
+    <div class="ref-card-title">Low-Cost Perspective-Correct Texture Interpolation</div>
+    <div class="ref-card-author">技術報告（lowk_persp_interp_techrep）</div>
+    <div class="ref-card-desc">
+      研究在硬體資源受限的情況下，如何用近似方法（每隔 K 個像素算一次精確值，中間線性補間）降低透視正確插值的成本。Quake 使用了這種近似。
+    </div>
+  </div>
+
+  <div class="ref-card paper">
+    <div class="ref-card-title">Optimal Depth Buffer for Low-Cost Graphics Hardware</div>
+    <div class="ref-card-author">Lapidous & Jiao</div>
+    <div class="ref-card-desc">
+      系統分析各種 depth buffer 方案（Z-buffer、W-buffer、log-depth）的精度分布，以及 Reverse-Z 為什麼優於傳統 Z-buffer。對應你的 Ch11。
+    </div>
+  </div>
+
+  <div class="ref-card paper">
+    <div class="ref-card-title">Rasterization on Larrabee</div>
+    <div class="ref-card-author">Michael Abrash · Intel 2009</div>
+    <div class="ref-card-desc">
+      Intel 在 CPU 上實作高效能三角形光柵化的技術文章（為了 Larrabee 那顆「GPU 概念的 CPU」）。SIMD 優化、tile-based 光柵化、edge function 向量化。是你資料夾裡技術含量最高的論文，建議最後讀。
+    </div>
+  </div>
+
+  <div class="ref-card paper">
+    <div class="ref-card-title">Bresenham's Line Drawing Algorithm</div>
+    <div class="ref-card-author">Jack E. Bresenham · 1965</div>
+    <div class="ref-card-desc">
+      原始論文。讀過原始推導（用實際印表機誤差量測的描述）和你現在學的理論版推導對比，可以看出同一個演算法可以有多少種理解方式。對應你的 Ch04-07。
+    </div>
+  </div>
+
+  <div class="ref-card paper">
+    <div class="ref-card-title">The Setup for Triangle Rasterization</div>
+    <div class="ref-card-author">Pineda · 1988</div>
+    <div class="ref-card-desc">
+      定義了 edge function 的概念（f(x,y) = (y2-y1)x - (x2-x1)y + ..），以及用它做三角形光柵化的完整數學。所有現代 GPU 光柵器都建立在這篇論文上。
+    </div>
+  </div>
+
+  <div class="ref-card paper">
+    <div class="ref-card-title">The Reyes Image Rendering Architecture</div>
+    <div class="ref-card-author">Cook, Carpenter, Catmull · 1987</div>
+    <div class="ref-card-desc">
+      Pixar 的離線渲染架構論文。把複雜幾何微切成「微多邊形」（micropolygon）再光柵化——概念上與 Nanite 把幾何切成 cluster 的做法有相似之處，有趣的歷史對照。
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h2 id="s13"><span class="n">13</span> 你的渲染器 vs 真實引擎：對應關係總表</h2>
+
+<table class="cmp-table">
+  <thead>
+    <tr>
+      <th>你的程式碼</th>
+      <th>對應 Unreal Engine 5</th>
+      <th>對應 Unity URP/HDRP</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>frame_buffer</code> + <code>pitch</code></td>
+      <td><code>FRHITexture2D</code>（Render Target）</td>
+      <td><code>RenderTexture</code> / <code>RTHandle</code></td>
+    </tr>
+    <tr>
+      <td><code>SetPixel()</code></td>
+      <td>Fragment Output（<code>SV_Target</code>）</td>
+      <td>Fragment Output（<code>SV_Target</code>）</td>
+    </tr>
+    <tr>
+      <td><code>DrawLine()</code></td>
+      <td>Debug wireframe pass（compute shader）</td>
+      <td><code>Debug.DrawLine()</code> → Gizmo pass</td>
+    </tr>
+    <tr>
+      <td><code>DrawTriangle()</code><br><small>包圍盒 + 重心座標</small></td>
+      <td>GPU 硬體光柵器（固定功能）<br>Nanite 小三角形 → compute shader 軟光柵</td>
+      <td>GPU 硬體光柵器</td>
+    </tr>
+    <tr>
+      <td>Z-buffer（Ch11）</td>
+      <td>Early Z PrePass + <code>D32F_FLOAT</code> depth buffer（Reverse-Z）</td>
+      <td>Depth Prepass（URP Forward+/Deferred）</td>
+    </tr>
+    <tr>
+      <td>MVP 矩陣（Ch13–16）</td>
+      <td><code>FLocalVertexFactory</code> + Vertex Shader<br><code>unity_ObjectToWorld</code> 等內建矩陣</td>
+      <td><code>UNITY_MATRIX_MVP</code> / <code>GetVertexPositionInputs()</code></td>
+    </tr>
+    <tr>
+      <td>透視正確插值（Ch24）<br><small>rhw trick</small></td>
+      <td>光柵器自動處理（interpolator）</td>
+      <td>光柵器自動處理</td>
+    </tr>
+    <tr>
+      <td>IShader <code>vertex()</code>（Ch23）</td>
+      <td>HLSL Vertex Shader</td>
+      <td>HLSL Vertex Shader（ShaderLab <code>HLSLPROGRAM</code>）</td>
+    </tr>
+    <tr>
+      <td>IShader <code>fragment()</code>（Ch23）</td>
+      <td>HLSL Pixel Shader</td>
+      <td>HLSL Fragment Shader</td>
+    </tr>
+    <tr>
+      <td>Uniforms（Ch23）</td>
+      <td>Constant Buffer（<code>CBUFFER</code>）<br><code>FViewUniformShaderParameters</code></td>
+      <td><code>CBUFFER UnityPerMaterial</code>（SRP Batcher 要求）</td>
+    </tr>
+    <tr>
+      <td>Varyings 插值（Ch10）</td>
+      <td>光柵器 interpolator（自動透視正確）</td>
+      <td>光柵器 interpolator</td>
+    </tr>
+    <tr>
+      <td>OBJ Loader（Ch21）</td>
+      <td>Static Mesh import pipeline（FBX → UAsset）</td>
+      <td>Mesh import（FBX/OBJ → Mesh asset）</td>
+    </tr>
+    <tr>
+      <td>TGA Loader（Ch20）</td>
+      <td>Texture2D import（DDS/PNG/TGA → UAsset）</td>
+      <td>Texture2D import</td>
+    </tr>
+    <tr>
+      <td>Phong Shader（Ch28）</td>
+      <td>Legacy shading model（已被 PBR 取代）</td>
+      <td>Built-in shading（Legacy）</td>
+    </tr>
+    <tr>
+      <td>Normal Map Shader（Ch29）</td>
+      <td>Normal Map（TBN 矩陣，切線空間）</td>
+      <td>Unity Standard Shader Normal Map</td>
+    </tr>
+    <tr>
+      <td>Shadow Map（Ch31）</td>
+      <td>Virtual Shadow Maps（VSM）</td>
+      <td>URP Shadow Map pass（Basic + CSM）</td>
+    </tr>
+    <tr>
+      <td>MSAA / SSAA（Ch32）</td>
+      <td>TAA / TSR（取代 MSAA）</td>
+      <td>MSAA 或 TAA（設定項）/ DLSS/FSR（插件）</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout teal" style="margin-top:32px">
+  <div class="callout-title">▌ 為什麼先學軟體光柵器？</div>
+  GPU 隱藏了大量細節：光柵化、插值、Z-test 全都是硬體自動幫你做的。
+  先用 CPU 手工完成這些步驟，你才真正知道 GPU 的每個固定功能單元在做什麼——
+  才能在寫 GLSL/HLSL 時不只是「填空」，而是清楚知道每個 <code>varying</code>、每個 <code>uniform</code>、
+  每個 depth test 設定背後的意義。
+  這個系列結束後，你看 Unreal/Unity 的 shader 文件，會比大多數只學過 API 的人理解得深很多。
+</div>
+
+<div class="footer-nav">
+  <a href="../index.html">← 回首頁</a>
+  <span style="color:#313244">BONUS B-01 — 課外知識</span>
+  <span style="color:#6c7086">Unreal 5 · Unity · 論文 · 書單</span>
+</div>
+
+</body>
+</html>

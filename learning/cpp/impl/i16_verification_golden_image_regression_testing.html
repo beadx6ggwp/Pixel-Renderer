@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>I-16 — Verification / Golden Image / Regression Testing</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#1e1e2e; --bg1:#181825; --bg2:#11111b; --border:#313244;
+  --muted:#6c7086; --text:#cdd6f4; --blue:#89b4fa; --green:#a6e3a1;
+  --yellow:#f9e2af; --orange:#fab387; --red:#f38ba8; --purple:#cba6f7; --teal:#94e2d5;
+}
+body { background: var(--bg); color: var(--text); font-family: 'Georgia', serif; font-size: 15px; padding: 0 20px 80px; max-width: 900px; margin: 0 auto; line-height: 1.9; }
+nav { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); padding: 14px 0; border-bottom: 1px solid var(--border); margin-bottom: 36px; display: flex; align-items: center; gap: 10px; }
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--orange); }
+.nav-sep { color: var(--border); }
+.nav-cur { color: var(--text); }
+.nav-right { margin-left: auto; display: flex; gap: 16px; }
+.ch-header { margin-bottom: 40px; }
+.ch-label { font-family: 'Consolas', monospace; font-size: 0.78em; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px; }
+.ch-title { color: var(--orange); font-size: 1.7em; font-weight: normal; margin-bottom: 10px; }
+.ch-sub { color: var(--muted); font-size: 0.88em; margin-bottom: 14px; }
+.ch-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.ch-tag { font-family: 'Consolas', monospace; font-size: 0.72em; padding: 1px 7px; border-radius: 4px; background: var(--bg2); color: var(--muted); border: 1px solid var(--border); }
+h2 { color: var(--purple); font-size: 1em; font-family: 'Consolas', monospace; letter-spacing: 0.05em; padding: 10px 0; border-bottom: 1px solid var(--border); margin: 44px 0 20px; display: flex; align-items: center; gap: 12px; }
+h2 .n { background: var(--purple); color: var(--bg2); font-weight: bold; border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.85em; }
+h3 { color: var(--yellow); font-size: 0.95em; margin: 24px 0 10px; }
+p { margin-bottom: 12px; }
+strong { color: var(--yellow); }
+em { color: var(--orange); font-style: normal; }
+code { font-family: 'Consolas', monospace; color: var(--teal); }
+ul, ol { margin: 8px 0 14px 26px; line-height: 2.2; }
+.box { border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 0.9em; line-height: 1.85; background: var(--bg1); }
+.box-blue { border-left: 4px solid var(--blue); }
+.box-green { border-left: 4px solid var(--green); }
+.box-yellow { border-left: 4px solid var(--yellow); }
+.box-red { border-left: 4px solid var(--red); }
+.box-purple { border-left: 4px solid var(--purple); }
+.code { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.85em; line-height: 2.1; margin: 14px 0; overflow-x: auto; }
+.code .cmt { color: var(--muted); } .code .kw { color: var(--purple); } .code .val { color: var(--orange); } .code .tp { color: var(--blue); } .code .fn { color: var(--teal); }
+.ascii { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; font-family: 'Consolas', monospace; font-size: 0.82em; line-height: 1.55; margin: 14px 0; overflow-x: auto; color: var(--text); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9em; }
+thead { background: var(--bg1); }
+th { color: var(--muted); font-family: 'Consolas', monospace; font-size: 0.85em; padding: 8px 14px; text-align: left; border-bottom: 2px solid var(--border); }
+td { padding: 8px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.fig { margin: 22px 0; text-align: center; }
+.fig svg { max-width: 100%; height: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--bg2); }
+.fig-caption { color: var(--muted); font-size: 0.82em; margin-top: 8px; font-family: 'Consolas', monospace; }
+.next-ch { margin-top: 56px; padding: 20px 24px; background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 20px; }
+.next-label { font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+.next-title { color: var(--orange); font-size: 1em; }
+.next-desc { color: var(--muted); font-size: 0.85em; margin-top: 4px; }
+.next-arrow { margin-left: auto; color: var(--orange); font-size: 1.6em; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">C++ for Pixel-Renderer</a>
+  <span class="nav-sep">/</span>
+  <span class="nav-cur">I-16 — Verification / Golden Image / Regression Testing</span>
+  <div class="nav-right">
+    <a href="i15_shader_pipeline_interface_boundary.html">&larr; I-15</a>
+    <a href="i17_header_boundary_dependency_hygiene.html">I-17 &rarr;</a>
+  </div>
+</nav>
+
+<div class="ch-header">
+  <div class="ch-label">IMPLEMENTATION TRACK &middot; I-16</div>
+  <div class="ch-title">Verification / Golden Image / Regression Testing</div>
+  <div class="ch-sub">software renderer 的價值不只是能畫，而是能被穩定檢查</div>
+  <div class="ch-tags">
+    <span class="ch-tag">testing</span>
+    <span class="ch-tag">golden-image</span>
+    <span class="ch-tag">determinism</span>
+    <span class="ch-tag">regression</span>
+  </div>
+</div>
+
+<p>
+當 renderer 還只有一條線、一個三角形時，靠眼睛看 window 似乎就夠了。但只要你開始改 Bresenham、edge function、z-buffer、shader interface、UI draw command、SDL backend，就會遇到同一個問題：<strong>畫面變了，到底是 bug、預期改動，還是平台 present path 的差異？</strong>
+</p>
+
+<p>
+這章補上的不是「測試框架速查」，而是一個 renderer project 必須有的思考層：rendering result 要如何變成可比較、可回歸、可定位的 artifact。
+</p>
+
+<div class="box box-blue">
+<strong>本章範圍</strong> &mdash; 建立 Pixel-Renderer 的 verification strategy：unit tests 檢查小規則，framebuffer tests 檢查 CPU pixels，golden image tests 檢查整張結果，debug dump 協助定位差異。重點放在 software renderer core，不依賴 Win32/SDL window 才能測。
+</div>
+
+<h2><span class="n">1</span> naive model：畫面看起來對就是對</h2>
+
+<p>
+最直覺的測試方式是：
+</p>
+
+<pre class="ascii">run program
+look at window
+if triangle appears:
+  good</pre>
+
+<p>
+這個模型很適合第一天確認程式有跑起來，但它很快會失效：
+</p>
+
+<ul>
+  <li>一個像素偏一格，肉眼不一定看得出來。</li>
+  <li>重構 <code>Framebuffer</code> ownership 後，window 仍然可能顯示正常，但 memory layout 已經錯了。</li>
+  <li>SDL / Win32 / macOS present path 可能有色彩格式或 pitch 差異。</li>
+  <li>triangle edge rule 改掉後，邊界 pixel 的差異要能被精準定位。</li>
+  <li>CI 或無視窗環境不能靠人工看畫面。</li>
+</ul>
+
+<div class="box box-yellow">
+<strong>測試的第一性問題</strong> &mdash; 你要測的不是「window 是否看起來像」，而是「renderer core 是否對同一份 input 產生同一份符合規格的 framebuffer」。window 是觀察手段，不是判準本身。
+</div>
+
+<h2><span class="n">2</span> 分層測試地圖</h2>
+
+<div class="fig">
+<svg viewBox="0 0 860 500" role="img" aria-label="Renderer verification layers">
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#89b4fa"/>
+    </marker>
+  </defs>
+  <rect x="70" y="38" width="720" height="64" rx="8" fill="#1a2a3d" stroke="#89b4fa" stroke-width="2"/>
+  <text x="430" y="75" fill="#89b4fa" font-family="Consolas" font-size="18" text-anchor="middle">Unit-level rules</text>
+  <text x="430" y="96" fill="#cdd6f4" font-family="Consolas" font-size="12" text-anchor="middle">edge function sign, bounds check, color packing, matrix helper, clipping helper</text>
+
+  <rect x="70" y="140" width="720" height="64" rx="8" fill="#1a2d1a" stroke="#a6e3a1" stroke-width="2"/>
+  <text x="430" y="177" fill="#a6e3a1" font-family="Consolas" font-size="18" text-anchor="middle">Framebuffer-level tests</text>
+  <text x="430" y="198" fill="#cdd6f4" font-family="Consolas" font-size="12" text-anchor="middle">draw into std::vector pixels, count pixels, inspect exact coordinates</text>
+
+  <rect x="70" y="242" width="720" height="64" rx="8" fill="#2a1a3d" stroke="#cba6f7" stroke-width="2"/>
+  <text x="430" y="279" fill="#cba6f7" font-family="Consolas" font-size="18" text-anchor="middle">Golden image tests</text>
+  <text x="430" y="300" fill="#cdd6f4" font-family="Consolas" font-size="12" text-anchor="middle">render fixed scene, compare output image/hash against blessed artifact</text>
+
+  <rect x="70" y="344" width="720" height="64" rx="8" fill="#2f2018" stroke="#fab387" stroke-width="2"/>
+  <text x="430" y="381" fill="#fab387" font-family="Consolas" font-size="18" text-anchor="middle">Platform smoke tests</text>
+  <text x="430" y="402" fill="#cdd6f4" font-family="Consolas" font-size="12" text-anchor="middle">Win32/SDL window opens, Present accepts framebuffer, event loop exits</text>
+
+  <path d="M430 102 L430 134" stroke="#89b4fa" stroke-width="3" marker-end="url(#arrow)"/>
+  <path d="M430 204 L430 236" stroke="#89b4fa" stroke-width="3" marker-end="url(#arrow)"/>
+  <path d="M430 306 L430 338" stroke="#89b4fa" stroke-width="3" marker-end="url(#arrow)"/>
+</svg>
+<div class="fig-caption">SVG：testing 應該從 renderer core 往外長。越往下越接近平台，越不適合當作主要 correctness oracle。</div>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>層級</th>
+      <th>測什麼</th>
+      <th>不該測什麼</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Unit-level</td>
+      <td>小函式規則：bounds、edge function、color conversion、matrix helper。</td>
+      <td>不要開 window，不要依賴 OS event loop。</td>
+    </tr>
+    <tr>
+      <td>Framebuffer-level</td>
+      <td>在 CPU buffer 裡畫固定 primitive，檢查某些 pixel 或統計量。</td>
+      <td>不要把 <code>BitBlt</code> / <code>SDL_RenderPresent</code> 放進 correctness 判斷。</td>
+    </tr>
+    <tr>
+      <td>Golden image</td>
+      <td>固定 scene 的完整 framebuffer 影像。</td>
+      <td>不要把每次視覺變動都默默更新 golden。</td>
+    </tr>
+    <tr>
+      <td>Platform smoke</td>
+      <td>window 是否能建立、present 是否能走完、事件是否能關閉。</td>
+      <td>不要用它判斷 rasterizer math 是否正確。</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2><span class="n">3</span> Golden image 的基本模型</h2>
+
+<p>
+Golden image test 的核心流程是：
+</p>
+
+<pre class="ascii">test scene input
+  |
+  v
+headless renderer core
+  |
+  v
+CPU framebuffer
+  |
+  +-- write actual image/debug dump
+  |
+  v
+compare with golden artifact
+  |
+  +-- exact match for integer deterministic paths
+  +-- tolerance match for floating-point or platform-sensitive paths</pre>
+
+<p>
+對目前 Pixel-Renderer 的第一版來說，最好先做 <em>exact match</em>，因為目前主要是 CPU rasterizer、32-bit color、固定尺寸、沒有 texture filtering、沒有 MSAA，也還沒有跨 SIMD/FMA 差異。當你進入 perspective-correct interpolation、floating depth、不同 compiler optimization 後，再引入 tolerance。
+</p>
+
+<div class="box box-yellow">
+<strong>不要太早把 tolerance 當遮羞布</strong> &mdash; 如果現在只是 <code>SetPixel</code>、line、flat-color triangle，結果應該高度 deterministic。這時 tolerance 太寬，會把 off-by-one、pitch 錯誤、color channel 交換都藏起來。
+</div>
+
+<h2><span class="n">4</span> 第一版測試應該長什麼樣子</h2>
+
+<p>
+等 I-08 的 owned <code>Framebuffer</code> 落地後，可以先做一個完全不開 window 的 test path：
+</p>
+
+<div class="code">
+<span class="tp">Framebuffer</span> fb(<span class="val">64</span>, <span class="val">64</span>);<br>
+<span class="tp">RenderDevice</span> device(fb.<span class="fn">View</span>());<br>
+<span class="tp">Rasterizer</span> rasterizer(&amp;device);<br>
+<br>
+device.<span class="fn">Clear</span>(<span class="val">0x00000000</span>);<br>
+rasterizer.<span class="fn">DrawLine</span>(<span class="val">0</span>, <span class="val">0</span>, <span class="val">63</span>, <span class="val">63</span>, <span class="val">0xffffffff</span>);<br>
+<br>
+<span class="fn">expect_pixel</span>(fb, <span class="val">0</span>, <span class="val">0</span>, <span class="val">0xffffffff</span>);<br>
+<span class="fn">expect_pixel</span>(fb, <span class="val">63</span>, <span class="val">63</span>, <span class="val">0xffffffff</span>);<br>
+<span class="fn">expect_pixel_count</span>(fb, <span class="val">0xffffffff</span>, <span class="val">64</span>);
+</div>
+
+<p>
+這個測試很小，但它檢查了三個重要 invariant：
+</p>
+
+<ul>
+  <li><code>Framebuffer</code> 可以在沒有 <code>ScreenManager</code> 的情況下存在。</li>
+  <li><code>RenderDevice</code> 寫的是 project-owned CPU memory。</li>
+  <li><code>Rasterizer</code> 的輸出可以被程式檢查，而不是只能看 window。</li>
+</ul>
+
+<h2><span class="n">5</span> Debug dump：失敗時要能定位</h2>
+
+<p>
+Golden image test 最常見的壞味道是：它只告訴你「不一樣」，但不告訴你哪裡不一樣。第一版至少要輸出：
+</p>
+
+<pre class="ascii">artifacts/
+  actual.ppm
+  expected.ppm
+  diff.ppm
+  diff.txt
+
+diff.txt:
+  size: 800x600
+  mismatched pixels: 124
+  first mismatch: x=321 y=240
+  expected: 0xff00ff00
+  actual:   0xff000000</pre>
+
+<p>
+PPM 是很適合早期 renderer 的格式，因為它簡單、可自己寫、沒有 PNG encoder dependency。等工具鏈穩定後，再考慮 PNG。
+</p>
+
+<div class="box box-purple">
+<strong>工程判準</strong> &mdash; 測試失敗時，artifact 要能回答「哪個 pixel、哪個顏色、差多少、是哪張 scene」。如果只得到 failed，debugger 還是會被迫回到人工猜測。
+</div>
+
+<h2><span class="n">6</span> 測試與抽象分離的關係</h2>
+
+<p>
+測試不是 refactor 之後才補的東西。它反過來定義什麼叫分離成功：
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>架構目標</th>
+      <th>對應測試</th>
+      <th>代表的工程意義</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Renderer core 不依賴 Win32</td>
+      <td>headless framebuffer test 可在 macOS / Ubuntu build。</td>
+      <td>core header 沒有平台污染。</td>
+    </tr>
+    <tr>
+      <td>Win32 / SDL 只替換 present path</td>
+      <td>同一份 golden framebuffer 可交給不同 backend present。</td>
+      <td>display backend 沒有改變 rendering result。</td>
+    </tr>
+    <tr>
+      <td>UI / shader interface 可演進</td>
+      <td>固定 UI draw list 或 shader input 可以產生可比較 output。</td>
+      <td>未來 refactor 有 regression net。</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2><span class="n">7</span> 建議落地順序</h2>
+
+<ol>
+  <li>先讓 <code>Framebuffer</code> 成為 project-owned <code>std::vector&lt;uint32_t&gt;</code>。</li>
+  <li>讓 <code>RenderDevice</code> 接受 <code>FramebufferView</code> 或 <code>Framebuffer&amp;</code>。</li>
+  <li>新增 headless test executable，不開 window。</li>
+  <li>先測 <code>Clear</code>、<code>SetPixel</code>、line，再測 triangle。</li>
+  <li>加入 PPM writer 和 golden compare。</li>
+  <li>最後才做 Win32 / SDL smoke test。</li>
+</ol>
+
+<div class="box box-green">
+<strong>本章學到的三件事：</strong>
+<ol>
+  <li>software renderer 的 correctness oracle 應該是 deterministic CPU framebuffer，不是肉眼看到的 window。</li>
+  <li>golden image test 要搭配 exact/tolerance policy 和 debug dump，否則只會變成難用的 failed 訊息。</li>
+  <li>測試本身能驗證抽象是否真的分離：core 能 headless 測、backend 只 present、platform header 不污染 renderer。</li>
+</ol>
+</div>
+
+<div class="next-ch">
+  <div>
+    <div class="next-label">NEXT CHAPTER</div>
+    <div class="next-title">I-17 — Header Boundary / Dependency Hygiene</div>
+    <div class="next-desc">測試要能跨平台跑，下一步就要防止 windows.h、SDL.h、backend-private type 滲進 renderer core。</div>
+  </div>
+  <a class="next-arrow" href="i17_header_boundary_dependency_hygiene.html">&rarr;</a>
+</div>
+
+</body>
+</html>

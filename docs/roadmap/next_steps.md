@@ -364,7 +364,7 @@ docs/roadmap/next_steps.md
 README.md if current features changed
 ```
 
-Only update `notes/journal` if you want to preserve the learning trace or tutorial narrative.
+Only update `learning/` if you want to preserve the learning trace or tutorial narrative.
 
 ---
 

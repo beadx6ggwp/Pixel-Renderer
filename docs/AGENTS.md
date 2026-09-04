@@ -8,45 +8,25 @@
 
 `docs/HANDOFF.md` 是跨裝置 / 跨 session 的交接入口. 保持精簡, 只記 future session 無法從 git history 或 stable docs 快速推回來的 durable context.
 
-Long-form learning notes, historical reasoning, tutorial drafts, and exploratory records are kept on branch `notes/journal`, not on `main`.
-
-Historical teaching tracks such as `docs/tutorial-soft-renderer/` and `docs/tutorial-cpp/` live on `notes/journal`. They are useful learning context, but they are not current source roadmap.
+Long-form learning notes, historical reasoning, tutorial tracks, readings, and exploratory records live under `learning/` on `main`. They are useful learning context, but they are not current source truth or the current source roadmap.
 
 `docs/adr/` 只放會約束未來 branch 的 architecture decisions, 例如 owned `Framebuffer`, `DisplayBackend` boundary, depth convention, screen-space triangle before MVP, `CommandQueue` sequencing.
 
 其他 stable docs 依主題使用, 例如 `foundations/`, `architecture/`, `verification/`, `mapping/`, `roadmap/`. 這些資料夾是可用出口, 不是唯一出口.
 
-## Project Journal 工作流
+## Learning 與 Stable Docs
 
-新的 rough idea, learning trace, 長篇推導, brainstorming, 或 teaching draft, 先放在 branch:
+新的 rough idea, learning trace, 長篇推導, brainstorming, teaching draft, paper reading, 或 small lab 直接放在 `learning/`. 不需要為了內容分類建立永久 branch.
 
 ```text
-notes/journal
+learning/
+  explains why, preserves derivation, and may remain exploratory
+
+docs/
+  states what the current project can rely on
 ```
 
-`main` 不保存完整學習歷程. `main` 只保存 source, build/test, stable project docs, renderer conventions, architecture boundaries, verification strategy, roadmap, and ADR.
-
-從 `main` 讀歷史脈絡時, 不需要切 branch. 使用:
-
-```bash
-git show notes/journal:docs/notes/JOURNAL_INDEX.md
-```
-
-Do not treat `notes/journal` as current source truth.
-
-如果 journal note 變成 durable project rule, 只抽 stable conclusion 回 `main`:
-
-```bash
-git switch main
-git switch -c docs/<topic>
-
-# rewrite or copy only the stable conclusion
-
-git add <stable-docs>
-git commit -m "docs(<scope>): <summary>"
-```
-
-只有當內容變成 project-wide convention, architecture boundary, verification strategy, roadmap decision, 或 durable ADR 時, 才放進對應 stable docs. 不要只是因為一篇 journal note 看起來完整, 就急著搬回 `main`.
+如果 learning note 變成 durable project rule, 把 stable conclusion 重寫到對應的 foundation, architecture, verification, roadmap, 或 ADR 文件. 不要因為一篇 learning note 很完整, 就把其中所有探索性內容視為正式決策.
 
 ## Note 結構
 
@@ -88,7 +68,7 @@ stable docs 應該記錄長期可依賴的規則, 架構邊界, 命名, 測試�
 有沒有 current source 或 git state 需要驗證?
 ```
 
-如果只是探索, 留在 `notes/journal`. 只有真正變成 project-wide rule 時, 才放到 stable docs 或 ADR.
+如果只是探索, 留在 `learning/`. 只有真正變成 project-wide rule 時, 才放到 stable docs 或 ADR.
 
 ## 寫作風格
 
@@ -130,7 +110,7 @@ current source / git state
 root AGENTS.md and docs/AGENTS.md
 stable docs
 recent handoff when this is actually a handoff context
-notes/journal historical records
+learning/ historical records and tutorials
 chat memory
 ```
 

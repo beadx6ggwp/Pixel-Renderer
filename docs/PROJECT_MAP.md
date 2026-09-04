@@ -802,7 +802,7 @@ Correctness
 
 ## 11. Docs 導覽
 
-`main` 只保存 current project truth 與 stable project docs. 完整 learning history, long-form notes, and tutorial drafts 保存在 branch `notes/journal`.
+`main` 同時保存 formal renderer、stable project docs 與 `learning/` workspace. 這些內容的 authority 不同: `docs/` 是 current project truth, `learning/` 保存完整推導、tutorial、readings 與探索紀錄.
 
 ### Stable docs on main
 
@@ -830,20 +830,20 @@ verification 放 debug/testing，mapping 放商業引擎與職涯對照，
 roadmap 放里程碑，adr 放重要架構決策。
 ```
 
-### Project journal
+### Learning workspace
 
 ```text
-branch: notes/journal
-index: docs/notes/JOURNAL_INDEX.md
+learning/README.md
+learning/notes/README.md
+learning/cpp/
+learning/software-renderer/
 ```
 
 用途：
 
 ```text
-保存 rough thinking, learning notes, tutorial tracks, and historical reasoning.
-需要歷史脈絡時才讀:
-
-git show notes/journal:docs/notes/JOURNAL_INDEX.md
+保存 rough thinking, learning notes, tutorial tracks, readings, and historical reasoning.
+它們與 source 共存, 不需要切換 branch, 但不能取代 current source、stable docs 或實際驗證結果.
 ```
 
 ---

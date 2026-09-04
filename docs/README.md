@@ -1,12 +1,6 @@
 # Pixel-Renderer Docs
 
-`docs/` 放 stable project docs, renderer conventions, architecture notes, verification policy, roadmap, and ADR. 這裡保存 current project truth, 不保存完整學習歷程.
-
-Long-form learning notes, teaching drafts, and historical reasoning live on branch:
-
-```text
-notes/journal
-```
+`docs/` 放 stable project docs, renderer conventions, architecture notes, verification policy, roadmap, and ADR. 這裡保存 current project truth. 完整學習歷程、tutorial、readings 與 exploratory notes 放在 repository root 的 `learning/`.
 
 ## Reading Entry
 
@@ -78,12 +72,6 @@ docs/
   adr/                        architecture decision records
 ```
 
-## Project Journal
+## Learning Workspace
 
-Historical notes were moved out of `main` to keep `main` focused. Read them only when the task needs past reasoning:
-
-```bash
-git show notes/journal:docs/notes/JOURNAL_INDEX.md
-```
-
-Do not treat `notes/journal` as current source truth. When a note becomes a durable project rule, extract only the stable part into `foundations/`, `architecture/`, `verification/`, `roadmap/`, or `adr/` through a focused `docs/*` branch.
+Read [`../learning/README.md`](../learning/README.md) for learning notes, tutorial tracks, readings, and small labs. Learning material lives on `main`, but it is not automatically current source truth. When a note becomes a durable project rule, extract only the stable part into `foundations/`, `architecture/`, `verification/`, `roadmap/`, or `adr/`.
